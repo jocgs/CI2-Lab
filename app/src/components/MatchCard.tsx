@@ -4,8 +4,7 @@ import type { Bet, Match, Team } from "@/types/domain";
 import { getTeamById, getCompetitionById } from "@/lib/db";
 import { Badge } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
-
-const OUTCOME_LABEL: Record<string, string> = { "1": "1", X: "X", "2": "2" };
+import { formatBetPrediction } from "@/lib/scoring";
 
 /** Convierte un código ISO 3166-1 alpha-2 en emoji de bandera. */
 function flagEmoji(countryCode: string): string {
@@ -43,8 +42,8 @@ export async function MatchCard({ match, userBet }: { match: Match; userBet?: Be
         <span>{formatKickoff(match.kickoffAt)}</span>
         {userBet ? (
           <Badge tone={betTone(userBet)}>
-            Tu porra: {OUTCOME_LABEL[userBet.prediction]}
-            {userBet.status === "WON" && " · +3"}
+            Tu porra: {formatBetPrediction(userBet.prediction)}
+            {userBet.status === "WON" && ` · +${userBet.points}`}
             {userBet.status === "LOST" && " · 0"}
           </Badge>
         ) : match.status === "SCHEDULED" ? (

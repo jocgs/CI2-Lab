@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { USE_MOCKS } from "./runtime";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -10,6 +11,14 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const auth = getAuth(app);
+const hasClientConfig = Object.values(firebaseConfig).every(Boolean);
+
+const app =
+  !USE_MOCKS && hasClientConfig
+    ? getApps().length === 0
+      ? initializeApp(firebaseConfig)
+      : getApp()
+    : null;
+
+export const auth = app ? getAuth(app) : ({} as ReturnType<typeof getAuth>);
 export default app;

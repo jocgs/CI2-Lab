@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getRedirectResult } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { USE_MOCKS } from "@/lib/runtime";
 
 /**
  * Se monta en la página de login y recoge el resultado de
@@ -15,6 +16,8 @@ export function AuthRedirectHandler() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
+    if (USE_MOCKS) return;
+
     getRedirectResult(auth)
       .then(async (result) => {
         if (!result) return; // No había redirect pendiente — carga normal

@@ -9,6 +9,7 @@ import {
   signInAnonymously,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { USE_MOCKS } from "@/lib/runtime";
 
 type Mode = "login" | "register";
 
@@ -20,6 +21,23 @@ export function SignInButton() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (USE_MOCKS) {
+    return (
+      <div className="mt-6 flex flex-col gap-4">
+        <p className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--muted)]">
+          El modo demo está activo en local. Puedes entrar sin credenciales para seguir navegando.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="rounded-xl bg-[var(--brand)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-strong)]"
+        >
+          Entrar en modo demo
+        </button>
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

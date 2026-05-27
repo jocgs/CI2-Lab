@@ -1,14 +1,15 @@
-import type { Bet, Match, Outcome, RankingEntry, User, UserStreak } from "@/types/domain";
+import type {
+  Bet,
+  BetPrediction,
+  Match,
+  Outcome,
+  RankingEntry,
+  User,
+  UserStreak,
+} from "@/types/domain";
 
-/**
- * Reglas de puntuación del MVP (modo 1/X/2):
- *  - Acertar el resultado → 3 puntos
- *  - Fallar              → 0 puntos
- *
- * Cuando el jueves añadamos resultado exacto, esta función crece a algo
- * tipo `getPoints(bet, match, { mode: '1x2' | 'exact' })`.
- */
-export const POINTS_PER_CORRECT = 3;
+export const POINTS_PER_OUTCOME = 1;
+export const POINTS_PER_EXACT_SCORE = 2;
 
 export function outcomeFromGoals(home: number, away: number): Outcome {
   if (home > away) return "1";
@@ -18,7 +19,19 @@ export function outcomeFromGoals(home: number, away: number): Outcome {
 
 export function getPointsForBet(bet: Bet, match: Match): number {
   if (match.status !== "FINISHED" || !match.result) return 0;
-  return bet.prediction === match.result.outcome ? POINTS_PER_CORRECT : 0;
+
+  if (
+    bet.prediction.homeGoals === match.result.homeGoals &&
+    bet.prediction.awayGoals === match.result.awayGoals
+  ) {
+    return POINTS_PER_EXACT_SCORE;
+  }
+
+  return bet.prediction.outcome === match.result.outcome ? POINTS_PER_OUTCOME : 0;
+}
+
+export function formatBetPrediction(prediction: BetPrediction): string {
+  return `${prediction.outcome} · ${prediction.homeGoals}-${prediction.awayGoals}`;
 }
 
 /**
@@ -47,6 +60,10 @@ export function buildRanking(
       }, 0);
 
       const correctBets = resolvedBets.filter((b) => b.status === "WON").length;
+      const exactBets = resolvedBets.filter((bet) => {
+        const m = matchById.get(bet.matchId);
+        return m ? getPointsForBet(bet, m) === POINTS_PER_EXACT_SCORE : false;
+      }).length;
       const totalBets = resolvedBets.length;
 
       return {
@@ -55,6 +72,7 @@ export function buildRanking(
         avatarUrl: user.avatarUrl,
         totalPoints,
         correctBets,
+        exactBets,
         totalBets,
         accuracy: totalBets === 0 ? 0 : Math.round((correctBets / totalBets) * 100),
         rankChange: rankChanges?.[user.id],

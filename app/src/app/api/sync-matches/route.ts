@@ -8,12 +8,13 @@
 
 import { NextResponse } from "next/server";
 import { fetchRecentAndUpcomingMatches } from "@/lib/football-api";
+import { USE_MOCKS } from "@/lib/runtime";
 
 export async function GET() {
   try {
     const { competitions, teams, matches } = await fetchRecentAndUpcomingMatches();
 
-    if (process.env.USE_MOCKS === "true") {
+    if (USE_MOCKS) {
       // ── Modo mock: guardar en memoria, sin Firebase ──────────────────────
       const { setLiveData } = await import("@/lib/mocks/live-store");
       setLiveData({ competitions, teams, matches });

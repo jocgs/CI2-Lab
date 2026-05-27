@@ -13,6 +13,7 @@ import {
 import { Badge, Card } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
 import { placeBetAction } from "./actions";
+import { formatBetPrediction } from "@/lib/scoring";
 import type { Outcome, Team } from "@/types/domain";
 
 function flagEmoji(countryCode: string): string {
@@ -49,6 +50,10 @@ const OUTCOME_LABELS: { value: Outcome; label: string; helper: string }[] = [
   { value: "X", label: "X", helper: "Empate" },
   { value: "2", label: "2", helper: "Visitante" },
 ];
+
+function scoreLabel(homeGoals: number, awayGoals: number) {
+  return `${homeGoals}-${awayGoals}`;
+}
 
 export default async function MatchDetailPage({
   params,
@@ -110,7 +115,7 @@ export default async function MatchDetailPage({
 
         {match.status === "FINISHED" && match.result && (
           <p className="mt-4 text-center text-sm text-[var(--muted)]">
-            Resultado oficial: <strong>{match.result.outcome}</strong>
+            Resultado oficial: <strong>{match.result.outcome}</strong> · {scoreLabel(match.result.homeGoals, match.result.awayGoals)}
           </p>
         )}
       </Card>
@@ -119,14 +124,14 @@ export default async function MatchDetailPage({
       <Card className="p-6">
         <h2 className="text-lg font-semibold">Tu porra</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Elige el resultado: 1 (gana local), X (empate) o 2 (gana visitante).
+          Elige la quiniela 1/X/2 y el marcador exacto. Si aciertas solo la quiniela sumas 1 punto; si además clavas el marcador, 2 puntos.
         </p>
 
         {!canBet && match.status === "FINISHED" && (
           <div className="mt-4 rounded-xl bg-[var(--background)] p-4">
             {userBet ? (
               <p className="text-sm">
-                Apostaste por <strong>{userBet.prediction}</strong> ·{" "}
+                Apostaste por <strong>{formatBetPrediction(userBet.prediction)}</strong> ·{" "}
                 {userBet.status === "WON" ? (
                   <Badge tone="brand">¡Acertaste! +{userBet.points} pts</Badge>
                 ) : (
@@ -145,43 +150,91 @@ export default async function MatchDetailPage({
             {userBet && (
               <>
                 {" "}
-                Tu porra: <strong>{userBet.prediction}</strong>
+                Tu porra: <strong>{formatBetPrediction(userBet.prediction)}</strong>
               </>
             )}
           </div>
         )}
 
         {canBet && (
-          <form action={placeBetAction} className="mt-4 grid grid-cols-3 gap-3">
+          <form action={placeBetAction} className="mt-4 flex flex-col gap-4">
             <input type="hidden" name="matchId" value={match.id} />
-            {OUTCOME_LABELS.map(({ value, label, helper }) => {
-              const isSelected = userBet?.prediction === value;
-              return (
-                <button
-                  key={value}
-                  type="submit"
-                  name="prediction"
-                  value={value}
-                  className={
-                    "flex flex-col items-center gap-1 rounded-2xl border px-4 py-4 text-base font-semibold transition-all " +
-                    (isSelected
-                      ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand-strong)] shadow-sm"
-                      : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]/40")
-                  }
-                >
-                  <span className="text-2xl">{label}</span>
-                  <span className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                    {helper}
-                  </span>
-                </button>
-              );
-            })}
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Quiniela</p>
+              <div className="grid grid-cols-3 gap-3">
+                {OUTCOME_LABELS.map(({ value, label, helper }) => {
+                  const isSelected = userBet?.prediction.outcome === value;
+                  return (
+                    <label
+                      key={value}
+                      className={
+                        "flex cursor-pointer flex-col items-center gap-1 rounded-2xl border px-4 py-4 text-base font-semibold transition-all " +
+                        (isSelected
+                          ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand-strong)] shadow-sm"
+                          : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]/40")
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="outcome"
+                        value={value}
+                        defaultChecked={isSelected}
+                        required
+                        className="sr-only"
+                      />
+                      <span className="text-2xl">{label}</span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+                        {helper}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Marcador exacto</p>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                <label className="flex flex-col gap-2 text-sm">
+                  <span className="text-xs text-[var(--muted)]">Goles local</span>
+                  <input
+                    type="number"
+                    name="homeGoals"
+                    min="0"
+                    step="1"
+                    defaultValue={userBet?.prediction.homeGoals ?? ""}
+                    required
+                    className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center text-base font-semibold outline-none focus:border-[var(--brand)]"
+                  />
+                </label>
+                <span className="pb-2 text-lg font-semibold text-[var(--muted)]">-</span>
+                <label className="flex flex-col gap-2 text-sm">
+                  <span className="text-xs text-[var(--muted)]">Goles visitante</span>
+                  <input
+                    type="number"
+                    name="awayGoals"
+                    min="0"
+                    step="1"
+                    defaultValue={userBet?.prediction.awayGoals ?? ""}
+                    required
+                    className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center text-base font-semibold outline-none focus:border-[var(--brand)]"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-strong)]"
+            >
+              Guardar porra
+            </button>
           </form>
         )}
 
         {canBet && userBet && (
           <p className="mt-3 text-xs text-[var(--muted)]">
-            Tu porra actual: <strong>{userBet.prediction}</strong>. Puedes cambiarla hasta el inicio del partido.
+            Tu porra actual: <strong>{formatBetPrediction(userBet.prediction)}</strong>. Puedes cambiarla hasta el inicio del partido.
           </p>
         )}
       </Card>
@@ -209,7 +262,7 @@ export default async function MatchDetailPage({
                             : "muted"
                       }
                     >
-                      {bet.prediction}
+                      {formatBetPrediction(bet.prediction)}
                     </Badge>
                   </li>
                 );
