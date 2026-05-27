@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/groups", label: "Grupos" },
   { href: "/ranking", label: "Ranking" },
   { href: "/fantasy", label: "Fantasy" },
+  { href: "/news", label: "Noticias" },
   { href: "/profile", label: "Perfil" },
 ];
 
