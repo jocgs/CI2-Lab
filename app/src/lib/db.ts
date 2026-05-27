@@ -128,8 +128,8 @@ export async function requestFriendByUsername(
   userSent.add(friend.id);
   friendReceived.add(user.id);
 
-  store.update("users", user.id, { friendRequestSentIds: [...userSent] });
-  store.update("users", friend.id, { friendRequestReceivedIds: [...friendReceived] });
+  store.update<UserWithPassword>("users", user.id, { friendRequestSentIds: [...userSent] });
+  store.update<UserWithPassword>("users", friend.id, { friendRequestReceivedIds: [...friendReceived] });
 
   return stripPassword(friend);
 }
@@ -165,12 +165,12 @@ export async function acceptFriendRequestByUsername(
   requesterReceived.delete(user.id);
   requesterSent.delete(user.id);
 
-  store.update("users", user.id, {
+  store.update<UserWithPassword>("users", user.id, {
     friendIds: [...userFriends],
     friendRequestReceivedIds: [...received],
     friendRequestSentIds: [...userSent],
   });
-  store.update("users", requester.id, {
+  store.update<UserWithPassword>("users", requester.id, {
     friendIds: [...requesterFriends],
     friendRequestReceivedIds: [...requesterReceived],
     friendRequestSentIds: [...requesterSent],

@@ -301,7 +301,7 @@ export async function getFantasyRankingByCompetition(
     const captainPlayer = FANTASY_PLAYERS.find(
       (p) => p.id === team.captainId,
     );
-    const championTeam = ntMap.get(team.championTeamId);
+    const championTeam = team.championTeamId ? ntMap.get(team.championTeamId) : undefined;
     const prev = i > 0 ? sorted[i - 1].totalPoints : team.totalPoints;
     const pointsDiff = i === 0 ? 0 : team.totalPoints - prev;
 
@@ -312,7 +312,7 @@ export async function getFantasyRankingByCompetition(
       teamName: team.teamName,
       totalPoints: team.totalPoints,
       captainName: captainPlayer?.name ?? "—",
-      championTeamName: championTeam?.name ?? team.championTeamId,
+      championTeamName: championTeam?.name ?? team.championTeamId ?? "—",
       pointsDiff,
       label: getRankingLabel(i + 1, team.totalPoints),
     };

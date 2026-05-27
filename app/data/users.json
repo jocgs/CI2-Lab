@@ -101,5 +101,22 @@
     ],
     "createdAt": "2026-05-27T10:49:00.442Z",
     "supportedNationalTeamId": "canada"
+  },
+  {
+    "id": "user_np6ei4ei",
+    "username": "ramonprueba",
+    "displayName": "Ramon",
+    "email": "ramonprueba@gmail.com",
+    "avatarUrl": "https://ui-avatars.com/api/?name=Ramon&background=6366f1&color=fff&bold=true",
+    "passwordHash": "$2b$10$XaS4WyId4pC7/vXr23JCVeNVEiT6hhVQFqK.Qfry0Vw6MMNZaukfy",
+    "friendIds": [],
+    "friendRequestSentIds": [],
+    "friendRequestReceivedIds": [],
+    "supportedTeamIds": [
+      "team_rma",
+      "team_pca"
+    ],
+    "createdAt": "2026-05-27T11:55:09.069Z",
+    "supportedNationalTeamId": "usa"
   }
 ]
