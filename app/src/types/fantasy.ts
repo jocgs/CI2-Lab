@@ -17,6 +17,7 @@ export interface FantasyNationalTeam {
   id: string;
   name: string;
   flagUrl?: string;
+  logoUrl?: string;
   competitionId: string;
   group?: string;
 }

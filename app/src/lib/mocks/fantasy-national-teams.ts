@@ -44,6 +44,7 @@ export const FANTASY_NATIONAL_TEAMS: FantasyNationalTeam[] = [
     id: "spain",
     name: "España",
     flagUrl: flagEmoji("ES"),
+    logoUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Escudo_selecci%C3%B3n_espa%C3%B1ola.png",
     competitionId: "world_cup_2026",
     group: "B",
   },

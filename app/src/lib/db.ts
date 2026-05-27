@@ -82,6 +82,74 @@ export async function getUserById(id: string): Promise<User | undefined> {
   return { id: doc.id, ...doc.data() } as User;
 }
 
+export async function getUserByUsername(username: string): Promise<User | undefined> {
+  if (MOCKS) return MockDb.getUserByUsername(username);
+  const normalizedUsername = username.trim().toLowerCase();
+  const snap = await adminDb
+    .collection("users")
+    .where("username", "==", normalizedUsername)
+    .limit(1)
+    .get();
+  if (snap.empty) return undefined;
+  const doc = snap.docs[0];
+  return { id: doc.id, ...doc.data() } as User;
+}
+
+export async function getFriendsForUser(userId: string): Promise<User[]> {
+  if (MOCKS) return MockDb.getFriendsForUser(userId);
+  const user = await getUserById(userId);
+  if (!user) return [];
+  const friendIds = user.friendIds ?? [];
+  const friends = await Promise.all(friendIds.map((friendId) => getUserById(friendId)));
+  return friends.filter((friend): friend is User => Boolean(friend));
+}
+
+export async function updateUserProfile(
+  userId: string,
+  input: {
+    avatarUrl?: string | null;
+    supportedNationalTeamId?: string | null;
+    supportedTeamIds?: string[];
+  }
+): Promise<User> {
+  if (MOCKS) return MockDb.updateUserProfile(userId, input);
+
+  const updatePayload = {
+    avatarUrl: input.avatarUrl?.trim() || null,
+    supportedNationalTeamId: input.supportedNationalTeamId?.trim() || null,
+    supportedTeamIds: (input.supportedTeamIds ?? []).filter(Boolean),
+  };
+
+  await adminDb.collection("users").doc(userId).update(updatePayload);
+  const updated = await getUserById(userId);
+  if (!updated) throw new Error("Usuario no encontrado");
+  return updated;
+}
+
+export async function addFriendByUsername(
+  userId: string,
+  username: string
+): Promise<User> {
+  if (MOCKS) return MockDb.addFriendByUsername(userId, username);
+
+  const user = await getUserById(userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const friend = await getUserByUsername(username.toLowerCase());
+  if (!friend) throw new Error("No existe ningún usuario con ese nombre");
+  if (friend.id === user.id) throw new Error("No puedes añadirte a ti mismo");
+
+  const userFriends = Array.from(new Set([...(user.friendIds ?? []), friend.id]));
+  const friendFriends = Array.from(new Set([...(friend.friendIds ?? []), user.id]));
+
+  await Promise.all([
+    adminDb.collection("users").doc(user.id).update({ friendIds: userFriends }),
+    adminDb.collection("users").doc(friend.id).update({ friendIds: friendFriends }),
+  ]);
+
+  return friend;
+}
+
 // ---------------------------------------------------------------------------
 // Equipos y competiciones
 // ---------------------------------------------------------------------------
