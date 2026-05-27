@@ -29,6 +29,7 @@ export function buildRanking(
   users: User[],
   bets: Bet[],
   matches: Match[],
+  rankChanges?: Record<string, number>,
 ): RankingEntry[] {
   const matchById = new Map(matches.map((m) => [m.id, m]));
 
@@ -56,6 +57,7 @@ export function buildRanking(
         correctBets,
         totalBets,
         accuracy: totalBets === 0 ? 0 : Math.round((correctBets / totalBets) * 100),
+        rankChange: rankChanges?.[user.id],
       };
     })
     .sort((a, b) => b.totalPoints - a.totalPoints || b.accuracy - a.accuracy);

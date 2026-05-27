@@ -62,3 +62,56 @@ body {
 body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Balón decorativo del hero */
+@keyframes ball-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-10px) rotate(8deg); }
+  66%       { transform: translateY(-4px) rotate(-5deg); }
+}
+@keyframes ball-fire {
+  0%, 100% { transform: translateY(0px) rotate(-6deg) scale(1);
+             filter: drop-shadow(0 0 12px #f97316) drop-shadow(0 0 28px #ef4444); }
+  50%       { transform: translateY(-12px) rotate(6deg) scale(1.07);
+             filter: drop-shadow(0 0 20px #fb923c) drop-shadow(0 0 40px #f97316); }
+}
+@keyframes flame-center {
+  0%, 100% { transform: scaleY(1)    scaleX(1)    translateY(0);    opacity: 1;   }
+  40%       { transform: scaleY(1.15) scaleX(0.88) translateY(-6px); opacity: 0.95;}
+  70%       { transform: scaleY(0.92) scaleX(1.08) translateY(2px);  opacity: 0.85;}
+}
+@keyframes flame-left {
+  0%, 100% { transform: rotate(-25deg) scaleY(1)    translateY(0);    opacity: 0.85;}
+  50%       { transform: rotate(-30deg) scaleY(1.12) translateY(-5px); opacity: 1;   }
+}
+@keyframes flame-right {
+  0%, 100% { transform: rotate(25deg) scaleY(1)    translateY(0);    opacity: 0.85;}
+  50%       { transform: rotate(30deg) scaleY(1.12) translateY(-5px); opacity: 1;   }
+}
+
+.hero-ball {
+  animation: ball-float 3.5s ease-in-out infinite;
+  display: inline-block;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.25));
+  user-select: none;
+}
+.hero-ball-fire {
+  animation: ball-fire 1.6s ease-in-out infinite;
+  display: inline-block;
+  user-select: none;
+}
+.hero-flame-center {
+  animation: flame-center 0.9s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: bottom center;
+}
+.hero-flame-left {
+  animation: flame-left 1.1s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: bottom center;
+}
+.hero-flame-right {
+  animation: flame-right 1.0s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: bottom center;
+}

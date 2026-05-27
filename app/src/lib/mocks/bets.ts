@@ -8,8 +8,8 @@ import type { Bet } from "@/types/domain";
  *   match_1: 1   |   match_2: 1   |   match_3: X   |   match_4: 2   |   match_5: 2
  */
 export const MOCK_BETS: Bet[] = [
-  // ----- Clara: L W W W W → racha 4, mejor 4, 12 pts -----
-  { id: "bet_c1", userId: "user_clara", matchId: "match_1", prediction: "X", createdAt: "2026-05-18T10:00:00.000Z", status: "LOST", points: 0 },
+  // ----- Clara: W W W W W → racha 5, mejor 5, 15 pts -----
+  { id: "bet_c1", userId: "user_clara", matchId: "match_1", prediction: "1", createdAt: "2026-05-18T10:00:00.000Z", status: "WON", points: 3 },
   { id: "bet_c2", userId: "user_clara", matchId: "match_2", prediction: "1", createdAt: "2026-05-19T10:00:00.000Z", status: "WON", points: 3 },
   { id: "bet_c3", userId: "user_clara", matchId: "match_3", prediction: "X", createdAt: "2026-05-20T10:00:00.000Z", status: "WON", points: 3 },
   { id: "bet_c4", userId: "user_clara", matchId: "match_4", prediction: "2", createdAt: "2026-05-22T10:00:00.000Z", status: "WON", points: 3 },
