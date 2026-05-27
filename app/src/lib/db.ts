@@ -104,6 +104,24 @@ export async function getFriendsForUser(userId: string): Promise<User[]> {
   return friends.filter((friend): friend is User => Boolean(friend));
 }
 
+export async function getFriendRequestsReceived(userId: string): Promise<User[]> {
+  if (MOCKS) return MockDb.getFriendRequestsReceived(userId);
+  const user = await getUserById(userId);
+  if (!user) return [];
+  const requestIds = user.friendRequestReceivedIds ?? [];
+  const requests = await Promise.all(requestIds.map((requestId) => getUserById(requestId)));
+  return requests.filter((request): request is User => Boolean(request));
+}
+
+export async function getFriendRequestsSent(userId: string): Promise<User[]> {
+  if (MOCKS) return MockDb.getFriendRequestsSent(userId);
+  const user = await getUserById(userId);
+  if (!user) return [];
+  const requestIds = user.friendRequestSentIds ?? [];
+  const requests = await Promise.all(requestIds.map((requestId) => getUserById(requestId)));
+  return requests.filter((request): request is User => Boolean(request));
+}
+
 export async function updateUserProfile(
   userId: string,
   input: {
@@ -126,11 +144,11 @@ export async function updateUserProfile(
   return updated;
 }
 
-export async function addFriendByUsername(
+export async function requestFriendByUsername(
   userId: string,
   username: string
 ): Promise<User> {
-  if (MOCKS) return MockDb.addFriendByUsername(userId, username);
+  if (MOCKS) return MockDb.requestFriendByUsername(userId, username);
 
   const user = await getUserById(userId);
   if (!user) throw new Error("Usuario no encontrado");
@@ -139,15 +157,82 @@ export async function addFriendByUsername(
   if (!friend) throw new Error("No existe ningún usuario con ese nombre");
   if (friend.id === user.id) throw new Error("No puedes añadirte a ti mismo");
 
-  const userFriends = Array.from(new Set([...(user.friendIds ?? []), friend.id]));
-  const friendFriends = Array.from(new Set([...(friend.friendIds ?? []), user.id]));
+  if ((user.friendIds ?? []).includes(friend.id)) {
+    return friend;
+  }
+
+  const userSent = new Set(user.friendRequestSentIds ?? []);
+  const userReceived = new Set(user.friendRequestReceivedIds ?? []);
+  const friendReceived = new Set(friend.friendRequestReceivedIds ?? []);
+
+  if (userSent.has(friend.id)) {
+    return friend;
+  }
+
+  if (userReceived.has(friend.id)) {
+    throw new Error("Ya te ha enviado una solicitud. Acepta desde tu perfil.");
+  }
+
+  userSent.add(friend.id);
+  friendReceived.add(user.id);
 
   await Promise.all([
-    adminDb.collection("users").doc(user.id).update({ friendIds: userFriends }),
-    adminDb.collection("users").doc(friend.id).update({ friendIds: friendFriends }),
+    adminDb.collection("users").doc(user.id).update({ friendRequestSentIds: [...userSent] }),
+    adminDb.collection("users").doc(friend.id).update({ friendRequestReceivedIds: [...friendReceived] }),
   ]);
 
   return friend;
+}
+
+export async function acceptFriendRequestByUsername(
+  userId: string,
+  username: string
+): Promise<User> {
+  if (MOCKS) return MockDb.acceptFriendRequestByUsername(userId, username);
+
+  const user = await getUserById(userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const requester = await getUserByUsername(username.toLowerCase());
+  if (!requester) throw new Error("No existe ningún usuario con ese nombre");
+  if (requester.id === user.id) throw new Error("No puedes aceptarte a ti mismo");
+
+  const received = new Set(user.friendRequestReceivedIds ?? []);
+  if (!received.has(requester.id)) {
+    throw new Error("No tienes una solicitud pendiente de ese usuario");
+  }
+
+  const userFriends = new Set(user.friendIds ?? []);
+  const requesterFriends = new Set(requester.friendIds ?? []);
+  const userSent = new Set(user.friendRequestSentIds ?? []);
+  const requesterReceived = new Set(requester.friendRequestReceivedIds ?? []);
+  const requesterSent = new Set(requester.friendRequestSentIds ?? []);
+
+  userFriends.add(requester.id);
+  requesterFriends.add(user.id);
+  received.delete(requester.id);
+  userSent.delete(requester.id);
+  requesterReceived.delete(user.id);
+  requesterSent.delete(user.id);
+
+  await Promise.all([
+    adminDb.collection("users").doc(user.id).update({
+      friendIds: [...userFriends],
+      friendRequestReceivedIds: [...received],
+      friendRequestSentIds: [...userSent],
+    }),
+    adminDb.collection("users").doc(requester.id).update({
+      friendIds: [...requesterFriends],
+      friendRequestReceivedIds: [...requesterReceived],
+      friendRequestSentIds: [...requesterSent],
+    }),
+  ]);
+
+  return requester;
+}
+
+export async function addFriendByUsername(userId: string, username: string): Promise<User> {
+  return requestFriendByUsername(userId, username);
 }
 
 // ---------------------------------------------------------------------------

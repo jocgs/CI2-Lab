@@ -682,8 +682,6 @@ function PlayerPickerPanel({
   );
 }
 
-<<<<<<< HEAD
-=======
 // ─── PredictionsPanel ─────────────────────────────────────────────────────────
 
 interface PredictionsPanelProps {
@@ -798,7 +796,6 @@ function TeamPicker({
   );
 }
 
->>>>>>> 5256bc7 (Cambios perfiles)
 // ─── ConfirmationPanel ────────────────────────────────────────────────────────
 
 interface ConfirmationPanelProps {

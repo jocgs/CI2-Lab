@@ -67,6 +67,8 @@ export interface User {
   displayName: string;
   avatarUrl?: string;
   friendIds?: ID[];
+  friendRequestSentIds?: ID[];
+  friendRequestReceivedIds?: ID[];
   supportedNationalTeamId?: ID;
   supportedTeamIds?: ID[];
   createdAt: string;

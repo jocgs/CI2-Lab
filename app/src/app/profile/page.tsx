@@ -3,6 +3,8 @@ import Image from "next/image";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import {
   getBetsForUser,
+  getFriendRequestsReceived,
+  getFriendRequestsSent,
   getFriendsForUser,
   getCurrentUser,
   getGroupsForUser,
@@ -14,7 +16,11 @@ import {
 import { formatBetPrediction } from "@/lib/scoring";
 import { Badge, Card, EmptyState, SectionTitle } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
-import { addFriendAction, saveProfileAction } from "./actions";
+import {
+  acceptFriendRequestAction,
+  saveProfileAction,
+  sendFriendRequestAction,
+} from "./actions";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
@@ -22,11 +28,13 @@ const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 export default async function ProfilePage() {
   const user = await getCurrentUser();
 
-  const [streak, bets, groups, friends, teams, nationalTeams] = await Promise.all([
+  const [streak, bets, groups, friends, receivedRequests, sentRequests, teams, nationalTeams] = await Promise.all([
     getStreakForUser(user.id),
     getBetsForUser(user.id),
     getGroupsForUser(user.id),
     getFriendsForUser(user.id),
+    getFriendRequestsReceived(user.id),
+    getFriendRequestsSent(user.id),
     getTeams(),
     getNationalTeamsByCompetition(NATIONAL_TEAM_COMPETITION_ID),
   ]);
@@ -178,7 +186,7 @@ export default async function ProfilePage() {
 
         <Card className="p-6">
           <SectionTitle title="Amigos" subtitle="Añade amigos por su nombre de usuario" />
-          <form action={addFriendAction} className="mt-5 flex flex-col gap-3">
+          <form action={sendFriendRequestAction} className="mt-5 flex flex-col gap-3">
             <input type="hidden" name="redirectTo" value="/profile" />
             <input
               type="text"
@@ -226,6 +234,68 @@ export default async function ProfilePage() {
           </div>
         </Card>
       </section>
+
+      <Card className="p-6">
+        <SectionTitle
+          title="Solicitudes de amistad"
+          subtitle="Acepta las recibidas y revisa el estado de las que has enviado"
+        />
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div>
+            <p className="mb-3 text-xs uppercase tracking-wide text-[var(--muted)]">Recibidas</p>
+            {receivedRequests.length === 0 ? (
+              <EmptyState title="No tienes solicitudes recibidas" description="Aquí aparecerán cuando alguien quiera añadirte." />
+            ) : (
+              <div className="grid gap-3">
+                {receivedRequests.map((request) => (
+                  <div key={request.id} className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-3">
+                    <Link href={`/users/${request.username}`} className="flex items-center gap-3">
+                      <ProfileAvatar avatarUrl={request.avatarUrl} displayName={request.displayName} size="sm" zoomable={false} />
+                      <div>
+                        <p className="font-medium">{request.displayName}</p>
+                        <p className="text-xs text-[var(--muted)]">@{request.username}</p>
+                      </div>
+                    </Link>
+                    <form action={acceptFriendRequestAction}>
+                      <input type="hidden" name="friendUsername" value={request.username} />
+                      <input type="hidden" name="redirectTo" value="/profile" />
+                      <button
+                        type="submit"
+                        className="rounded-full bg-[var(--brand)] px-3 py-1 text-xs font-semibold text-white hover:bg-[var(--brand-strong)]"
+                      >
+                        Aceptar
+                      </button>
+                    </form>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <p className="mb-3 text-xs uppercase tracking-wide text-[var(--muted)]">Enviadas</p>
+            {sentRequests.length === 0 ? (
+              <EmptyState title="No has enviado solicitudes" description="Las solicitudes que mandes aparecerán aquí en estado pendiente." />
+            ) : (
+              <div className="grid gap-3">
+                {sentRequests.map((request) => (
+                  <Link key={request.id} href={`/users/${request.username}`} className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-3 transition-shadow hover:shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <ProfileAvatar avatarUrl={request.avatarUrl} displayName={request.displayName} size="sm" zoomable={false} />
+                      <div>
+                        <p className="font-medium">{request.displayName}</p>
+                        <p className="text-xs text-[var(--muted)]">@{request.username}</p>
+                      </div>
+                    </div>
+                    <Badge tone="warning">Pendiente</Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
 
       <section>
         <SectionTitle

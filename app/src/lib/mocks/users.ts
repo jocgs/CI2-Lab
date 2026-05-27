@@ -12,6 +12,8 @@ export const MOCK_USERS: User[] = [
     displayName: "Clara",
     avatarUrl: "https://ui-avatars.com/api/?name=Clara&background=0ea5e9&color=fff&bold=true",
     friendIds: ["user_marina", "user_pablo"],
+    friendRequestSentIds: ["user_diego"],
+    friendRequestReceivedIds: ["user_lucia"],
     supportedNationalTeamId: "spain",
     supportedTeamIds: ["team_fcb"],
     createdAt: "2026-05-01T10:00:00.000Z",
@@ -22,6 +24,8 @@ export const MOCK_USERS: User[] = [
     displayName: "Marina",
     avatarUrl: "https://ui-avatars.com/api/?name=Marina&background=f97316&color=fff&bold=true",
     friendIds: ["user_clara"],
+    friendRequestSentIds: [],
+    friendRequestReceivedIds: [],
     createdAt: "2026-05-02T10:00:00.000Z",
   },
   {
@@ -30,6 +34,8 @@ export const MOCK_USERS: User[] = [
     displayName: "Pablo",
     avatarUrl: "https://ui-avatars.com/api/?name=Pablo&background=22c55e&color=fff&bold=true",
     friendIds: ["user_clara"],
+    friendRequestSentIds: [],
+    friendRequestReceivedIds: [],
     createdAt: "2026-05-03T10:00:00.000Z",
   },
   {
@@ -38,6 +44,8 @@ export const MOCK_USERS: User[] = [
     displayName: "Lucía",
     avatarUrl: "https://ui-avatars.com/api/?name=Luc%C3%ADa&background=ec4899&color=fff&bold=true",
     friendIds: [],
+    friendRequestSentIds: ["user_clara"],
+    friendRequestReceivedIds: [],
     createdAt: "2026-05-04T10:00:00.000Z",
   },
   {
@@ -46,6 +54,8 @@ export const MOCK_USERS: User[] = [
     displayName: "Diego",
     avatarUrl: "https://ui-avatars.com/api/?name=Diego&background=6366f1&color=fff&bold=true",
     friendIds: [],
+    friendRequestSentIds: [],
+    friendRequestReceivedIds: ["user_clara"],
     createdAt: "2026-05-05T10:00:00.000Z",
   },
 ];
