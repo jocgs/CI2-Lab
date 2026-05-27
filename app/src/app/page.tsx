@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { computeMood, moodToImage } from "@/lib/mood";
 import {
   getCurrentUser,
   getBetForUserAndMatch,
@@ -49,13 +51,20 @@ export default async function HomePage() {
     <div className="flex flex-col gap-8">
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--brand-strong)] via-[var(--brand)] to-emerald-400 p-6 text-white shadow-md sm:p-8">
-        {/* Balón decorativo */}
-        <span
+        {/* Balón decorativo — humor según historial de porras */}
+        <div
           aria-hidden
-          className="hero-ball pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[7rem] opacity-30 sm:right-8 sm:text-[9rem]"
+          className="hero-ball pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 sm:right-6"
         >
-          ⚽
-        </span>
+          <Image
+            src={moodToImage(computeMood(userBets))}
+            alt=""
+            width={150}
+            height={150}
+            className="h-28 w-28 object-contain opacity-85 sm:h-36 sm:w-36"
+            priority
+          />
+        </div>
 
         {/* Contenido — max-w para que no solape con el balón */}
         <div className="relative max-w-[calc(100%-7rem)] sm:max-w-[calc(100%-9rem)]">
@@ -138,6 +147,7 @@ export default async function HomePage() {
     </div>
   );
 }
+
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (

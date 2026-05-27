@@ -5,18 +5,25 @@ import {
   getPlayersByCompetition,
   getNationalTeamsByCompetition,
 } from "@/lib/fantasy-db";
+import { getUserTournamentPicks } from "@/lib/picks-db";
+import { MOCK_TOURNAMENT, MOCK_TOURNAMENT_TEAMS } from "@/lib/mocks/tournament-teams";
+import { isTournamentLocked } from "@/lib/tournament-picks";
 import { FantasyTeamDisplay } from "@/components/fantasy/FantasyTeamDisplay";
 import { PredictionsForm } from "./PredictionsForm";
+import { SpecialPicksForm } from "@/components/SpecialPicksForm";
 import { EmptyState } from "@/components/ui";
 
 export default async function MyFantasyTeamPage() {
   const user = await getCurrentUser();
 
-  const [fantasyTeam, players, nationalTeams] = await Promise.all([
+  const [fantasyTeam, players, nationalTeams, myPicks] = await Promise.all([
     getFantasyTeamByUserAndCompetition(user.id, "world_cup_2026"),
     getPlayersByCompetition("world_cup_2026"),
     getNationalTeamsByCompetition("world_cup_2026"),
+    getUserTournamentPicks(user.id, MOCK_TOURNAMENT.id),
   ]);
+
+  const picksLocked = isTournamentLocked(MOCK_TOURNAMENT);
 
   if (!fantasyTeam) {
     return (
@@ -84,29 +91,53 @@ export default async function MyFantasyTeamPage() {
         nationalTeams={nationalTeams}
       />
 
-      {/* Squad player IDs for the MVP dropdown */}
-      {(() => {
-        const { startingEleven: se, bench: b } = fantasyTeam;
-        const squadIds = new Set([
-          se.goalkeeperId,
-          ...se.defenderIds,
-          ...se.midfielderIds,
-          ...se.forwardIds,
-          b.goalkeeperId,
-          b.defenderId,
-          b.midfielderId,
-          b.forwardId,
-        ]);
-        const squadPlayers = players.filter((p) => squadIds.has(p.id));
-        return (
-          <PredictionsForm
-            team={fantasyTeam}
-            nationalTeams={nationalTeams}
-            squadPlayers={squadPlayers}
-            competitionId="world_cup_2026"
-          />
-        );
-      })()}
+      {/* ── Predicciones del torneo (sección unificada) ── */}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 className="mb-1 text-base font-semibold">🔮 Predicciones del torneo</h2>
+        <p className="mb-5 text-xs text-[var(--muted)]">
+          Predice el campeón, la sorpresa, la decepción y el MVP Fantasy — y elige tu tapada y
+          favorita con cuotas de mercado. Todo suma puntos al final.
+        </p>
+
+        {/* Fantasy predictions: champion, surprise, disappointment, MVP */}
+        {(() => {
+          const { startingEleven: se, bench: b } = fantasyTeam;
+          const squadIds = new Set([
+            se.goalkeeperId,
+            ...se.defenderIds,
+            ...se.midfielderIds,
+            ...se.forwardIds,
+            b.goalkeeperId,
+            b.defenderId,
+            b.midfielderId,
+            b.forwardId,
+          ]);
+          const squadPlayers = players.filter((p) => squadIds.has(p.id));
+          return (
+            <PredictionsForm
+              team={fantasyTeam}
+              nationalTeams={nationalTeams}
+              squadPlayers={squadPlayers}
+              competitionId="world_cup_2026"
+            />
+          );
+        })()}
+
+        {/* Divider */}
+        <div className="my-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-[var(--border)]" />
+          <span className="text-xs font-medium text-[var(--muted)]">Selecciones especiales con cuotas</span>
+          <div className="h-px flex-1 bg-[var(--border)]" />
+        </div>
+
+        {/* Special picks: revelation & disappointment by market odds */}
+        <SpecialPicksForm
+          teams={MOCK_TOURNAMENT_TEAMS}
+          existingPicks={myPicks}
+          tournamentId={MOCK_TOURNAMENT.id}
+          isLocked={picksLocked}
+        />
+      </div>
     </div>
   );
 }
