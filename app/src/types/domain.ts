@@ -35,6 +35,12 @@ export type MatchStatus = "SCHEDULED" | "LIVE" | "FINISHED";
 /** Resultado del partido en formato 1X2: local / empate / visitante. */
 export type Outcome = "1" | "X" | "2";
 
+export interface BetPrediction {
+  outcome: Outcome;
+  homeGoals: number;
+  awayGoals: number;
+}
+
 export interface MatchResult {
   homeGoals: number;
   awayGoals: number;
@@ -83,7 +89,7 @@ export interface Bet {
   id: ID;
   userId: ID;
   matchId: ID;
-  prediction: Outcome;
+  prediction: BetPrediction;
   createdAt: string;
   status: BetStatus;
   /** Puntos otorgados una vez resuelto el partido. */
@@ -101,6 +107,7 @@ export interface RankingEntry {
   avatarUrl?: string;
   totalPoints: number;
   correctBets: number;
+  exactBets: number;
   totalBets: number;
   /** % de aciertos (0–100). */
   accuracy: number;

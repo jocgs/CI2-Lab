@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/session";
+import { USE_MOCKS } from "@/lib/runtime";
 import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -48,7 +49,7 @@ export async function Header() {
               <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 font-medium text-[var(--brand-strong)]">
                 {user.displayName}
               </span>
-              {process.env.USE_MOCKS !== "true" && <SignOutButton />}
+              {!USE_MOCKS && <SignOutButton />}
             </>
           )}
         </div>

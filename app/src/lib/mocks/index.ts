@@ -119,7 +119,7 @@ export function getBetForUserAndMatch(userId: string, matchId: string): Bet | un
 export function upsertBet(input: {
   userId: string;
   matchId: string;
-  prediction: Outcome;
+  prediction: { outcome: Outcome; homeGoals: number; awayGoals: number };
 }): Bet {
   const existing = bets.find(
     (b) => b.userId === input.userId && b.matchId === input.matchId,

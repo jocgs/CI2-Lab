@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { USE_MOCKS } from "./lib/runtime";
 
 const SESSION_COOKIE = "porrify-session";
 const PUBLIC_PATHS = ["/login", "/api/auth/session", "/api/sync-matches", "/api/resolve-bets", "/api/sync-status"];
 
 export function proxy(req: NextRequest) {
   // Modo mock: sin autenticación, acceso libre a toda la app
-  if (process.env.USE_MOCKS === "true") {
+  if (USE_MOCKS) {
     return NextResponse.next();
   }
 

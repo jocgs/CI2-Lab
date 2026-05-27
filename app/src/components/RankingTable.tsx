@@ -32,7 +32,7 @@ export function RankingTable({ entries }: { entries: RankingEntry[] }) {
                   {isMe && <span className="ml-2 text-xs text-[var(--brand-strong)]">(tú)</span>}
                 </p>
                 <p className="text-xs text-[var(--muted)]">
-                  {entry.correctBets}/{entry.totalBets} aciertos · {entry.accuracy}%
+                  {entry.correctBets} aciertos · {entry.exactBets} exactos · {entry.accuracy}%
                 </p>
               </div>
             </div>

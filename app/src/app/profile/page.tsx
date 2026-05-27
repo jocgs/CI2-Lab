@@ -7,6 +7,7 @@ import {
   getStreakForUser,
   getTeamById,
 } from "@/lib/db";
+import { formatBetPrediction } from "@/lib/scoring";
 import { Badge, Card, SectionTitle } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
 
@@ -91,7 +92,7 @@ export default async function ProfilePage() {
                             : "warning"
                       }
                     >
-                      Predicción: {bet.prediction}
+                      Predicción: {formatBetPrediction(bet.prediction)}
                       {bet.status === "WON" && ` · +${bet.points}`}
                     </Badge>
                   </li>

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { adminAuth, adminDb } from "./firebase-admin";
 import { MOCK_USERS, CURRENT_USER_ID } from "./mocks/users";
+import { USE_MOCKS } from "./runtime";
 import type { User } from "@/types/domain";
 
 export const SESSION_COOKIE = "porrify-session";
@@ -10,7 +11,7 @@ export const SESSION_COOKIE = "porrify-session";
  * En modo mock devuelve directamente el usuario hardcoded.
  */
 export async function getSessionUser(): Promise<User | null> {
-  if (process.env.USE_MOCKS === "true") {
+  if (USE_MOCKS) {
     return MOCK_USERS.find((u) => u.id === CURRENT_USER_ID) ?? null;
   }
 
@@ -33,7 +34,7 @@ export async function getSessionUser(): Promise<User | null> {
  * necesita el ID para escribir en Firestore.
  */
 export async function getSessionUserId(): Promise<string | null> {
-  if (process.env.USE_MOCKS === "true") {
+  if (USE_MOCKS) {
     return CURRENT_USER_ID;
   }
   const cookieStore = await cookies();

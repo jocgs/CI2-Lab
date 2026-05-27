@@ -8,6 +8,7 @@
 import { adminDb } from "./firebase-admin";
 import { buildRanking, computeStreak, getPointsForBet } from "./scoring";
 import { getSessionUser, getSessionUserId } from "./session";
+import { USE_MOCKS } from "./runtime";
 import * as MockDb from "./mocks";
 import {
   getLiveCompetitions,
@@ -26,7 +27,7 @@ import type {
   UserStreak,
 } from "@/types/domain";
 
-const MOCKS = process.env.USE_MOCKS === "true";
+const MOCKS = USE_MOCKS;
 
 // ---------------------------------------------------------------------------
 // Helpers — live-store con fallback a mocks estáticos
@@ -214,7 +215,7 @@ export async function getBetForUserAndMatch(
 export async function upsertBet(input: {
   userId: string;
   matchId: string;
-  prediction: Outcome;
+  prediction: { outcome: Outcome; homeGoals: number; awayGoals: number };
 }): Promise<Bet> {
   if (MOCKS) return MockDb.upsertBet(input);
 
