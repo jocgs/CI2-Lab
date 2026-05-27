@@ -20,6 +20,8 @@ export interface FantasyNationalTeam {
   logoUrl?: string;
   competitionId: string;
   group?: string;
+  /** Cuota de apuesta (p.ej. 5.0). Determina los puntos bonus si la predicción es correcta. */
+  odds?: number;
 }
 
 export interface FantasyStartingEleven {

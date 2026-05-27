@@ -4,14 +4,11 @@ import { useState, useTransition } from "react";
 import type { TournamentTeam, UserTournamentPicks } from "@/types/picks";
 import {
   getEligibleRevelationTeams,
-  getEligibleDisappointmentTeams,
   validateSpecialPicks,
   formatOdds,
   calculateRevelationPoints,
-  calculateDisappointmentPoints,
   stageLabelEs,
   REVELATION_MIN_ODDS,
-  DISAPPOINTMENT_MAX_ODDS,
 } from "@/lib/tournament-picks";
 import { savePicksAction } from "@/app/picks/picks-actions";
 import { clsx } from "@/lib/utils";
@@ -26,118 +23,113 @@ interface Props {
 export function SpecialPicksForm({ teams, existingPicks, tournamentId, isLocked }: Props) {
   const [isPending, startTransition] = useTransition();
   const [revelationId, setRevelationId] = useState(existingPicks?.revelationTeamId ?? "");
-  const [disappointmentId, setDisappointmentId] = useState(
-    existingPicks?.disappointmentTeamId ?? "",
-  );
-  const [saved, setSaved] = useState(!!existingPicks);
+  const [saved, setSaved] = useState(!!existingPicks?.revelationTeamId);
   const [error, setError] = useState<string | null>(null);
 
   const revelationTeams = getEligibleRevelationTeams(teams);
-  const disappointmentTeams = getEligibleDisappointmentTeams(teams);
-
   const selectedRevelation = teams.find((t) => t.id === revelationId) ?? null;
-  const selectedDisappointment = teams.find((t) => t.id === disappointmentId) ?? null;
-
-  const isDirty =
-    revelationId !== (existingPicks?.revelationTeamId ?? "") ||
-    disappointmentId !== (existingPicks?.disappointmentTeamId ?? "");
+  const isDirty = revelationId !== (existingPicks?.revelationTeamId ?? "");
 
   const clientValidation = validateSpecialPicks({
     revelationTeamId: revelationId || null,
-    disappointmentTeamId: disappointmentId || null,
     teams,
   });
 
   function handleSave() {
     setError(null);
-    if (!clientValidation.valid) {
-      setError(clientValidation.error);
-      return;
-    }
+    if (!clientValidation.valid) { setError(clientValidation.error); return; }
     startTransition(async () => {
-      const result = await savePicksAction({
-        tournamentId,
-        revelationTeamId: revelationId,
-        disappointmentTeamId: disappointmentId,
-      });
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setSaved(true);
-      }
+      const result = await savePicksAction({ tournamentId, revelationTeamId: revelationId });
+      if (result.error) setError(result.error);
+      else setSaved(true);
     });
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* ── Header banner when locked ── */}
+    <div className="flex flex-col gap-4">
       {isLocked && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
-          🔒 El torneo ha comenzado. Tus selecciones están bloqueadas.
+          🔒 El torneo ha comenzado. Tu selección revelación está bloqueada.
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* ────────────────── REVELATION ────────────────── */}
-        <PickCard
-          icon="⭐"
-          title="Selección revelación"
-          subtitle={`Tu tapada del torneo. Solo válidas con cuota ≥ ${REVELATION_MIN_ODDS}.`}
-          accentClass="border-amber-300 dark:border-amber-700"
-          headerClass="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/30"
-          scoringRows={[
-            { stage: "round_of_16",    pts: calculateRevelationPoints("round_of_16") },
-            { stage: "quarter_finals", pts: calculateRevelationPoints("quarter_finals") },
-            { stage: "semi_finals",    pts: calculateRevelationPoints("semi_finals") },
-            { stage: "final",          pts: calculateRevelationPoints("final") },
-            { stage: "winner",         pts: calculateRevelationPoints("winner") },
-          ]}
-        >
+      {/* ── Tarjeta Selección Revelación ── */}
+      <div className="flex flex-col overflow-hidden rounded-2xl border-2 border-amber-300 dark:border-amber-700">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 px-5 py-4 dark:from-amber-950/40 dark:to-yellow-950/30">
+          <div className="flex items-start gap-3">
+            <span className="text-3xl leading-none">⭐</span>
+            <div>
+              <h2 className="text-base font-semibold">Selección revelación</h2>
+              <p className="mt-0.5 text-xs text-[var(--muted)]">
+                Tu tapada del torneo — solo válida con cuota ≥ {REVELATION_MIN_ODDS}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-5 p-5">
+          {/* Explicación */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            <p className="mb-1.5 font-semibold">¿Cómo funciona este modo?</p>
+            <p>
+              Aquí eliges una selección que <strong>no parte como favorita</strong>, pero que crees que puede
+              sorprender en el torneo. Solo aparecen equipos con cuota alta, por lo que no podrás elegir grandes
+              favoritos. Si tu selección llega más lejos de lo esperado, sumarás puntos extra.
+            </p>
+            <ul className="mt-2 list-disc space-y-0.5 pl-4">
+              <li>No es lo mismo que elegir campeón.</li>
+              <li>Solo puedes elegir <strong>una</strong> selección revelación.</li>
+              <li>Solo aparecen selecciones con <strong>cuota ≥ {REVELATION_MIN_ODDS}</strong>.</li>
+              <li>No puede coincidir con tu elección de campeón ni de decepción.</li>
+              <li>Predicción especial pensada para premiar apuestas arriesgadas pero razonables.</li>
+            </ul>
+          </div>
+
+          {/* Selector */}
           <TeamSelector
             options={revelationTeams}
             value={revelationId}
             onChange={(id) => { setRevelationId(id); setSaved(false); setError(null); }}
             disabled={isLocked}
             placeholder="Elige tu tapada…"
-            highlightId={disappointmentId}
-            highlightReason="Ya elegida como decepción"
           />
-          {selectedRevelation && (
-            <SelectedBadge team={selectedRevelation} colorClass="text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800" />
-          )}
-        </PickCard>
 
-        {/* ────────────────── DISAPPOINTMENT ────────────────── */}
-        <PickCard
-          icon="💣"
-          title="Selección decepción"
-          subtitle={`La favorita que crees que se la pega. Solo válidas con cuota ≤ ${DISAPPOINTMENT_MAX_ODDS}.`}
-          accentClass="border-rose-300 dark:border-rose-700"
-          headerClass="bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-950/40 dark:to-red-950/30"
-          scoringRows={[
-            { stage: "group_stage",    pts: calculateDisappointmentPoints("group_stage") },
-            { stage: "round_of_16",    pts: calculateDisappointmentPoints("round_of_16") },
-            { stage: "quarter_finals", pts: calculateDisappointmentPoints("quarter_finals") },
-            { stage: "final",          pts: calculateDisappointmentPoints("final") },
-            { stage: "winner",         pts: calculateDisappointmentPoints("winner") },
-          ]}
-        >
-          <TeamSelector
-            options={disappointmentTeams}
-            value={disappointmentId}
-            onChange={(id) => { setDisappointmentId(id); setSaved(false); setError(null); }}
-            disabled={isLocked}
-            placeholder="Elige tu decepción…"
-            highlightId={revelationId}
-            highlightReason="Ya elegida como revelación"
-          />
-          {selectedDisappointment && (
-            <SelectedBadge team={selectedDisappointment} colorClass="text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800" />
+          {selectedRevelation && (
+            <SelectedBadge team={selectedRevelation} />
           )}
-        </PickCard>
+
+          {/* Tabla de puntuación */}
+          <details className="group">
+            <summary className="flex cursor-pointer select-none list-none items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--fg)]">
+              <span className="inline-block transition-transform group-open:rotate-90">›</span>
+              ¿Cómo se puntúa?
+            </summary>
+            <div className="mt-2 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+              <table className="w-full text-xs">
+                <tbody>
+                  {(["round_of_16", "quarter_finals", "semi_finals", "final", "winner"] as const).map((stage) => {
+                    const pts = calculateRevelationPoints(stage);
+                    return (
+                      <tr key={stage} className="border-b border-[var(--border)] last:border-0">
+                        <td className="px-3 py-1.5 text-[var(--muted)]">{stageLabelEs(stage)}</td>
+                        <td className={clsx(
+                          "px-3 py-1.5 text-right font-semibold tabular-nums",
+                          pts > 0 ? "text-green-600 dark:text-green-400" : "text-[var(--muted)]",
+                        )}>
+                          {pts > 0 ? `+${pts}` : pts}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
       </div>
 
-      {/* ── Error / save ── */}
+      {/* ── Error / Guardar ── */}
       {error && (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
           {error}
@@ -149,14 +141,13 @@ export function SpecialPicksForm({ teams, existingPicks, tournamentId, isLocked 
           <button
             onClick={handleSave}
             disabled={isPending || !isDirty || !clientValidation.valid}
-            className="rounded-xl bg-[var(--brand)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-40 transition-opacity"
+            className="rounded-xl bg-[var(--brand)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            {isPending ? "Guardando…" : "Guardar selecciones"}
+            {isPending ? "Guardando…" : "Guardar selección revelación"}
           </button>
-
           {saved && !isDirty && !error && (
             <span className="flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400">
-              <span className="text-base">✓</span> Selecciones guardadas
+              <span className="text-base">✓</span> Selección guardada
             </span>
           )}
         </div>
@@ -165,72 +156,7 @@ export function SpecialPicksForm({ teams, existingPicks, tournamentId, isLocked 
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function PickCard({
-  icon,
-  title,
-  subtitle,
-  accentClass,
-  headerClass,
-  scoringRows,
-  children,
-}: {
-  icon: string;
-  title: string;
-  subtitle: string;
-  accentClass: string;
-  headerClass: string;
-  scoringRows: { stage: Parameters<typeof stageLabelEs>[0]; pts: number }[];
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={clsx("flex flex-col rounded-2xl border-2 overflow-hidden", accentClass)}>
-      {/* Card header */}
-      <div className={clsx("px-5 py-4", headerClass)}>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">{icon}</span>
-          <div>
-            <h2 className="font-semibold text-base">{title}</h2>
-            <p className="text-xs text-[var(--muted)] mt-0.5">{subtitle}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Selector area */}
-      <div className="flex flex-col gap-4 p-5 flex-1">
-        {children}
-
-        {/* Scoring table */}
-        <details className="group">
-          <summary className="cursor-pointer text-xs text-[var(--muted)] hover:text-[var(--fg)] select-none list-none flex items-center gap-1">
-            <span className="group-open:rotate-90 transition-transform inline-block">›</span>
-            ¿Cómo se puntúa?
-          </summary>
-          <div className="mt-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-            <table className="w-full text-xs">
-              <tbody>
-                {scoringRows.map(({ stage, pts }) => (
-                  <tr key={stage} className="border-b border-[var(--border)] last:border-0">
-                    <td className="px-3 py-1.5 text-[var(--muted)]">{stageLabelEs(stage)}</td>
-                    <td className={clsx(
-                      "px-3 py-1.5 text-right font-semibold tabular-nums",
-                      pts > 0 ? "text-green-600 dark:text-green-400"
-                        : pts < 0 ? "text-red-500"
-                        : "text-[var(--muted)]",
-                    )}>
-                      {pts > 0 ? `+${pts}` : pts}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
-      </div>
-    </div>
-  );
-}
+// ─── Sub-components ────────────────────────────────────────────────────────────
 
 function TeamSelector({
   options,
@@ -238,16 +164,12 @@ function TeamSelector({
   onChange,
   disabled,
   placeholder,
-  highlightId,
-  highlightReason,
 }: {
   options: TournamentTeam[];
   value: string;
   onChange: (id: string) => void;
   disabled: boolean;
   placeholder: string;
-  highlightId: string;
-  highlightReason: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -255,47 +177,40 @@ function TeamSelector({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-50"
       >
         <option value="">{placeholder}</option>
-        {options.map((team) => {
-          const isConflict = team.id === highlightId;
-          return (
-            <option key={team.id} value={team.id} disabled={isConflict}>
-              {team.flag} {team.name} — cuota {formatOdds(team.marketOdds)}
-              {isConflict ? ` (${highlightReason})` : ""}
-            </option>
-          );
-        })}
+        {options.map((team) => (
+          <option key={team.id} value={team.id}>
+            {team.flag} {team.name} — cuota {formatOdds(team.marketOdds)}
+          </option>
+        ))}
       </select>
 
-      {/* Team grid for visual picking */}
+      {/* Grid visual */}
       <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
         {options.map((team) => {
           const isSelected = team.id === value;
-          const isConflict = team.id === highlightId;
           return (
             <button
               key={team.id}
               type="button"
-              disabled={disabled || isConflict}
-              onClick={() => !isConflict && onChange(team.id === value ? "" : team.id)}
-              title={isConflict ? highlightReason : `${team.name} — cuota ${formatOdds(team.marketOdds)}`}
+              disabled={disabled}
+              onClick={() => onChange(team.id === value ? "" : team.id)}
+              title={`${team.name} — cuota ${formatOdds(team.marketOdds)}`}
               className={clsx(
                 "flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2 text-xs transition-all",
                 isSelected
                   ? "border-[var(--brand)] bg-[var(--brand-soft)] font-semibold text-[var(--brand-strong)]"
-                  : isConflict
-                  ? "border-dashed border-[var(--border)] opacity-30 cursor-not-allowed"
-                  : "border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] cursor-pointer",
-                disabled && "cursor-not-allowed",
+                  : "cursor-pointer border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]",
+                disabled && "cursor-not-allowed opacity-50",
               )}
             >
               <span className="text-lg leading-none">{team.flag}</span>
-              <span className="truncate w-full text-center text-[10px] leading-tight">
+              <span className="w-full truncate text-center text-[10px] leading-tight">
                 {team.name.split(" ")[0]}
               </span>
-              <span className="text-[9px] text-[var(--muted)] tabular-nums">
+              <span className="text-[9px] tabular-nums text-[var(--muted)]">
                 {formatOdds(team.marketOdds)}
               </span>
             </button>
@@ -306,15 +221,9 @@ function TeamSelector({
   );
 }
 
-function SelectedBadge({
-  team,
-  colorClass,
-}: {
-  team: TournamentTeam;
-  colorClass: string;
-}) {
+function SelectedBadge({ team }: { team: TournamentTeam }) {
   return (
-    <div className={clsx("flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium", colorClass)}>
+    <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
       <span className="text-xl">{team.flag}</span>
       <div>
         <p className="font-semibold">{team.name}</p>

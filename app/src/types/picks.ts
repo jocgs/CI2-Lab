@@ -32,7 +32,8 @@ export interface UserTournamentPicks {
   userId: string;
   tournamentId: string;
   revelationTeamId: string | null;
-  disappointmentTeamId: string | null;
+  /** @deprecated La decepción ahora se gestiona en las predicciones del equipo fantasy. */
+  disappointmentTeamId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

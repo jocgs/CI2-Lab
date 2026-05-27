@@ -1,81 +1,121 @@
 import { cookies } from "next/headers";
-import { adminAuth, adminDb } from "./firebase-admin";
-import { MOCK_USERS, CURRENT_USER_ID } from "./mocks/users";
-import { USE_MOCKS } from "./runtime";
+import * as store from "./local-store";
+import bcrypt from "bcryptjs";
 import type { User } from "@/types/domain";
 
 export const SESSION_COOKIE = "porrify-session";
 
-/**
- * Lee la cookie de sesión y devuelve el usuario.
- * En modo mock devuelve directamente el usuario hardcoded.
- */
-export async function getSessionUser(): Promise<User | null> {
-  if (USE_MOCKS) {
-    return MOCK_USERS.find((u) => u.id === CURRENT_USER_ID) ?? null;
-  }
+type UserWithPassword = User & { email?: string; passwordHash?: string };
 
+// ---------------------------------------------------------------------------
+// Sesión
+// ---------------------------------------------------------------------------
+
+export async function getSessionUser(): Promise<User | null> {
   try {
     const cookieStore = await cookies();
     const uid = cookieStore.get(SESSION_COOKIE)?.value;
     if (!uid) return null;
 
-    const doc = await adminDb.collection("users").doc(uid).get();
-    if (!doc.exists) return null;
+    const user = store.getById<UserWithPassword>("users", uid);
+    if (!user) return null;
 
-    return { id: doc.id, ...doc.data() } as User;
+    const { passwordHash: _pw, ...safeUser } = user;
+    return safeUser as User;
   } catch {
     return null;
   }
 }
 
-/**
- * Solo el UID — más ligero que getSessionUser() cuando solo se
- * necesita el ID para escribir en Firestore.
- */
 export async function getSessionUserId(): Promise<string | null> {
-  if (USE_MOCKS) {
-    return CURRENT_USER_ID;
-  }
   const cookieStore = await cookies();
   return cookieStore.get(SESSION_COOKIE)?.value ?? null;
 }
 
+// ---------------------------------------------------------------------------
+// Login local
+// ---------------------------------------------------------------------------
+
 /**
- * Verifica el idToken de Firebase y crea/actualiza el doc de usuario.
- * Devuelve el UID o lanza si el token no es válido.
+ * Verifica email y contraseña contra la base de datos local.
+ * Crea la cookie de sesión si son correctos.
  */
-export async function createSession(idToken: string): Promise<string> {
-  const decoded = await adminAuth.verifyIdToken(idToken);
-  const uid = decoded.uid;
+export async function createSession(email: string, password: string): Promise<string> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = store.findOneWhere<UserWithPassword>(
+    "users",
+    (u) => (u.email ?? "").toLowerCase() === normalizedEmail
+  );
 
-  const userRef = adminDb.collection("users").doc(uid);
-  const userDoc = await userRef.get();
+  if (!user) throw new Error("Correo o contraseña incorrectos");
 
-  if (!userDoc.exists) {
-    const shortId = uid.slice(-4).toUpperCase();
-    await userRef.set({
-      username: decoded.email?.split("@")[0] ?? `invitado_${shortId}`,
-      displayName: decoded.name ?? decoded.email ?? `Invitado ${shortId}`,
-      avatarUrl: decoded.picture ?? null,
-      friendIds: [],
-      supportedNationalTeamId: null,
-      supportedTeamIds: [],
-      createdAt: new Date().toISOString(),
-    });
-  }
+  const passwordHash = user.passwordHash ?? "";
+  const valid = passwordHash ? await bcrypt.compare(password, passwordHash) : false;
+  if (!valid) throw new Error("Correo o contraseña incorrectos");
+
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, user.id, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
+  });
+
+  return user.id;
+}
+
+// ---------------------------------------------------------------------------
+// Registro local
+// ---------------------------------------------------------------------------
+
+export async function registerUser(input: {
+  email: string;
+  displayName: string;
+  password: string;
+}): Promise<string> {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const existing = store.findOneWhere<UserWithPassword>(
+    "users",
+    (u) => (u.email ?? "").toLowerCase() === normalizedEmail
+  );
+  if (existing) throw new Error("Ese correo ya está registrado");
+
+  const passwordHash = await bcrypt.hash(input.password, 10);
+  const uid = `user_${Math.random().toString(36).slice(2, 10)}`;
+  const username = normalizedEmail.split("@")[0].replace(/[^a-z0-9_]/g, "_");
+
+  const newUser: UserWithPassword = {
+    id: uid,
+    username,
+    displayName: input.displayName.trim(),
+    email: normalizedEmail,
+    avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(input.displayName.trim())}&background=6366f1&color=fff&bold=true`,
+    passwordHash,
+    friendIds: [],
+    friendRequestSentIds: [],
+    friendRequestReceivedIds: [],
+    supportedTeamIds: [],
+    createdAt: new Date().toISOString(),
+  };
+
+  store.insert("users", newUser);
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, uid, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7, // 7 días
+    maxAge: 60 * 60 * 24 * 7,
     path: "/",
   });
 
   return uid;
 }
+
+// ---------------------------------------------------------------------------
+// Logout
+// ---------------------------------------------------------------------------
 
 export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();

@@ -1,38 +1,13 @@
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
-import { USE_MOCKS } from "./runtime";
+// Firebase Admin no se usa — toda la persistencia es local (JSON en /data).
+// Este fichero existe para no romper imports residuales.
 
-const hasAdminConfig = Boolean(
-  process.env.FIREBASE_PROJECT_ID &&
-    process.env.FIREBASE_CLIENT_EMAIL &&
-    process.env.FIREBASE_PRIVATE_KEY
-);
-
-if (!USE_MOCKS && hasAdminConfig && !getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID!,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-      // Vercel encode las newlines como \\n en las env vars
-      privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-
-function createMissingFirebaseAdminProxy<T extends object>(label: string): T {
-  return new Proxy({} as T, {
+function unusable(label: string) {
+  return new Proxy({} as never, {
     get() {
-      throw new Error(`${label} no está configurado`);
+      throw new Error(`${label} no está disponible en modo local`);
     },
   });
 }
 
-export const adminDb =
-  USE_MOCKS || !hasAdminConfig
-    ? createMissingFirebaseAdminProxy<ReturnType<typeof getFirestore>>("Firebase Admin")
-    : getFirestore();
-export const adminAuth =
-  USE_MOCKS || !hasAdminConfig
-    ? createMissingFirebaseAdminProxy<ReturnType<typeof getAuth>>("Firebase Admin")
-    : getAuth();
+export const adminDb = unusable("adminDb");
+export const adminAuth = unusable("adminAuth");

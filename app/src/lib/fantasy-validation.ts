@@ -137,9 +137,21 @@ export function validateFantasyTeam(
 
 export function validateFantasyPredictions(team: Partial<FantasyTeam>): ValidationError[] {
   const errors: ValidationError[] = [];
-  if (!team.championTeamId)       errors.push({ field: "championTeamId",       message: "Debes seleccionar un equipo campeón." });
-  if (!team.surpriseTeamId)       errors.push({ field: "surpriseTeamId",       message: "Debes seleccionar un equipo sorpresa." });
-  if (!team.disappointmentTeamId) errors.push({ field: "disappointmentTeamId", message: "Debes seleccionar un equipo decepción." });
-  if (!team.tournamentMvpPlayerId)errors.push({ field: "tournamentMvpPlayerId",message: "Debes seleccionar el MVP del torneo." });
+
+  if (!team.championTeamId)
+    errors.push({ field: "championTeamId", message: "Debes seleccionar un equipo campeón." });
+  if (!team.disappointmentTeamId)
+    errors.push({ field: "disappointmentTeamId", message: "Debes seleccionar un equipo decepción." });
+  if (!team.tournamentMvpPlayerId)
+    errors.push({ field: "tournamentMvpPlayerId", message: "Debes seleccionar el MVP del torneo." });
+
+  // Unicidad: campeón ≠ decepción
+  if (team.championTeamId && team.disappointmentTeamId && team.championTeamId === team.disappointmentTeamId) {
+    errors.push({
+      field: "predictions",
+      message: "No puedes elegir el mismo equipo como campeón y como decepción.",
+    });
+  }
+
   return errors;
 }

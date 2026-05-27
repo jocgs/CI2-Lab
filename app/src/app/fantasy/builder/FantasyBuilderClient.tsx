@@ -684,6 +684,14 @@ function PlayerPickerPanel({
 
 // ─── PredictionsPanel ─────────────────────────────────────────────────────────
 
+type PredSlot = "champion" | "surprise" | "disappointment";
+
+const PRED_SLOT_META: Record<PredSlot, { label: string; emoji: string; bonus: (o: number) => number }> = {
+  champion:       { label: "Campeón",   emoji: "🏆", bonus: (o) => Math.ceil(o * 5) },
+  surprise:       { label: "Sorpresa",  emoji: "🚀", bonus: (o) => Math.ceil(o * 3) },
+  disappointment: { label: "Decepción", emoji: "💩", bonus: (o) => Math.ceil(o * 2) },
+};
+
 interface PredictionsPanelProps {
   nationalTeams: FantasyNationalTeam[];
   players: FantasyPlayer[];
@@ -709,42 +717,80 @@ function PredictionsPanel({
   setDisappointmentTeamId,
   setTournamentMvpId,
 }: PredictionsPanelProps) {
+  const teamMap = new Map(nationalTeams.map((t) => [t.id, t]));
+  const selectedIds = new Set([championTeamId, surpriseTeamId, disappointmentTeamId].filter(Boolean) as string[]);
+
+  function currentId(slot: PredSlot) {
+    return slot === "champion" ? championTeamId : slot === "surprise" ? surpriseTeamId : disappointmentTeamId;
+  }
+  function setter(slot: PredSlot) {
+    return slot === "champion" ? setChampionTeamId : slot === "surprise" ? setSurpriseTeamId : setDisappointmentTeamId;
+  }
+  function available(slot: PredSlot) {
+    const cur = currentId(slot);
+    return nationalTeams.filter((t) => t.id === cur || !selectedIds.has(t.id));
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <TeamPicker
-        label="🏆 Equipo campeón"
-        hint="El que levantará el trofeo. Apuesta con el corazón o con la cabeza."
-        teams={nationalTeams}
-        selected={championTeamId}
-        onSelect={setChampionTeamId}
-      />
-      <TeamPicker
-        label="🚀 Equipo sorpresa"
-        hint="El que llegará más lejos de lo esperado. Hay que creer."
-        teams={nationalTeams}
-        selected={surpriseTeamId}
-        onSelect={setSurpriseTeamId}
-      />
-      <TeamPicker
-        label="😬 Equipo decepción"
-        hint="El que decepcionará a sus fans. Con cariño."
-        teams={nationalTeams}
-        selected={disappointmentTeamId}
-        onSelect={setDisappointmentTeamId}
-      />
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-[var(--muted)]">
+        Elige un equipo distinto para cada predicción. La cuota muestra los puntos bonus que ganarás si aciertas.
+      </p>
+
+      {(["champion", "surprise", "disappointment"] as PredSlot[]).map((slot) => {
+        const meta = PRED_SLOT_META[slot];
+        const id = currentId(slot) ?? "";
+        const team = id ? teamMap.get(id) : undefined;
+        const odds = team?.odds;
+        const bonus = odds !== undefined ? meta.bonus(odds) : null;
+
+        return (
+          <div
+            key={slot}
+            className={`rounded-2xl border p-4 transition-colors ${
+              id ? "border-[var(--brand)]/30 bg-[var(--brand-soft)]/10" : "border-[var(--border)] bg-[var(--surface)]"
+            }`}
+          >
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">{meta.emoji} {meta.label}</span>
+              {odds !== undefined && bonus !== null && (
+                <span className="text-xs text-[var(--muted)]">
+                  <span className="rounded-full border border-[var(--brand)]/20 bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--brand)]">
+                    x{odds.toFixed(1)}
+                  </span>
+                  {" "}→ <strong>+{bonus} pts</strong>
+                </span>
+              )}
+            </div>
+            <select
+              value={id}
+              onChange={(e) => setter(slot)(e.target.value)}
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+            >
+              <option value="">Elige un equipo…</option>
+              {available(slot)
+                .slice()
+                .sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99))
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.flagUrl} {t.name}{t.odds !== undefined ? `  (x${t.odds.toFixed(1)} → +${meta.bonus(t.odds)} pts)` : ""}
+                  </option>
+                ))}
+            </select>
+          </div>
+        );
+      })}
 
       {/* MVP */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-        <p className="mb-1 text-sm font-medium">⭐ MVP del torneo</p>
-        <p className="mb-3 text-xs text-[var(--muted)]">
-          El mejor jugador del Mundial. De tu equipo o del mundo.
-        </p>
+        <p className="mb-1 text-sm font-medium">🌟 MVP del torneo</p>
+        <p className="mb-3 text-xs text-[var(--muted)]">El mejor jugador. Solo de tu plantilla.</p>
         <select
           value={tournamentMvpId ?? ""}
           onChange={(e) => setTournamentMvpId(e.target.value)}
           className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
         >
-          <option value="">Elige un jugador...</option>
+          <option value="">Elige un jugador…</option>
           {players.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name} ({p.nationalTeamName})
@@ -807,6 +853,11 @@ interface ConfirmationPanelProps {
   bench: Partial<FantasyBench>;
   captainId: string | null;
   players: FantasyPlayer[];
+  nationalTeams: FantasyNationalTeam[];
+  championTeamId?: string | null;
+  surpriseTeamId?: string | null;
+  disappointmentTeamId?: string | null;
+  tournamentMvpId?: string | null;
 }
 
 function ConfirmationPanel({
@@ -818,8 +869,14 @@ function ConfirmationPanel({
   bench,
   captainId,
   players,
+  nationalTeams,
+  championTeamId,
+  surpriseTeamId,
+  disappointmentTeamId,
+  tournamentMvpId,
 }: ConfirmationPanelProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
+  const ntm = new Map(nationalTeams.map((t) => [t.id, t]));
 
   const starterGroups = [
     {

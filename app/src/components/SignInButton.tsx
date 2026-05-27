@@ -2,14 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signInAnonymously,
-} from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { USE_MOCKS } from "@/lib/runtime";
 
 type Mode = "login" | "register";
 
@@ -17,27 +9,10 @@ export function SignInButton() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (USE_MOCKS) {
-    return (
-      <div className="mt-6 flex flex-col gap-4">
-        <p className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--muted)]">
-          El modo demo está activo en local. Puedes entrar sin credenciales para seguir navegando.
-        </p>
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          className="rounded-xl bg-[var(--brand)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-strong)]"
-        >
-          Entrar en modo demo
-        </button>
-      </div>
-    );
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,58 +20,24 @@ export function SignInButton() {
     setError(null);
 
     try {
-      let result;
+      const body =
+        mode === "register"
+          ? { action: "register", email, displayName, password }
+          : { email, password };
 
-      if (mode === "register") {
-        result = await createUserWithEmailAndPassword(auth, email, password);
-        if (name) await updateProfile(result.user, { displayName: name });
-      } else {
-        result = await signInWithEmailAndPassword(auth, email, password);
-      }
-
-      const idToken = await result.user.getIdToken();
       const res = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error("Error al crear la sesión");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Error al iniciar sesión");
 
       router.push("/");
       router.refresh();
     } catch (err: unknown) {
-      const code = (err as { code?: string }).code ?? "";
-      setError(
-        code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential"
-          ? "Email o contraseña incorrectos."
-          : code === "auth/email-already-in-use"
-            ? "Ese email ya está registrado. Inicia sesión."
-            : code === "auth/weak-password"
-              ? "La contraseña debe tener al menos 6 caracteres."
-              : code === "auth/invalid-email"
-                ? "Email no válido."
-                : "Error al iniciar sesión. Inténtalo de nuevo."
-      );
-      setLoading(false);
-    }
-  }
-
-  async function handleAnon() {
-    setLoading(true);
-    try {
-      const result = await signInAnonymously(auth);
-      const idToken = await result.user.getIdToken();
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      if (!res.ok) throw new Error();
-      router.push("/");
-      router.refresh();
-    } catch {
-      setError("Error al entrar. Inténtalo de nuevo.");
+      setError(err instanceof Error ? err.message : "Error inesperado");
       setLoading(false);
     }
   }
@@ -127,18 +68,19 @@ export function SignInButton() {
           <input
             type="text"
             placeholder="Tu nombre"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
             required
             className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
           />
         )}
         <input
           type="email"
-          placeholder="Email"
+          placeholder="Correo electrónico"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
           className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
         />
         <input
@@ -147,6 +89,8 @@ export function SignInButton() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          minLength={6}
+          autoComplete={mode === "register" ? "new-password" : "current-password"}
           className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
         />
         <button
@@ -160,29 +104,18 @@ export function SignInButton() {
 
       {error && <p className="text-center text-xs text-red-500">{error}</p>}
 
-      <div className="relative flex items-center gap-3">
-        <div className="flex-1 border-t border-[var(--border)]" />
-        <span className="text-xs text-[var(--muted)]">o</span>
-        <div className="flex-1 border-t border-[var(--border)]" />
-      </div>
-
-      <button
-        onClick={handleAnon}
-        disabled={loading}
-        className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] py-2.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-60"
-      >
-        <GuestIcon />
-        Entrar como invitado
-      </button>
+      {mode === "login" && (
+        <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--background)] px-4 py-3 text-xs text-[var(--muted)]">
+          <p className="mb-1 font-medium">Cuentas de prueba (contraseña: <span className="font-mono">porrify</span>)</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+            <span>clara@porrify.app</span>
+            <span>marina@porrify.app</span>
+            <span>pablo@porrify.app</span>
+            <span>lucia@porrify.app</span>
+            <span>diego@porrify.app</span>
+          </div>
+        </div>
+      )}
     </div>
-  );
-}
-
-function GuestIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-    </svg>
   );
 }

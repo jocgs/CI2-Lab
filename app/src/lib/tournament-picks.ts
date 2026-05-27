@@ -37,46 +37,23 @@ export interface PicksValidationResult {
 
 export function validateSpecialPicks(params: {
   revelationTeamId: string | null;
-  disappointmentTeamId: string | null;
   teams: TournamentTeam[];
 }): PicksValidationResult {
-  const { revelationTeamId, disappointmentTeamId, teams } = params;
+  const { revelationTeamId, teams } = params;
 
-  if (!revelationTeamId || !disappointmentTeamId) {
-    return {
-      valid: false,
-      error: "Debes elegir una selección revelación y una selección decepción.",
-    };
-  }
-
-  if (revelationTeamId === disappointmentTeamId) {
-    return {
-      valid: false,
-      error: "No puedes elegir la misma selección como revelación y decepción.",
-    };
+  if (!revelationTeamId) {
+    return { valid: false, error: "Debes elegir una selección revelación." };
   }
 
   const revelationTeam = teams.find((t) => t.id === revelationTeamId);
-  const disappointmentTeam = teams.find((t) => t.id === disappointmentTeamId);
-
-  if (!revelationTeam || !disappointmentTeam) {
-    return {
-      valid: false,
-      error: "Alguna de las selecciones elegidas no existe.",
-    };
+  if (!revelationTeam) {
+    return { valid: false, error: "La selección elegida no existe." };
   }
 
   if (revelationTeam.marketOdds < REVELATION_MIN_ODDS) {
     return {
       valid: false,
-      error: `La selección revelación debe tener una cuota igual o superior a ${REVELATION_MIN_ODDS.toFixed(2)}.`,
-    };
-  }
-
-  if (disappointmentTeam.marketOdds > DISAPPOINTMENT_MAX_ODDS) {
-    return {
-      valid: false,
-      error: `La selección decepción debe tener una cuota igual o inferior a ${DISAPPOINTMENT_MAX_ODDS.toFixed(2)}.`,
+      error: `La selección revelación debe tener una cuota igual o superior a ${REVELATION_MIN_ODDS}.`,
     };
   }
 

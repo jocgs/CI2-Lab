@@ -65,6 +65,7 @@ export interface User {
   id: ID;
   username: string;
   displayName: string;
+  email?: string;
   avatarUrl?: string;
   friendIds?: ID[];
   friendRequestSentIds?: ID[];

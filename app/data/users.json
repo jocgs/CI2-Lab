@@ -1,0 +1,105 @@
+[
+  {
+    "id": "user_clara",
+    "username": "clara",
+    "displayName": "Clara",
+    "email": "clara@porrify.app",
+    "avatarUrl": "https://ui-avatars.com/api/?name=Clara&background=0ea5e9&color=fff&bold=true",
+    "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
+    "friendIds": [
+      "user_marina",
+      "user_pablo"
+    ],
+    "friendRequestSentIds": [
+      "user_diego",
+      "user_zcbcj3h4"
+    ],
+    "friendRequestReceivedIds": [
+      "user_lucia"
+    ],
+    "supportedNationalTeamId": "spain",
+    "supportedTeamIds": [
+      "team_fcb"
+    ],
+    "createdAt": "2026-05-01T10:00:00.000Z"
+  },
+  {
+    "id": "user_marina",
+    "username": "marina",
+    "displayName": "Marina",
+    "email": "marina@porrify.app",
+    "avatarUrl": "https://ui-avatars.com/api/?name=Marina&background=f97316&color=fff&bold=true",
+    "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
+    "friendIds": [
+      "user_clara"
+    ],
+    "friendRequestSentIds": [],
+    "friendRequestReceivedIds": [],
+    "createdAt": "2026-05-02T10:00:00.000Z"
+  },
+  {
+    "id": "user_pablo",
+    "username": "pablo",
+    "displayName": "Pablo",
+    "email": "pablo@porrify.app",
+    "avatarUrl": "https://ui-avatars.com/api/?name=Pablo&background=22c55e&color=fff&bold=true",
+    "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
+    "friendIds": [
+      "user_clara"
+    ],
+    "friendRequestSentIds": [],
+    "friendRequestReceivedIds": [
+      "user_zcbcj3h4"
+    ],
+    "createdAt": "2026-05-03T10:00:00.000Z"
+  },
+  {
+    "id": "user_lucia",
+    "username": "lucia",
+    "displayName": "Lucía",
+    "email": "lucia@porrify.app",
+    "avatarUrl": "https://ui-avatars.com/api/?name=Luc%C3%ADa&background=ec4899&color=fff&bold=true",
+    "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
+    "friendIds": [],
+    "friendRequestSentIds": [
+      "user_clara"
+    ],
+    "friendRequestReceivedIds": [],
+    "createdAt": "2026-05-04T10:00:00.000Z"
+  },
+  {
+    "id": "user_diego",
+    "username": "diego",
+    "displayName": "Diego",
+    "email": "diego@porrify.app",
+    "avatarUrl": "https://ui-avatars.com/api/?name=Diego&background=6366f1&color=fff&bold=true",
+    "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
+    "friendIds": [],
+    "friendRequestSentIds": [],
+    "friendRequestReceivedIds": [
+      "user_clara"
+    ],
+    "createdAt": "2026-05-05T10:00:00.000Z"
+  },
+  {
+    "id": "user_zcbcj3h4",
+    "username": "jorgealonso",
+    "displayName": "jorgealonso",
+    "email": "jorgealonso@porrify.app",
+    "avatarUrl": "https://ui-avatars.com/api/?name=jorgealonso&background=6366f1&color=fff&bold=true",
+    "passwordHash": "$2b$10$yRwEL4s4mj5ajH1osQgCN.FTFUBk5.8vpGjER2cch9oBWhB/vRqiC",
+    "friendIds": [],
+    "friendRequestSentIds": [
+      "user_pablo"
+    ],
+    "friendRequestReceivedIds": [
+      "user_clara"
+    ],
+    "supportedTeamIds": [
+      "team_bay",
+      "team_int"
+    ],
+    "createdAt": "2026-05-27T10:49:00.442Z",
+    "supportedNationalTeamId": "canada"
+  }
+]

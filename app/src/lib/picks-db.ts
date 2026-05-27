@@ -24,7 +24,6 @@ export async function saveUserTournamentPicks(data: {
   userId: string;
   tournamentId: string;
   revelationTeamId: string;
-  disappointmentTeamId: string;
 }): Promise<UserTournamentPicks> {
   const now = new Date().toISOString();
   const existing = PICKS_STORE.find(
@@ -33,7 +32,6 @@ export async function saveUserTournamentPicks(data: {
 
   if (existing) {
     existing.revelationTeamId = data.revelationTeamId;
-    existing.disappointmentTeamId = data.disappointmentTeamId;
     existing.updatedAt = now;
     return existing;
   }
