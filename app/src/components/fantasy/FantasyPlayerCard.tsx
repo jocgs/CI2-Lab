@@ -21,6 +21,8 @@ interface FantasyPlayerCardProps {
   player: FantasyPlayer;
   isSelected?: boolean;
   isCaptain?: boolean;
+  isDisabled?: boolean;
+  disabledReason?: string;
   onSelect?: () => void;
   onRemove?: () => void;
   size?: "sm" | "md";
@@ -30,6 +32,8 @@ export function FantasyPlayerCard({
   player,
   isSelected = false,
   isCaptain = false,
+  isDisabled = false,
+  disabledReason,
   onSelect,
   onRemove,
   size = "md",
@@ -38,14 +42,16 @@ export function FantasyPlayerCard({
 
   return (
     <div
-      onClick={onSelect}
+      onClick={isDisabled ? undefined : onSelect}
+      title={isDisabled ? disabledReason : undefined}
       className={clsx(
         "relative rounded-xl border transition-all",
         isSmall ? "p-2" : "p-3",
-        isSelected
-          ? "border-[var(--brand)] bg-[var(--brand-soft)] shadow-md"
-          : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--brand)] hover:shadow-sm",
-        onSelect && "cursor-pointer",
+        isDisabled
+          ? "cursor-not-allowed border-[var(--border)] bg-[var(--background)] opacity-40"
+          : isSelected
+            ? "border-[var(--brand)] bg-[var(--brand-soft)] shadow-md cursor-pointer"
+            : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--brand)] hover:shadow-sm cursor-pointer",
       )}
     >
       {/* Captain badge */}

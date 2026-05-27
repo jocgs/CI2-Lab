@@ -12,7 +12,7 @@ export default async function FantasyBuilderPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Crear equipo Fantasy</h1>
         <p className="text-sm text-[var(--muted)]">
-          Mundial 2026 · 9 pasos para demostrar que eres un genio del fútbol (o no)
+          Mundial 2026 · 8 pasos para demostrar que eres un genio del fútbol (o no)
         </p>
       </div>
       <FantasyBuilderClient

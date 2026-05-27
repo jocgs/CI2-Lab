@@ -121,20 +121,6 @@ export function validateFantasyTeam(
     errors.push({ field: "captainId", message: "Debes elegir un capitán." });
   }
 
-  // Predictions
-  if (!team.championTeamId) {
-    errors.push({ field: "championTeamId", message: "Debes seleccionar un equipo campeón." });
-  }
-  if (!team.surpriseTeamId) {
-    errors.push({ field: "surpriseTeamId", message: "Debes seleccionar un equipo sorpresa." });
-  }
-  if (!team.disappointmentTeamId) {
-    errors.push({ field: "disappointmentTeamId", message: "Debes seleccionar un equipo decepción." });
-  }
-  if (!team.tournamentMvpPlayerId) {
-    errors.push({ field: "tournamentMvpPlayerId", message: "Debes seleccionar el MVP del torneo." });
-  }
-
   // All 15 players must exist and be active
   for (const id of allIds) {
     if (!id) continue;
@@ -146,5 +132,14 @@ export function validateFantasyTeam(
     }
   }
 
+  return errors;
+}
+
+export function validateFantasyPredictions(team: Partial<FantasyTeam>): ValidationError[] {
+  const errors: ValidationError[] = [];
+  if (!team.championTeamId)       errors.push({ field: "championTeamId",       message: "Debes seleccionar un equipo campeón." });
+  if (!team.surpriseTeamId)       errors.push({ field: "surpriseTeamId",       message: "Debes seleccionar un equipo sorpresa." });
+  if (!team.disappointmentTeamId) errors.push({ field: "disappointmentTeamId", message: "Debes seleccionar un equipo decepción." });
+  if (!team.tournamentMvpPlayerId)errors.push({ field: "tournamentMvpPlayerId",message: "Debes seleccionar el MVP del torneo." });
   return errors;
 }
