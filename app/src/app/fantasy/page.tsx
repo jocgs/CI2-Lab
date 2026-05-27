@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/db";
 import {
   getFantasyTeamByUserAndCompetition,
   getFantasyRankingByCompetition,
+  getLeaguesByUserId,
 } from "@/lib/fantasy-db";
 import { Card, SectionTitle } from "@/components/ui";
 
@@ -18,13 +19,16 @@ const COMPETITIONS = [
 export default async function FantasyPage() {
   const user = await getCurrentUser();
 
-  const competitionData = await Promise.all(
-    COMPETITIONS.map(async (comp) => {
-      const myTeam = await getFantasyTeamByUserAndCompetition(user.id, comp.id);
-      const ranking = await getFantasyRankingByCompetition(comp.id);
-      return { comp, myTeam, rankingCount: ranking.length };
-    }),
-  );
+  const [competitionData, myLeagues] = await Promise.all([
+    Promise.all(
+      COMPETITIONS.map(async (comp) => {
+        const myTeam = await getFantasyTeamByUserAndCompetition(user.id, comp.id);
+        const ranking = await getFantasyRankingByCompetition(comp.id);
+        return { comp, myTeam, rankingCount: ranking.length };
+      }),
+    ),
+    getLeaguesByUserId(user.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -109,6 +113,67 @@ export default async function FantasyPage() {
             </Card>
           ))}
         </div>
+      </section>
+
+      {/* Friend leagues */}
+      <section>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <SectionTitle
+            title="Ligas de amigos"
+            subtitle="Compite contra los tuyos"
+          />
+          <Link
+            href="/fantasy/leagues"
+            className="shrink-0 rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface)]"
+          >
+            Ver todas →
+          </Link>
+        </div>
+
+        {myLeagues.length === 0 ? (
+          <Card className="p-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="font-medium">Sin ligas aún</p>
+              <p className="mt-0.5 text-sm text-[var(--muted)]">
+                Crea una liga privada o únete con el código de un amigo.
+              </p>
+            </div>
+            <Link
+              href="/fantasy/leagues"
+              className="shrink-0 rounded-xl bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            >
+              Empezar →
+            </Link>
+          </Card>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {myLeagues.slice(0, 3).map((league) => (
+              <Link
+                key={league.id}
+                href={`/fantasy/leagues/${league.id}`}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 hover:border-[var(--brand)] transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{league.name}</p>
+                  <p className="text-xs text-[var(--muted)]">
+                    {league.memberIds.length} participante{league.memberIds.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-lg bg-[var(--brand-soft)] px-2 py-1 font-mono text-xs font-bold tracking-wider text-[var(--brand-strong)]">
+                  {league.inviteCode}
+                </span>
+              </Link>
+            ))}
+            {myLeagues.length > 3 && (
+              <Link
+                href="/fantasy/leagues"
+                className="flex items-center justify-center rounded-2xl border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted)] hover:border-[var(--brand)] transition-colors"
+              >
+                +{myLeagues.length - 3} más →
+              </Link>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Rules */}

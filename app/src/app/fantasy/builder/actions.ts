@@ -12,10 +12,6 @@ export interface CreateFantasyTeamInput {
   startingEleven: FantasyStartingEleven;
   bench: FantasyBench;
   captainId: string;
-  championTeamId: string;
-  surpriseTeamId: string;
-  disappointmentTeamId: string;
-  tournamentMvpPlayerId: string;
 }
 
 export async function createFantasyTeamAction(
@@ -39,10 +35,6 @@ export async function createFantasyTeamAction(
       startingEleven: data.startingEleven,
       bench: data.bench,
       captainId: data.captainId,
-      championTeamId: data.championTeamId,
-      surpriseTeamId: data.surpriseTeamId,
-      disappointmentTeamId: data.disappointmentTeamId,
-      tournamentMvpPlayerId: data.tournamentMvpPlayerId,
     };
 
     const errors = validateFantasyTeam(partialTeam, players, false);
@@ -57,10 +49,6 @@ export async function createFantasyTeamAction(
       startingEleven: data.startingEleven,
       bench: data.bench,
       captainId: data.captainId,
-      championTeamId: data.championTeamId,
-      surpriseTeamId: data.surpriseTeamId,
-      disappointmentTeamId: data.disappointmentTeamId,
-      tournamentMvpPlayerId: data.tournamentMvpPlayerId,
     });
 
     return {};

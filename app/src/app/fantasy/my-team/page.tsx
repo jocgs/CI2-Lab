@@ -6,6 +6,7 @@ import {
   getNationalTeamsByCompetition,
 } from "@/lib/fantasy-db";
 import { FantasyTeamDisplay } from "@/components/fantasy/FantasyTeamDisplay";
+import { PredictionsForm } from "./PredictionsForm";
 import { EmptyState } from "@/components/ui";
 
 export default async function MyFantasyTeamPage() {
@@ -26,7 +27,7 @@ export default async function MyFantasyTeamPage() {
         </div>
         <EmptyState
           title="Aún no tienes equipo"
-          description="Crea tu once titular, elige al capitán y predice el campeón. El torneo no espera."
+          description="Crea tu once titular, elige al capitán y luego haz tus predicciones del torneo. El Mundial no espera."
           action={
             <Link
               href="/fantasy/builder"
@@ -82,6 +83,30 @@ export default async function MyFantasyTeamPage() {
         players={players}
         nationalTeams={nationalTeams}
       />
+
+      {/* Squad player IDs for the MVP dropdown */}
+      {(() => {
+        const { startingEleven: se, bench: b } = fantasyTeam;
+        const squadIds = new Set([
+          se.goalkeeperId,
+          ...se.defenderIds,
+          ...se.midfielderIds,
+          ...se.forwardIds,
+          b.goalkeeperId,
+          b.defenderId,
+          b.midfielderId,
+          b.forwardId,
+        ]);
+        const squadPlayers = players.filter((p) => squadIds.has(p.id));
+        return (
+          <PredictionsForm
+            team={fantasyTeam}
+            nationalTeams={nationalTeams}
+            squadPlayers={squadPlayers}
+            competitionId="world_cup_2026"
+          />
+        );
+      })()}
     </div>
   );
 }
