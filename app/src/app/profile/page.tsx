@@ -1,23 +1,34 @@
 import Link from "next/link";
+import Image from "next/image";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import {
   getBetsForUser,
+  getFriendsForUser,
   getCurrentUser,
   getGroupsForUser,
   getMatchById,
   getStreakForUser,
+  getTeams,
   getTeamById,
 } from "@/lib/db";
 import { formatBetPrediction } from "@/lib/scoring";
-import { Badge, Card, SectionTitle } from "@/components/ui";
+import { Badge, Card, EmptyState, SectionTitle } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
+import { addFriendAction, saveProfileAction } from "./actions";
+import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
+
+const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
 
-  const [streak, bets, groups] = await Promise.all([
+  const [streak, bets, groups, friends, teams, nationalTeams] = await Promise.all([
     getStreakForUser(user.id),
     getBetsForUser(user.id),
     getGroupsForUser(user.id),
+    getFriendsForUser(user.id),
+    getTeams(),
+    getNationalTeamsByCompetition(NATIONAL_TEAM_COMPETITION_ID),
   ]);
 
   const resolvedBets = bets.filter((b) => b.status !== "PENDING");
@@ -33,23 +44,187 @@ export default async function ProfilePage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 8);
 
+  const supportedTeamIds = user.supportedTeamIds ?? [];
+  const supportedTeams = teams.filter((team) => supportedTeamIds.includes(team.id));
+  const supportedNationalTeam = nationalTeams.find((team) => team.id === user.supportedNationalTeamId);
+
   return (
     <div className="flex flex-col gap-8">
-      <Card className="flex flex-col items-center gap-3 p-6 text-center sm:flex-row sm:text-left">
-        <div className="grid h-16 w-16 place-items-center rounded-full bg-[var(--brand)] text-2xl font-bold text-white">
-          {user.displayName.charAt(0)}
+      <Card className="overflow-hidden border-[var(--border)] bg-[var(--surface)]">
+        <div className="bg-gradient-to-r from-[var(--brand)] via-cyan-500 to-emerald-400 px-6 py-8 text-white sm:px-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+            <ProfileAvatar avatarUrl={user.avatarUrl} displayName={user.displayName} />
+            <div className="flex-1">
+              <p className="text-xs uppercase tracking-[0.24em] text-white/75">Perfil</p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight">{user.displayName}</h1>
+              <p className="text-sm text-white/85">@{user.username}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                  {friends.length} amigos
+                </span>
+                <div className="flex items-center gap-2">
+                  {supportedNationalTeam ? (
+                    <SupportIconPill label={supportedNationalTeam.name}>
+                      <NationalTeamBadge team={supportedNationalTeam} />
+                    </SupportIconPill>
+                  ) : (
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                      Sin selección
+                    </span>
+                  )}
+
+                  {supportedTeams.length > 0 ? (
+                    <div className="flex items-center gap-2">
+                      {supportedTeams.map((team) => (
+                        <SupportIconPill key={team.id} label={team.name}>
+                          <TeamBadge team={team} />
+                        </SupportIconPill>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                      Sin equipos favoritos
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{user.displayName}</h1>
-          <p className="text-sm text-[var(--muted)]">@{user.username}</p>
+        <div className="grid gap-3 border-t border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-4">
+          <Stat label="Puntos totales" value={totalPoints} accent />
+          <Stat label="Aciertos" value={`${wonBets.length}/${resolvedBets.length}`} />
+          <Stat label="Precisión" value={`${accuracy}%`} />
+          <Stat label="Racha actual" value={streak.current} subtitle={`Mejor: ${streak.best}`} />
         </div>
       </Card>
 
-      <section className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Puntos totales" value={totalPoints} accent />
-        <Stat label="Aciertos" value={`${wonBets.length}/${resolvedBets.length}`} />
-        <Stat label="Precisión" value={`${accuracy}%`} />
-        <Stat label="Racha actual" value={streak.current} subtitle={`Mejor: ${streak.best}`} />
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <SectionTitle
+            title="Editar perfil"
+            subtitle="Sube una foto, elige una selección y marca tus equipos favoritos"
+          />
+          <form action={saveProfileAction} className="mt-5 flex flex-col gap-4">
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="font-medium">Foto de perfil</span>
+              <input
+                type="file"
+                name="avatarFile"
+                accept="image/*"
+                className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
+              />
+              <span className="text-xs text-[var(--muted)]">Sube una imagen desde tu dispositivo. Si no eliges ninguna, se mantiene la actual.</span>
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="font-medium">Selección favorita</span>
+              <select
+                name="supportedNationalTeamId"
+                defaultValue={user.supportedNationalTeamId ?? ""}
+                className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
+              >
+                <option value="">Sin selección</option>
+                {nationalTeams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.flagUrl ? `${team.flagUrl} ` : ""}{team.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-medium">Equipo favorito 1</span>
+                <select
+                  name="supportedTeamId1"
+                  defaultValue={supportedTeamIds[0] ?? ""}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
+                >
+                  <option value="">Sin equipo</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-medium">Equipo favorito 2</span>
+                <select
+                  name="supportedTeamId2"
+                  defaultValue={supportedTeamIds[1] ?? ""}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
+                >
+                  <option value="">Opcional</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-strong)]"
+            >
+              Guardar perfil
+            </button>
+          </form>
+        </Card>
+
+        <Card className="p-6">
+          <SectionTitle title="Amigos" subtitle="Añade amigos por su nombre de usuario" />
+          <form action={addFriendAction} className="mt-5 flex flex-col gap-3">
+            <input type="hidden" name="redirectTo" value="/profile" />
+            <input
+              type="text"
+              name="friendUsername"
+              placeholder="Ej: marina"
+              className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
+            />
+            <button
+              type="submit"
+              className="rounded-xl border border-[var(--border)] px-4 py-3 text-sm font-semibold hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]/40"
+            >
+              Añadir amigo
+            </button>
+          </form>
+
+          <div className="mt-5">
+            <p className="mb-3 text-xs uppercase tracking-wide text-[var(--muted)]">Tus amigos</p>
+            {friends.length === 0 ? (
+              <EmptyState
+                title="Aún no tienes amigos"
+                description="Añade a alguien por su usuario para empezar a compararte con él."
+              />
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {friends.map((friend) => (
+                  <Link
+                    key={friend.id}
+                    href={`/users/${friend.username}`}
+                    className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-3 transition-shadow hover:shadow-sm"
+                  >
+                    <ProfileAvatar
+                      avatarUrl={friend.avatarUrl}
+                      displayName={friend.displayName}
+                      size="sm"
+                      zoomable={false}
+                    />
+                    <div>
+                      <p className="font-medium">{friend.displayName}</p>
+                      <p className="text-xs text-[var(--muted)]">@{friend.username}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
       </section>
 
       <section>
@@ -153,5 +328,62 @@ function Stat({
         </p>
       )}
     </Card>
+  );
+}
+
+function TeamBadge({ team }: { team: { name: string; shortName: string; logoUrl?: string } }) {
+  if (team.logoUrl) {
+    return (
+      <span className="grid h-8 w-8 place-items-center rounded-full bg-white/90 p-1 shadow-sm">
+        <Image
+          src={team.logoUrl}
+          alt={team.name}
+          width={24}
+          height={24}
+          className="h-6 w-6 object-contain"
+          unoptimized
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-[10px] font-semibold uppercase">
+      {team.shortName}
+    </span>
+  );
+}
+
+function NationalTeamBadge({
+  team,
+}: {
+  team: { name: string; flagUrl?: string; logoUrl?: string };
+}) {
+  if (team.logoUrl) {
+    return (
+      <span className="grid h-8 w-8 place-items-center rounded-full bg-white/20 p-1">
+        <img src={team.logoUrl} alt={team.name} className="h-6 w-6 object-contain" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-lg leading-none">
+      {team.flagUrl ?? "🏳️"}
+    </span>
+  );
+}
+
+function SupportIconPill({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span title={label} className="inline-flex items-center rounded-full bg-white/10 p-1 backdrop-blur">
+      {children}
+    </span>
   );
 }

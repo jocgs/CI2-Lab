@@ -45,6 +45,18 @@ export function getUserById(id: string): User | undefined {
   return MOCK_USERS.find((u) => u.id === id);
 }
 
+export function getUserByUsername(username: string): User | undefined {
+  return MOCK_USERS.find((u) => u.username.toLowerCase() === username.toLowerCase());
+}
+
+export function getFriendsForUser(userId: string): User[] {
+  const user = getUserById(userId);
+  if (!user) return [];
+  return (user.friendIds ?? [])
+    .map((friendId) => getUserById(friendId))
+    .filter((friend): friend is User => Boolean(friend));
+}
+
 export function getTeams(): Team[] {
   return MOCK_TEAMS;
 }
@@ -142,6 +154,44 @@ export function upsertBet(input: {
   };
   bets.push(newBet);
   return newBet;
+}
+
+export function updateUserProfile(
+  userId: string,
+  input: {
+    avatarUrl?: string | null;
+    supportedNationalTeamId?: string | null;
+    supportedTeamIds?: string[];
+  },
+): User {
+  const user = getUserById(userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  user.avatarUrl = input.avatarUrl?.trim() || undefined;
+  user.supportedNationalTeamId = input.supportedNationalTeamId?.trim() || undefined;
+  user.supportedTeamIds = (input.supportedTeamIds ?? []).filter(Boolean);
+
+  return user;
+}
+
+export function addFriendByUsername(userId: string, username: string): User {
+  const user = getUserById(userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const friend = getUserByUsername(username.trim());
+  if (!friend) throw new Error("No existe ningún usuario con ese nombre");
+  if (friend.id === user.id) throw new Error("No puedes añadirte a ti mismo");
+
+  const userFriends = new Set(user.friendIds ?? []);
+  const friendFriends = new Set(friend.friendIds ?? []);
+
+  userFriends.add(friend.id);
+  friendFriends.add(user.id);
+
+  user.friendIds = [...userFriends];
+  friend.friendIds = [...friendFriends];
+
+  return friend;
 }
 
 // ---------------------------------------------------------------------------

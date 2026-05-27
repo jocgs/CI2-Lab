@@ -58,6 +58,9 @@ export async function createSession(idToken: string): Promise<string> {
       username: decoded.email?.split("@")[0] ?? `invitado_${shortId}`,
       displayName: decoded.name ?? decoded.email ?? `Invitado ${shortId}`,
       avatarUrl: decoded.picture ?? null,
+      friendIds: [],
+      supportedNationalTeamId: null,
+      supportedTeamIds: [],
       createdAt: new Date().toISOString(),
     });
   }

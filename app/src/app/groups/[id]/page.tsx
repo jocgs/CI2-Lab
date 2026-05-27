@@ -29,7 +29,7 @@ export default async function GroupDetailPage({
         <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Grupo</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">{group.name}</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Creado por {owner?.displayName ?? "—"} · {group.memberIds.length} miembros
+          Creado por {owner ? <Link href={`/users/${owner.username}`} className="hover:underline">{owner.displayName}</Link> : "—"} · {group.memberIds.length} miembros
         </p>
 
         <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--background)] px-3 py-2 text-sm">

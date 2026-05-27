@@ -682,6 +682,123 @@ function PlayerPickerPanel({
   );
 }
 
+<<<<<<< HEAD
+=======
+// ─── PredictionsPanel ─────────────────────────────────────────────────────────
+
+interface PredictionsPanelProps {
+  nationalTeams: FantasyNationalTeam[];
+  players: FantasyPlayer[];
+  championTeamId: string | null;
+  surpriseTeamId: string | null;
+  disappointmentTeamId: string | null;
+  tournamentMvpId: string | null;
+  setChampionTeamId: (id: string) => void;
+  setSurpriseTeamId: (id: string) => void;
+  setDisappointmentTeamId: (id: string) => void;
+  setTournamentMvpId: (id: string) => void;
+}
+
+function PredictionsPanel({
+  nationalTeams,
+  players,
+  championTeamId,
+  surpriseTeamId,
+  disappointmentTeamId,
+  tournamentMvpId,
+  setChampionTeamId,
+  setSurpriseTeamId,
+  setDisappointmentTeamId,
+  setTournamentMvpId,
+}: PredictionsPanelProps) {
+  return (
+    <div className="flex flex-col gap-4">
+      <TeamPicker
+        label="🏆 Equipo campeón"
+        hint="El que levantará el trofeo. Apuesta con el corazón o con la cabeza."
+        teams={nationalTeams}
+        selected={championTeamId}
+        onSelect={setChampionTeamId}
+      />
+      <TeamPicker
+        label="🚀 Equipo sorpresa"
+        hint="El que llegará más lejos de lo esperado. Hay que creer."
+        teams={nationalTeams}
+        selected={surpriseTeamId}
+        onSelect={setSurpriseTeamId}
+      />
+      <TeamPicker
+        label="😬 Equipo decepción"
+        hint="El que decepcionará a sus fans. Con cariño."
+        teams={nationalTeams}
+        selected={disappointmentTeamId}
+        onSelect={setDisappointmentTeamId}
+      />
+
+      {/* MVP */}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+        <p className="mb-1 text-sm font-medium">⭐ MVP del torneo</p>
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          El mejor jugador del Mundial. De tu equipo o del mundo.
+        </p>
+        <select
+          value={tournamentMvpId ?? ""}
+          onChange={(e) => setTournamentMvpId(e.target.value)}
+          className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+        >
+          <option value="">Elige un jugador...</option>
+          {players.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} ({p.nationalTeamName})
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function TeamPicker({
+  label,
+  hint,
+  teams,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  hint: string;
+  teams: FantasyNationalTeam[];
+  selected: string | null;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+      <p className="mb-1 text-sm font-medium">{label}</p>
+      <p className="mb-3 text-xs text-[var(--muted)]">{hint}</p>
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+        {teams.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => onSelect(t.id)}
+            className={clsx(
+              "flex flex-col items-center gap-0.5 rounded-xl border p-2 text-xs transition-all",
+              selected === t.id
+                ? "border-[var(--brand)] bg-[var(--brand-soft)] font-medium text-[var(--brand-strong)]"
+                : "border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]",
+            )}
+          >
+            <NationalTeamSymbol team={t} />
+            <span className="truncate w-full text-center text-[10px]">
+              {t.name.split(" ")[0]}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+>>>>>>> 5256bc7 (Cambios perfiles)
 // ─── ConfirmationPanel ────────────────────────────────────────────────────────
 
 interface ConfirmationPanelProps {
@@ -773,10 +890,58 @@ function ConfirmationPanel({
         </div>
       </div>
 
-      {/* Predicciones — recordatorio */}
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-        🔮 Las <strong>predicciones del torneo</strong> (campeón, sorpresa, decepción y MVP) las podrás rellenar desde la página de tu equipo una vez creado.
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+        <p className="mb-2 text-sm font-medium">Predicciones</p>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-[var(--muted)]">Campeón: </span>
+            {ntm.get(championTeamId ?? "") ? (
+              <span className="inline-flex items-center gap-1">
+                <NationalTeamSymbol team={ntm.get(championTeamId!)} />
+                <span>{ntm.get(championTeamId!)?.name}</span>
+              </span>
+            ) : (
+              "—"
+            )}
+          </div>
+          <div>
+            <span className="text-[var(--muted)]">Sorpresa: </span>
+            {ntm.get(surpriseTeamId ?? "") ? (
+              <span className="inline-flex items-center gap-1">
+                <NationalTeamSymbol team={ntm.get(surpriseTeamId!)} />
+                <span>{ntm.get(surpriseTeamId!)?.name}</span>
+              </span>
+            ) : (
+              "—"
+            )}
+          </div>
+          <div>
+            <span className="text-[var(--muted)]">Decepción: </span>
+            {ntm.get(disappointmentTeamId ?? "") ? (
+              <span className="inline-flex items-center gap-1">
+                <NationalTeamSymbol team={ntm.get(disappointmentTeamId!)} />
+                <span>{ntm.get(disappointmentTeamId!)?.name}</span>
+              </span>
+            ) : (
+              "—"
+            )}
+          </div>
+          <div>
+            <span className="text-[var(--muted)]">MVP: </span>
+            {tournamentMvpId ? pm.get(tournamentMvpId)?.name ?? "—" : "—"}
+          </div>
+        </div>
       </div>
     </div>
   );
+}
+
+function NationalTeamSymbol({ team }: { team: FantasyNationalTeam | undefined }) {
+  if (!team) return null;
+
+  if (team.logoUrl) {
+    return <img src={team.logoUrl} alt={team.name} className="h-4 w-4 object-contain" />;
+  }
+
+  return <span className="text-base">{team.flagUrl}</span>;
 }
