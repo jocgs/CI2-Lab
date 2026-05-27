@@ -39,12 +39,36 @@ export function RankingTable({ entries }: { entries: RankingEntry[] }) {
                 </p>
               </div>
             </div>
-            <p className="text-base font-semibold tabular-nums">{entry.totalPoints} pts</p>
+            <div className="flex items-center gap-2">
+              <RankChange change={entry.rankChange} />
+              <p className="text-base font-semibold tabular-nums">{entry.totalPoints} pts</p>
+            </div>
           </li>
         );
       })}
     </ol>
   );
+}
+
+function RankChange({ change }: { change?: number }) {
+  if (change === undefined) return null;
+  if (change > 0) return (
+    <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+        <path d="M5 1 L9 8 L1 8 Z" />
+      </svg>
+      {change}
+    </span>
+  );
+  if (change < 0) return (
+    <span className="flex items-center gap-0.5 text-xs font-semibold text-red-500">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+        <path d="M5 9 L9 2 L1 2 Z" />
+      </svg>
+      {Math.abs(change)}
+    </span>
+  );
+  return <span className="text-xs text-[var(--muted)]">—</span>;
 }
 
 function Position({ index }: { index: number }) {

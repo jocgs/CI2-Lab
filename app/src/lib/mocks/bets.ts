@@ -8,11 +8,11 @@ import type { Bet } from "@/types/domain";
  *   match_1: 1   |   match_2: 1   |   match_3: X   |   match_4: 2   |   match_5: 2
  */
 export const MOCK_BETS: Bet[] = [
-  // ----- Clara: L W W W W → racha 4, mejor 4, 6 pts -----
-  { id: "bet_c1", userId: "user_clara", matchId: "match_1", prediction: { outcome: "X", homeGoals: 1, awayGoals: 1 }, createdAt: "2026-05-18T10:00:00.000Z", status: "LOST", points: 0 },
-  { id: "bet_c2", userId: "user_clara", matchId: "match_2", prediction: { outcome: "1", homeGoals: 2, awayGoals: 0 }, createdAt: "2026-05-19T10:00:00.000Z", status: "WON", points: 1 },
+  // ----- Clara: W W W W W → racha 5, mejor 5, 10 pts -----
+  { id: "bet_c1", userId: "user_clara", matchId: "match_1", prediction: { outcome: "1", homeGoals: 2, awayGoals: 1 }, createdAt: "2026-05-18T10:00:00.000Z", status: "WON", points: 2 },
+  { id: "bet_c2", userId: "user_clara", matchId: "match_2", prediction: { outcome: "1", homeGoals: 3, awayGoals: 0 }, createdAt: "2026-05-19T10:00:00.000Z", status: "WON", points: 2 },
   { id: "bet_c3", userId: "user_clara", matchId: "match_3", prediction: { outcome: "X", homeGoals: 1, awayGoals: 1 }, createdAt: "2026-05-20T10:00:00.000Z", status: "WON", points: 2 },
-  { id: "bet_c4", userId: "user_clara", matchId: "match_4", prediction: { outcome: "2", homeGoals: 0, awayGoals: 1 }, createdAt: "2026-05-22T10:00:00.000Z", status: "WON", points: 1 },
+  { id: "bet_c4", userId: "user_clara", matchId: "match_4", prediction: { outcome: "2", homeGoals: 1, awayGoals: 2 }, createdAt: "2026-05-22T10:00:00.000Z", status: "WON", points: 2 },
   { id: "bet_c5", userId: "user_clara", matchId: "match_5", prediction: { outcome: "2", homeGoals: 0, awayGoals: 2 }, createdAt: "2026-05-24T10:00:00.000Z", status: "WON", points: 2 },
   { id: "bet_c7", userId: "user_clara", matchId: "match_7", prediction: { outcome: "1", homeGoals: 2, awayGoals: 1 }, createdAt: "2026-05-26T08:00:00.000Z", status: "PENDING", points: 0 },
   { id: "bet_c9", userId: "user_clara", matchId: "match_9", prediction: { outcome: "1", homeGoals: 1, awayGoals: 0 }, createdAt: "2026-05-26T08:05:00.000Z", status: "PENDING", points: 0 },

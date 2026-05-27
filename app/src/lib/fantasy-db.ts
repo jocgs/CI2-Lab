@@ -1,5 +1,7 @@
 import type {
   FantasyTeam,
+  FantasyLeague,
+  FantasyLeagueRankingEntry,
   FantasyPlayer,
   FantasyNationalTeam,
   FantasyPlayerMatchStats,
@@ -11,11 +13,37 @@ import { MOCK_USERS } from "./mocks/users";
 import { calculateFantasyTeamPoints, getRankingLabel } from "./fantasy-scoring";
 
 // ---------------------------------------------------------------------------
-// In-memory mock stores (persist across requests in dev mode)
+// In-memory mock stores — anchored to `global` so they survive HMR reloads
 // ---------------------------------------------------------------------------
 
-const MOCK_FANTASY_TEAMS: FantasyTeam[] = [];
-const MOCK_FANTASY_STATS: FantasyPlayerMatchStats[] = [];
+declare global {
+  // eslint-disable-next-line no-var
+  var __fantasyTeams: FantasyTeam[] | undefined;
+  // eslint-disable-next-line no-var
+  var __fantasyStats: FantasyPlayerMatchStats[] | undefined;
+  // eslint-disable-next-line no-var
+  var __fantasyLeagues: FantasyLeague[] | undefined;
+}
+
+const MOCK_FANTASY_TEAMS: FantasyTeam[] = (global.__fantasyTeams ??= []);
+const MOCK_FANTASY_STATS: FantasyPlayerMatchStats[] = (global.__fantasyStats ??= []);
+
+function makeInviteCode(): string {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+// Seed a demo league so Clara has something to see on first load
+const MOCK_FANTASY_LEAGUES: FantasyLeague[] = (global.__fantasyLeagues ??= [
+  {
+    id: "league_demo",
+    name: "La Liga de los Cracks",
+    competitionId: "world_cup_2026",
+    ownerId: "user_clara",
+    memberIds: ["user_clara", "user_marina", "user_pablo"],
+    inviteCode: "CRACKS",
+    createdAt: "2026-05-01T10:00:00.000Z",
+  },
+]);
 
 // ---------------------------------------------------------------------------
 // Players
@@ -183,6 +211,81 @@ export async function recalculateFantasyRanking(
 // ---------------------------------------------------------------------------
 // Ranking
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Leagues
+// ---------------------------------------------------------------------------
+
+export async function getLeaguesByUserId(userId: string): Promise<FantasyLeague[]> {
+  return MOCK_FANTASY_LEAGUES.filter((l) => l.memberIds.includes(userId));
+}
+
+export async function getFantasyLeagueById(id: string): Promise<FantasyLeague | null> {
+  return MOCK_FANTASY_LEAGUES.find((l) => l.id === id) ?? null;
+}
+
+export async function getFantasyLeagueByInviteCode(
+  code: string,
+): Promise<FantasyLeague | null> {
+  return MOCK_FANTASY_LEAGUES.find(
+    (l) => l.inviteCode.toUpperCase() === code.toUpperCase(),
+  ) ?? null;
+}
+
+export async function createFantasyLeague(data: {
+  name: string;
+  competitionId: string;
+  ownerId: string;
+}): Promise<FantasyLeague> {
+  const league: FantasyLeague = {
+    id: `league_${Math.random().toString(36).slice(2, 10)}`,
+    name: data.name,
+    competitionId: data.competitionId,
+    ownerId: data.ownerId,
+    memberIds: [data.ownerId],
+    inviteCode: makeInviteCode(),
+    createdAt: new Date().toISOString(),
+  };
+  MOCK_FANTASY_LEAGUES.push(league);
+  return league;
+}
+
+export async function joinFantasyLeague(
+  leagueId: string,
+  userId: string,
+): Promise<{ error?: string }> {
+  const league = MOCK_FANTASY_LEAGUES.find((l) => l.id === leagueId);
+  if (!league) return { error: "Liga no encontrada." };
+  if (league.memberIds.includes(userId)) return { error: "Ya eres miembro de esta liga." };
+  league.memberIds.push(userId);
+  return {};
+}
+
+export async function leaveFantasyLeague(
+  leagueId: string,
+  userId: string,
+): Promise<{ error?: string }> {
+  const league = MOCK_FANTASY_LEAGUES.find((l) => l.id === leagueId);
+  if (!league) return { error: "Liga no encontrada." };
+  if (league.ownerId === userId) return { error: "El creador no puede abandonar la liga." };
+  league.memberIds = league.memberIds.filter((id) => id !== userId);
+  return {};
+}
+
+export async function getFantasyLeagueRanking(
+  leagueId: string,
+): Promise<FantasyLeagueRankingEntry[]> {
+  const league = MOCK_FANTASY_LEAGUES.find((l) => l.id === leagueId);
+  if (!league) return [];
+
+  const allEntries = await getFantasyRankingByCompetition(league.competitionId);
+  const leagueEntries = allEntries.filter((e) => league.memberIds.includes(e.userId));
+
+  return leagueEntries.map((e, i) => ({
+    ...e,
+    leagueRank: i + 1,
+  }));
+}
 
 export async function getFantasyRankingByCompetition(
   competitionId: string,

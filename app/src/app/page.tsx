@@ -48,21 +48,34 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col gap-8">
       {/* Hero */}
-      <section className="rounded-3xl bg-gradient-to-br from-[var(--brand-strong)] via-[var(--brand)] to-emerald-400 p-6 text-white shadow-md sm:p-8">
-        <p className="text-sm font-medium opacity-80">¡Hola, {user.displayName}!</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-          Tienes {pendingBetsCount} {pendingBetsCount === 1 ? "porra" : "porras"} por hacer
-        </h1>
-        <p className="mt-1 max-w-md text-sm text-white/90">
-          {streak.current > 0
-            ? `Racha en marcha: ${streak.current} acierto${streak.current === 1 ? "" : "s"} seguido${streak.current === 1 ? "" : "s"}. ¡Sigue así!`
-            : "No te quedes sin apostar a los próximos partidos."}
-        </p>
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--brand-strong)] via-[var(--brand)] to-emerald-400 p-6 text-white shadow-md sm:p-8">
+        {/* Balón decorativo */}
+        <span
+          aria-hidden
+          className="hero-ball pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[7rem] opacity-30 sm:right-8 sm:text-[9rem]"
+        >
+          ⚽
+        </span>
 
-        <div className="mt-5 grid grid-cols-3 gap-3 sm:max-w-sm">
-          <Stat label="Puntos" value={totalPoints} />
-          <Stat label="Racha" value={streak.current} />
-          <Stat label="Grupos" value={groups.length} />
+        {/* Contenido — max-w para que no solape con el balón */}
+        <div className="relative max-w-[calc(100%-7rem)] sm:max-w-[calc(100%-9rem)]">
+          <p className="text-sm font-medium opacity-80">¡Hola, {user.displayName}!</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+            {pendingBetsCount > 0
+              ? <>{pendingBetsCount} {pendingBetsCount === 1 ? "nueva porra" : "nuevas porras"} disponible{pendingBetsCount === 1 ? "" : "s"}</>
+              : "¡Al día con todas tus porras!"}
+          </h1>
+          <p className="mt-1 text-sm text-white/90">
+            {streak.current > 0
+              ? `Racha en marcha: ${streak.current} acierto${streak.current === 1 ? "" : "s"} seguido${streak.current === 1 ? "" : "s"}. ¡Sigue así!`
+              : "No te quedes sin apostar a los próximos partidos."}
+          </p>
+
+          <div className="mt-5 grid grid-cols-3 gap-3 sm:max-w-sm">
+            <Stat label="Puntos" value={totalPoints} />
+            <Stat label="Racha" value={streak.current} />
+            <Stat label="Grupos" value={groups.length} />
+          </div>
         </div>
       </section>
 

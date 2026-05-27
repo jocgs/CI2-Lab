@@ -67,13 +67,6 @@ const STEP_CONFIG = [
   },
   {
     step: 8,
-    title: "Predicciones del torneo",
-    hint: "Aquí se gana o se pierde la dignidad.",
-    position: null,
-    count: null,
-  },
-  {
-    step: 9,
     title: "Confirmación",
     hint: "Última oportunidad para arrepentirte.",
     position: null,
@@ -116,10 +109,6 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
   const [forwardIds, setForwardIds] = useState<string[]>([]);
   const [bench, setBench] = useState<Partial<FantasyBench>>({});
   const [captainId, setCaptainId] = useState<string | null>(null);
-  const [championTeamId, setChampionTeamId] = useState<string | null>(null);
-  const [surpriseTeamId, setSurpriseTeamId] = useState<string | null>(null);
-  const [disappointmentTeamId, setDisappointmentTeamId] = useState<string | null>(null);
-  const [tournamentMvpId, setTournamentMvpId] = useState<string | null>(null);
 
   // ── Filter state ──
   const [filterTeam, setFilterTeam] = useState<string>("all");
@@ -127,15 +116,12 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
 
   const config = STEP_CONFIG[step - 1];
 
-  // ─── Already selected player IDs (starters only) ─────────────────────────
+  // ─── Already selected player IDs ─────────────────────────────────────────
   const allStarterIds = useMemo(
     () =>
-      [
-        goalkeeperId,
-        ...defenderIds,
-        ...midfielderIds,
-        ...forwardIds,
-      ].filter((id): id is string => !!id),
+      [goalkeeperId, ...defenderIds, ...midfielderIds, ...forwardIds].filter(
+        (id): id is string => !!id,
+      ),
     [goalkeeperId, defenderIds, midfielderIds, forwardIds],
   );
 
@@ -146,6 +132,35 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
       ),
     [bench],
   );
+
+  // ─── Cupo por selección nacional (máx 3 en toda la plantilla) ─────────────
+  const teamCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const allIds = [...allStarterIds, ...allBenchIds];
+    for (const id of allIds) {
+      const p = players.find((pl) => pl.id === id);
+      if (p) map.set(p.nationalTeamId, (map.get(p.nationalTeamId) ?? 0) + 1);
+    }
+    return map;
+  }, [allStarterIds, allBenchIds, players]);
+
+  /** Devuelve true si el jugador no puede añadirse por cupo de selección. */
+  function isPlayerDisabled(playerId: string): boolean {
+    const player = players.find((p) => p.id === playerId);
+    if (!player) return false;
+    const alreadySelected =
+      allStarterIds.includes(playerId) || allBenchIds.includes(playerId);
+    if (alreadySelected) return false; // puede deseleccionarse siempre
+    return (teamCountMap.get(player.nationalTeamId) ?? 0) >= 3;
+  }
+
+  function disabledReason(playerId: string): string | undefined {
+    const player = players.find((p) => p.id === playerId);
+    if (!player) return undefined;
+    const count = teamCountMap.get(player.nationalTeamId) ?? 0;
+    if (count >= 3) return `Máximo 3 jugadores de ${player.nationalTeamName} (${count}/3)`;
+    return undefined;
+  }
 
   // ─── Filtered players for current step ───────────────────────────────────
   const filteredPlayers = useMemo(() => {
@@ -192,13 +207,8 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
     if (step === 6)
       return !!(bench.goalkeeperId && bench.defenderId && bench.midfielderId && bench.forwardId);
     if (step === 7) return !!captainId;
-    if (step === 8)
-      return !!(championTeamId && surpriseTeamId && disappointmentTeamId && tournamentMvpId);
     return true;
-  }, [
-    step, teamName, goalkeeperId, defenderIds, midfielderIds, forwardIds,
-    bench, captainId, championTeamId, surpriseTeamId, disappointmentTeamId, tournamentMvpId,
-  ]);
+  }, [step, teamName, goalkeeperId, defenderIds, midfielderIds, forwardIds, bench, captainId]);
 
   // ─── Bench step — current position being selected ────────────────────────
   const [benchPositionIndex, setBenchPositionIndex] = useState(0);
@@ -208,6 +218,14 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
 
   function handlePlayerSelect(playerId: string) {
     setError(null);
+    // Bloquear si el jugador superaría el cupo de 3 por selección
+    if (isPlayerDisabled(playerId)) {
+      const player = players.find((p) => p.id === playerId);
+      setError(
+        `Máximo 3 jugadores de ${player?.nationalTeamName ?? "la misma selección"}. Esto no es poner a Francia entera.`,
+      );
+      return;
+    }
     if (step === 2) {
       setGoalkeeperId(goalkeeperId === playerId ? null : playerId);
     } else if (step === 3) {
@@ -272,9 +290,6 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
       setError("Banquillo incompleto."); return;
     }
     if (!captainId) { setError("Falta el capitán."); return; }
-    if (!championTeamId || !surpriseTeamId || !disappointmentTeamId || !tournamentMvpId) {
-      setError("Faltan predicciones."); return;
-    }
 
     const startingEleven: FantasyStartingEleven = {
       goalkeeperId,
@@ -296,10 +311,6 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
         startingEleven,
         bench: fullBench,
         captainId,
-        championTeamId,
-        surpriseTeamId,
-        disappointmentTeamId,
-        tournamentMvpPlayerId: tournamentMvpId,
       });
       if (result.error) {
         setError(result.error);
@@ -319,12 +330,12 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="font-medium">{config.title}</span>
-          <span className="text-[var(--muted)]">Paso {step} de 9</span>
+          <span className="text-[var(--muted)]">Paso {step} de 8</span>
         </div>
         <div className="h-2 rounded-full bg-[var(--border)]">
           <div
             className="h-2 rounded-full bg-[var(--brand)] transition-all"
-            style={{ width: `${(step / 9) * 100}%` }}
+            style={{ width: `${(step / 8) * 100}%` }}
           />
         </div>
         <p className="mt-2 text-xs text-[var(--muted)] italic">{config.hint}</p>
@@ -367,20 +378,18 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
           onSelect={handlePlayerSelect}
           isSelected={isPlayerSelected}
           isCaptain={(id) => captainId === id}
+          isDisabled={isPlayerDisabled}
+          getDisabledReason={disabledReason}
+          teamCountMap={teamCountMap}
           filterTeam={filterTeam}
           setFilterTeam={setFilterTeam}
           search={search}
           setSearch={setSearch}
           selectedCount={
-            step === 2
-              ? goalkeeperId
-                ? 1
-                : 0
-              : step === 3
-              ? defenderIds.length
-              : step === 4
-              ? midfielderIds.length
-              : forwardIds.length
+            step === 2 ? (goalkeeperId ? 1 : 0)
+            : step === 3 ? defenderIds.length
+            : step === 4 ? midfielderIds.length
+            : forwardIds.length
           }
           maxCount={config.count ?? 1}
           label={config.title}
@@ -440,6 +449,9 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
             onSelect={handlePlayerSelect}
             isSelected={isPlayerSelected}
             isCaptain={() => false}
+            isDisabled={isPlayerDisabled}
+            getDisabledReason={disabledReason}
+            teamCountMap={teamCountMap}
             filterTeam={filterTeam}
             setFilterTeam={setFilterTeam}
             search={search}
@@ -467,6 +479,9 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
             onSelect={handlePlayerSelect}
             isSelected={isPlayerSelected}
             isCaptain={(id) => captainId === id}
+            isDisabled={() => false}
+            getDisabledReason={() => undefined}
+            teamCountMap={teamCountMap}
             filterTeam={filterTeam}
             setFilterTeam={setFilterTeam}
             search={search}
@@ -478,24 +493,8 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
         </div>
       )}
 
-      {/* ── STEP 8: Predictions ── */}
+      {/* ── STEP 8: Confirmation ── */}
       {step === 8 && (
-        <PredictionsPanel
-          nationalTeams={nationalTeams}
-          players={players.filter((p) => allStarterIds.includes(p.id) || allBenchIds.includes(p.id))}
-          championTeamId={championTeamId}
-          surpriseTeamId={surpriseTeamId}
-          disappointmentTeamId={disappointmentTeamId}
-          tournamentMvpId={tournamentMvpId}
-          setChampionTeamId={setChampionTeamId}
-          setSurpriseTeamId={setSurpriseTeamId}
-          setDisappointmentTeamId={setDisappointmentTeamId}
-          setTournamentMvpId={setTournamentMvpId}
-        />
-      )}
-
-      {/* ── STEP 9: Confirmation ── */}
-      {step === 9 && (
         <ConfirmationPanel
           teamName={teamName}
           goalkeeperId={goalkeeperId}
@@ -504,10 +503,6 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
           forwardIds={forwardIds}
           bench={bench}
           captainId={captainId}
-          championTeamId={championTeamId}
-          surpriseTeamId={surpriseTeamId}
-          disappointmentTeamId={disappointmentTeamId}
-          tournamentMvpId={tournamentMvpId}
           players={players}
           nationalTeams={nationalTeams}
         />
@@ -524,7 +519,7 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
           </button>
         )}
         <div className="flex-1" />
-        {step < 9 ? (
+        {step < 8 ? (
           <button
             onClick={() => {
               if (!canAdvance) {
@@ -565,6 +560,9 @@ interface PlayerPickerPanelProps {
   onSelect: (id: string) => void;
   isSelected: (id: string) => boolean;
   isCaptain: (id: string) => boolean;
+  isDisabled: (id: string) => boolean;
+  getDisabledReason: (id: string) => string | undefined;
+  teamCountMap: Map<string, number>;
   filterTeam: string;
   setFilterTeam: (t: string) => void;
   search: string;
@@ -580,6 +578,9 @@ function PlayerPickerPanel({
   onSelect,
   isSelected,
   isCaptain,
+  isDisabled,
+  getDisabledReason,
+  teamCountMap,
   filterTeam,
   setFilterTeam,
   search,
@@ -616,13 +617,45 @@ function PlayerPickerPanel({
           className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
         >
           <option value="all">Todas las selecciones</option>
-          {relevantTeams.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.flagUrl} {t.name}
-            </option>
-          ))}
+          {relevantTeams.map((t) => {
+            const count = teamCountMap.get(t.id) ?? 0;
+            const full = count >= 3;
+            return (
+              <option key={t.id} value={t.id}>
+                {t.flagUrl} {t.name}{full ? " (3/3 🔴)" : count > 0 ? ` (${count}/3)` : ""}
+              </option>
+            );
+          })}
         </select>
       </div>
+
+      {/* Cupo por selección — chips de aviso */}
+      {Array.from(teamCountMap.entries()).filter(([, c]) => c > 0).length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {Array.from(teamCountMap.entries())
+            .filter(([, c]) => c > 0)
+            .map(([teamId, count]) => {
+              const team = nationalTeams.find((t) => t.id === teamId);
+              if (!team) return null;
+              const full = count >= 3;
+              return (
+                <span
+                  key={teamId}
+                  className={clsx(
+                    "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                    full
+                      ? "bg-red-100 text-red-700"
+                      : count === 2
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-[var(--brand-soft)] text-[var(--brand-strong)]",
+                  )}
+                >
+                  {team.flagUrl} {team.name.split(" ")[0]} {count}/3{full ? " 🔴" : ""}
+                </span>
+              );
+            })}
+        </div>
+      )}
 
       {/* Player list */}
       <div className="flex max-h-72 flex-col gap-1.5 overflow-y-auto pr-1">
@@ -637,6 +670,8 @@ function PlayerPickerPanel({
               player={player}
               isSelected={isSelected(player.id)}
               isCaptain={isCaptain(player.id)}
+              isDisabled={isDisabled(player.id)}
+              disabledReason={getDisabledReason(player.id)}
               onSelect={() => onSelect(player.id)}
               size="sm"
             />
@@ -647,6 +682,8 @@ function PlayerPickerPanel({
   );
 }
 
+<<<<<<< HEAD
+=======
 // ─── PredictionsPanel ─────────────────────────────────────────────────────────
 
 interface PredictionsPanelProps {
@@ -761,6 +798,7 @@ function TeamPicker({
   );
 }
 
+>>>>>>> 5256bc7 (Cambios perfiles)
 // ─── ConfirmationPanel ────────────────────────────────────────────────────────
 
 interface ConfirmationPanelProps {
@@ -771,12 +809,7 @@ interface ConfirmationPanelProps {
   forwardIds: string[];
   bench: Partial<FantasyBench>;
   captainId: string | null;
-  championTeamId: string | null;
-  surpriseTeamId: string | null;
-  disappointmentTeamId: string | null;
-  tournamentMvpId: string | null;
   players: FantasyPlayer[];
-  nationalTeams: FantasyNationalTeam[];
 }
 
 function ConfirmationPanel({
@@ -787,15 +820,9 @@ function ConfirmationPanel({
   forwardIds,
   bench,
   captainId,
-  championTeamId,
-  surpriseTeamId,
-  disappointmentTeamId,
-  tournamentMvpId,
   players,
-  nationalTeams,
 }: ConfirmationPanelProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
-  const ntm = new Map(nationalTeams.map((t) => [t.id, t]));
 
   const starterGroups = [
     {
@@ -863,7 +890,6 @@ function ConfirmationPanel({
         </div>
       </div>
 
-      {/* Predictions */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
         <p className="mb-2 text-sm font-medium">Predicciones</p>
         <div className="grid grid-cols-2 gap-2 text-xs">

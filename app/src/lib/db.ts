@@ -10,6 +10,7 @@ import { buildRanking, computeStreak, getPointsForBet } from "./scoring";
 import { getSessionUser, getSessionUserId } from "./session";
 import { USE_MOCKS } from "./runtime";
 import * as MockDb from "./mocks";
+import { MOCK_RANK_CHANGES } from "./mocks/users";
 import {
   getLiveCompetitions,
   getLiveTeams,
@@ -315,7 +316,7 @@ export async function upsertBet(input: {
 // ---------------------------------------------------------------------------
 
 export async function getGlobalRanking(): Promise<RankingEntry[]> {
-  if (MOCKS) return MockDb.getGlobalRanking();
+  if (MOCKS) return MockDb.getGlobalRanking(MOCK_RANK_CHANGES);
   const [users, bets, matches] = await Promise.all([
     getUsers(),
     getBetsAll(),
@@ -325,7 +326,7 @@ export async function getGlobalRanking(): Promise<RankingEntry[]> {
 }
 
 export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> {
-  if (MOCKS) return MockDb.getGroupRanking(groupId);
+  if (MOCKS) return MockDb.getGroupRanking(groupId, MOCK_RANK_CHANGES);
   const group = await getGroupById(groupId);
   if (!group) return [];
 

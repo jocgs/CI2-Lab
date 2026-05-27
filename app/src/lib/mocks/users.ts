@@ -52,6 +52,18 @@ export const MOCK_USERS: User[] = [
 
 export const CURRENT_USER_ID = "user_clara";
 
+/**
+ * Cambio de posición simulado respecto a la jornada anterior.
+ * Positivo = subió, negativo = bajó, 0 = igual.
+ */
+export const MOCK_RANK_CHANGES: Record<string, number> = {
+  user_clara:  2,
+  user_marina: -1,
+  user_pablo:  0,
+  user_lucia:  1,
+  user_diego:  -2,
+};
+
 export function getCurrentUser(): User {
   const user = MOCK_USERS.find((u) => u.id === CURRENT_USER_ID);
   if (!user) throw new Error("Mock user not found");

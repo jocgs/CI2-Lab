@@ -44,10 +44,10 @@ export interface FantasyTeam {
   startingEleven: FantasyStartingEleven;
   bench: FantasyBench;
   captainId: string;
-  championTeamId: string;
-  surpriseTeamId: string;
-  disappointmentTeamId: string;
-  tournamentMvpPlayerId: string;
+  championTeamId?: string;
+  surpriseTeamId?: string;
+  disappointmentTeamId?: string;
+  tournamentMvpPlayerId?: string;
   totalPoints: number;
   createdAt: string;
   updatedAt: string;
@@ -93,6 +93,20 @@ export interface FantasyRankingEntry {
   championTeamName: string;
   pointsDiff: number;
   label: string;
+}
+
+export interface FantasyLeague {
+  id: string;
+  name: string;
+  competitionId: string;
+  ownerId: string;
+  memberIds: string[];
+  inviteCode: string;
+  createdAt: string;
+}
+
+export interface FantasyLeagueRankingEntry extends FantasyRankingEntry {
+  leagueRank: number;
 }
 
 export interface FantasyTeamPointsBreakdown {

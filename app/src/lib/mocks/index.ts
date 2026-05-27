@@ -199,16 +199,16 @@ export function addFriendByUsername(userId: string, username: string): User {
 // ---------------------------------------------------------------------------
 
 /** Ranking global: todos los usuarios. */
-export function getGlobalRanking(): RankingEntry[] {
-  return buildRanking(MOCK_USERS, bets, MOCK_MATCHES);
+export function getGlobalRanking(rankChanges?: Record<string, number>): RankingEntry[] {
+  return buildRanking(MOCK_USERS, bets, MOCK_MATCHES, rankChanges);
 }
 
 /** Ranking dentro de un grupo: solo sus miembros. */
-export function getGroupRanking(groupId: string): RankingEntry[] {
+export function getGroupRanking(groupId: string, rankChanges?: Record<string, number>): RankingEntry[] {
   const group = getGroupById(groupId);
   if (!group) return [];
   const members = MOCK_USERS.filter((u) => group.memberIds.includes(u.id));
-  return buildRanking(members, bets, MOCK_MATCHES);
+  return buildRanking(members, bets, MOCK_MATCHES, rankChanges);
 }
 
 export function getStreakForUser(userId: string): UserStreak {

@@ -115,6 +115,11 @@ export interface RankingEntry {
   totalBets: number;
   /** % de aciertos (0–100). */
   accuracy: number;
+  /**
+   * Cambio de posición respecto a la jornada anterior.
+   * Positivo = subió puestos, negativo = bajó, 0 = sin cambio.
+   */
+  rankChange?: number;
 }
 
 export interface UserStreak {
