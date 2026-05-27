@@ -6,6 +6,8 @@ import {
   getBetsForUser,
   getCurrentUser,
   getFinishedMatches,
+  getFriendRequestsReceived,
+  getFriendRequestsSent,
   getFriendsForUser,
   getGroupsForUser,
   getMatchById,
@@ -15,7 +17,7 @@ import {
 import { buildRanking } from "@/lib/scoring";
 import { getStreakForUser, getTeams } from "@/lib/db";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
-import { addFriendAction } from "../../profile/actions";
+import { acceptFriendRequestAction, sendFriendRequestAction } from "../../profile/actions";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 
@@ -30,7 +32,7 @@ export default async function PublicProfilePage({
   if (!user) notFound();
 
   const currentUser = await getCurrentUser();
-  const [friends, groups, bets, finishedMatches, teams, nationalTeams, streak] = await Promise.all([
+  const [friends, groups, bets, finishedMatches, teams, nationalTeams, streak, receivedRequests, sentRequests] = await Promise.all([
     getFriendsForUser(user.id),
     getGroupsForUser(user.id),
     getBetsForUser(user.id),
@@ -38,6 +40,8 @@ export default async function PublicProfilePage({
     getTeams(),
     getNationalTeamsByCompetition(NATIONAL_TEAM_COMPETITION_ID),
     getStreakForUser(user.id),
+    getFriendRequestsReceived(currentUser.id),
+    getFriendRequestsSent(currentUser.id),
   ]);
 
   const profileRanking = buildRanking([user], bets, finishedMatches)[0];
@@ -57,6 +61,8 @@ export default async function PublicProfilePage({
   const supportedNationalTeam = nationalTeams.find((team) => team.id === user.supportedNationalTeamId);
   const isMe = currentUser.id === user.id;
   const isFriend = (currentUser.friendIds ?? []).includes(user.id);
+  const hasIncomingRequestFromThisUser = receivedRequests.some((request) => request.id === user.id);
+  const hasOutgoingRequestToThisUser = sentRequests.some((request) => request.id === user.id);
 
   return (
     <div className="flex flex-col gap-8">
@@ -81,8 +87,23 @@ export default async function PublicProfilePage({
                   <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
                     Sois amigos
                   </span>
+                ) : hasIncomingRequestFromThisUser ? (
+                  <form action={acceptFriendRequestAction}>
+                    <input type="hidden" name="friendUsername" value={user.username} />
+                    <input type="hidden" name="redirectTo" value={`/users/${user.username}`} />
+                    <button
+                      type="submit"
+                      className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--brand-strong)] shadow-sm transition hover:bg-white/90"
+                    >
+                      Aceptar solicitud
+                    </button>
+                  </form>
+                ) : hasOutgoingRequestToThisUser ? (
+                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                    Solicitud enviada
+                  </span>
                 ) : (
-                  <form action={addFriendAction}>
+                  <form action={sendFriendRequestAction}>
                     <input type="hidden" name="friendUsername" value={user.username} />
                     <input type="hidden" name="redirectTo" value={`/users/${user.username}`} />
                     <button

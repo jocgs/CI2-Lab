@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  addFriendByUsername,
+  acceptFriendRequestByUsername,
   getCurrentUserId,
   getTeams,
   getUserById,
+  requestFriendByUsername,
   updateUserProfile,
 } from "@/lib/db";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
@@ -73,19 +74,47 @@ export async function saveProfileAction(formData: FormData) {
   redirect("/profile");
 }
 
-export async function addFriendAction(formData: FormData) {
-  const username = String(formData.get("friendUsername") ?? "").trim();
+function getSafeRedirectTo(formData: FormData) {
+  const redirectTo = String(formData.get("redirectTo") ?? "/profile").trim();
+  return redirectTo.startsWith("/") ? redirectTo : "/profile";
+}
+
+function getFriendUsername(formData: FormData) {
+  return String(formData.get("friendUsername") ?? "").trim();
+}
+
+export async function sendFriendRequestAction(formData: FormData) {
+  const username = getFriendUsername(formData);
   if (!username) throw new Error("Introduce un nombre de usuario");
 
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("No autenticado");
 
-  const redirectTo = String(formData.get("redirectTo") ?? "/profile").trim();
-  const safeRedirectTo = redirectTo.startsWith("/") ? redirectTo : "/profile";
+  const safeRedirectTo = getSafeRedirectTo(formData);
 
-  await addFriendByUsername(userId, username);
+  await requestFriendByUsername(userId, username);
 
   revalidatePath("/profile");
   revalidatePath(safeRedirectTo);
   redirect(safeRedirectTo);
+}
+
+export async function acceptFriendRequestAction(formData: FormData) {
+  const username = getFriendUsername(formData);
+  if (!username) throw new Error("Introduce un nombre de usuario");
+
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("No autenticado");
+
+  const safeRedirectTo = getSafeRedirectTo(formData);
+
+  await acceptFriendRequestByUsername(userId, username);
+
+  revalidatePath("/profile");
+  revalidatePath(safeRedirectTo);
+  redirect(safeRedirectTo);
+}
+
+export async function addFriendAction(formData: FormData) {
+  return sendFriendRequestAction(formData);
 }

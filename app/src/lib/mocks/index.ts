@@ -57,6 +57,22 @@ export function getFriendsForUser(userId: string): User[] {
     .filter((friend): friend is User => Boolean(friend));
 }
 
+export function getFriendRequestsReceived(userId: string): User[] {
+  const user = getUserById(userId);
+  if (!user) return [];
+  return (user.friendRequestReceivedIds ?? [])
+    .map((requestId) => getUserById(requestId))
+    .filter((request): request is User => Boolean(request));
+}
+
+export function getFriendRequestsSent(userId: string): User[] {
+  const user = getUserById(userId);
+  if (!user) return [];
+  return (user.friendRequestSentIds ?? [])
+    .map((requestId) => getUserById(requestId))
+    .filter((request): request is User => Boolean(request));
+}
+
 export function getTeams(): Team[] {
   return MOCK_TEAMS;
 }
@@ -174,7 +190,7 @@ export function updateUserProfile(
   return user;
 }
 
-export function addFriendByUsername(userId: string, username: string): User {
+export function requestFriendByUsername(userId: string, username: string): User {
   const user = getUserById(userId);
   if (!user) throw new Error("Usuario no encontrado");
 
@@ -182,16 +198,69 @@ export function addFriendByUsername(userId: string, username: string): User {
   if (!friend) throw new Error("No existe ningún usuario con ese nombre");
   if (friend.id === user.id) throw new Error("No puedes añadirte a ti mismo");
 
-  const userFriends = new Set(user.friendIds ?? []);
-  const friendFriends = new Set(friend.friendIds ?? []);
+  if ((user.friendIds ?? []).includes(friend.id)) {
+    return friend;
+  }
 
-  userFriends.add(friend.id);
-  friendFriends.add(user.id);
+  const userSent = new Set(user.friendRequestSentIds ?? []);
+  const userReceived = new Set(user.friendRequestReceivedIds ?? []);
+  const friendReceived = new Set(friend.friendRequestReceivedIds ?? []);
 
-  user.friendIds = [...userFriends];
-  friend.friendIds = [...friendFriends];
+  if (userSent.has(friend.id)) {
+    return friend;
+  }
+
+  if (userReceived.has(friend.id)) {
+    throw new Error("Ya te ha enviado una solicitud. Acepta desde tu perfil.");
+  }
+
+  userSent.add(friend.id);
+  friendReceived.add(user.id);
+
+  user.friendRequestSentIds = [...userSent];
+  friend.friendRequestReceivedIds = [...friendReceived];
 
   return friend;
+}
+
+export function acceptFriendRequestByUsername(userId: string, username: string): User {
+  const user = getUserById(userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const requester = getUserByUsername(username.trim());
+  if (!requester) throw new Error("No existe ningún usuario con ese nombre");
+  if (requester.id === user.id) throw new Error("No puedes aceptarte a ti mismo");
+
+  const received = new Set(user.friendRequestReceivedIds ?? []);
+  if (!received.has(requester.id)) {
+    throw new Error("No tienes una solicitud pendiente de ese usuario");
+  }
+
+  const userFriends = new Set(user.friendIds ?? []);
+  const requesterFriends = new Set(requester.friendIds ?? []);
+  const userSent = new Set(user.friendRequestSentIds ?? []);
+  const requesterReceived = new Set(requester.friendRequestReceivedIds ?? []);
+  const requesterSent = new Set(requester.friendRequestSentIds ?? []);
+
+  userFriends.add(requester.id);
+  requesterFriends.add(user.id);
+  received.delete(requester.id);
+  userSent.delete(requester.id);
+  requesterReceived.delete(user.id);
+  requesterSent.delete(user.id);
+
+  user.friendIds = [...userFriends];
+  user.friendRequestReceivedIds = [...received];
+  user.friendRequestSentIds = [...userSent];
+  requester.friendIds = [...requesterFriends];
+  requester.friendRequestReceivedIds = [...requesterReceived];
+  requester.friendRequestSentIds = [...requesterSent];
+
+  return requester;
+}
+
+export function addFriendByUsername(userId: string, username: string): User {
+  return requestFriendByUsername(userId, username);
 }
 
 // ---------------------------------------------------------------------------
