@@ -162,33 +162,24 @@ export default async function MatchDetailPage({
             <div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Quiniela</p>
               <div className="grid grid-cols-3 gap-3">
-                {OUTCOME_LABELS.map(({ value, label, helper }) => {
-                  const isSelected = userBet?.prediction.outcome === value;
-                  return (
-                    <label
-                      key={value}
-                      className={
-                        "flex cursor-pointer flex-col items-center gap-1 rounded-2xl border px-4 py-4 text-base font-semibold transition-all " +
-                        (isSelected
-                          ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand-strong)] shadow-sm"
-                          : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]/40")
-                      }
-                    >
-                      <input
-                        type="radio"
-                        name="outcome"
-                        value={value}
-                        defaultChecked={isSelected}
-                        required
-                        className="sr-only"
-                      />
+                {OUTCOME_LABELS.map(({ value, label, helper }) => (
+                  <label key={value} className="cursor-pointer">
+                    <input
+                      type="radio"
+                      name="outcome"
+                      value={value}
+                      defaultChecked={userBet?.prediction.outcome === value}
+                      required
+                      className="peer sr-only"
+                    />
+                    <div className="flex flex-col items-center gap-1 rounded-2xl border px-4 py-4 text-base font-semibold transition-all border-[var(--border)] bg-[var(--surface)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]/40 peer-checked:border-[var(--brand)] peer-checked:bg-[var(--brand-soft)] peer-checked:text-[var(--brand-strong)] peer-checked:shadow-sm">
                       <span className="text-2xl">{label}</span>
                       <span className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                         {helper}
                       </span>
-                    </label>
-                  );
-                })}
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
 
