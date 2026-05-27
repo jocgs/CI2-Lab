@@ -20,6 +20,16 @@ const POSITION_LABELS: Record<Position, string> = {
   FWD: "DEL",
 };
 
+function NationalTeamSymbol({ team }: { team: FantasyNationalTeam | undefined }) {
+  if (!team) return null;
+
+  if (team.logoUrl) {
+    return <img src={team.logoUrl} alt={team.name} className="h-4 w-4 object-contain" />;
+  }
+
+  return <span className="text-[10px]">{team.flagUrl}</span>;
+}
+
 interface PitchPlayerProps {
   player: FantasyPlayer | undefined;
   isCaptain?: boolean;
@@ -53,9 +63,7 @@ function PitchPlayer({ player, isCaptain, label, nationalTeams }: PitchPlayerPro
       <span className="max-w-[72px] truncate text-center text-[10px] font-medium leading-tight">
         {player.name.split(" ").slice(-1)[0]}
       </span>
-      {nt?.flagUrl && (
-        <span className="text-[10px]">{nt.flagUrl}</span>
-      )}
+      {nt && <NationalTeamSymbol team={nt} />}
     </div>
   );
 }
@@ -213,7 +221,14 @@ function PredictionBadge({
     <div className="rounded-lg border border-[var(--border)] p-2">
       <p className="text-[var(--muted)]">{label}</p>
       <p className="font-medium truncate">
-        {nt ? `${nt.flagUrl ?? ""} ${nt.name}` : value}
+        {nt ? (
+          <span className="inline-flex items-center gap-1">
+            <NationalTeamSymbol team={nt} />
+            <span>{nt.name}</span>
+          </span>
+        ) : (
+          value
+        )}
       </p>
     </div>
   );

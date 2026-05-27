@@ -750,7 +750,7 @@ function TeamPicker({
                 : "border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]",
             )}
           >
-            <span className="text-base">{t.flagUrl}</span>
+            <NationalTeamSymbol team={t} />
             <span className="truncate w-full text-center text-[10px]">
               {t.name.split(" ")[0]}
             </span>
@@ -869,21 +869,36 @@ function ConfirmationPanel({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>
             <span className="text-[var(--muted)]">Campeón: </span>
-            {ntm.get(championTeamId ?? "")
-              ? `${ntm.get(championTeamId!)?.flagUrl} ${ntm.get(championTeamId!)?.name}`
-              : "—"}
+            {ntm.get(championTeamId ?? "") ? (
+              <span className="inline-flex items-center gap-1">
+                <NationalTeamSymbol team={ntm.get(championTeamId!)} />
+                <span>{ntm.get(championTeamId!)?.name}</span>
+              </span>
+            ) : (
+              "—"
+            )}
           </div>
           <div>
             <span className="text-[var(--muted)]">Sorpresa: </span>
-            {ntm.get(surpriseTeamId ?? "")
-              ? `${ntm.get(surpriseTeamId!)?.flagUrl} ${ntm.get(surpriseTeamId!)?.name}`
-              : "—"}
+            {ntm.get(surpriseTeamId ?? "") ? (
+              <span className="inline-flex items-center gap-1">
+                <NationalTeamSymbol team={ntm.get(surpriseTeamId!)} />
+                <span>{ntm.get(surpriseTeamId!)?.name}</span>
+              </span>
+            ) : (
+              "—"
+            )}
           </div>
           <div>
             <span className="text-[var(--muted)]">Decepción: </span>
-            {ntm.get(disappointmentTeamId ?? "")
-              ? `${ntm.get(disappointmentTeamId!)?.flagUrl} ${ntm.get(disappointmentTeamId!)?.name}`
-              : "—"}
+            {ntm.get(disappointmentTeamId ?? "") ? (
+              <span className="inline-flex items-center gap-1">
+                <NationalTeamSymbol team={ntm.get(disappointmentTeamId!)} />
+                <span>{ntm.get(disappointmentTeamId!)?.name}</span>
+              </span>
+            ) : (
+              "—"
+            )}
           </div>
           <div>
             <span className="text-[var(--muted)]">MVP: </span>
@@ -893,4 +908,14 @@ function ConfirmationPanel({
       </div>
     </div>
   );
+}
+
+function NationalTeamSymbol({ team }: { team: FantasyNationalTeam | undefined }) {
+  if (!team) return null;
+
+  if (team.logoUrl) {
+    return <img src={team.logoUrl} alt={team.name} className="h-4 w-4 object-contain" />;
+  }
+
+  return <span className="text-base">{team.flagUrl}</span>;
 }

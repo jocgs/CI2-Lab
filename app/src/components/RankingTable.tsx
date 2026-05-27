@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { RankingEntry } from "@/types/domain";
 import { CURRENT_USER_ID } from "@/lib/mocks";
 import { clsx } from "@/lib/utils";
@@ -28,7 +29,9 @@ export function RankingTable({ entries }: { entries: RankingEntry[] }) {
               <Position index={index} />
               <div>
                 <p className="font-medium">
-                  {entry.displayName}
+                  <Link href={`/users/${entry.username}`} className="hover:underline">
+                    {entry.displayName}
+                  </Link>
                   {isMe && <span className="ml-2 text-xs text-[var(--brand-strong)]">(tú)</span>}
                 </p>
                 <p className="text-xs text-[var(--muted)]">

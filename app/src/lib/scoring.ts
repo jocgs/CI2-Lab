@@ -67,6 +67,7 @@ export function buildRanking(
 
       return {
         userId: user.id,
+        username: user.username,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl,
         totalPoints,

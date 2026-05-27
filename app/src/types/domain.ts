@@ -66,6 +66,9 @@ export interface User {
   username: string;
   displayName: string;
   avatarUrl?: string;
+  friendIds?: ID[];
+  supportedNationalTeamId?: ID;
+  supportedTeamIds?: ID[];
   createdAt: string;
 }
 
@@ -103,6 +106,7 @@ export interface Bet {
 
 export interface RankingEntry {
   userId: ID;
+  username: string;
   displayName: string;
   avatarUrl?: string;
   totalPoints: number;
