@@ -2,7 +2,7 @@ import { SignInButton } from "@/components/SignInButton";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-[80vh] flex-col items-center justify-center gap-8 px-4">
+    <div className="flex w-full max-w-md flex-col items-center justify-center gap-8 px-4">
       <div className="flex flex-col items-center gap-2 text-center">
         <div className="grid h-16 w-16 place-items-center rounded-full bg-[var(--brand)] text-3xl font-bold text-white shadow-md">
           P
