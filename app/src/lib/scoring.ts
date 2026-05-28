@@ -37,18 +37,31 @@ export function formatBetPrediction(prediction: BetPrediction): string {
 /**
  * Construye el ranking de un conjunto de usuarios a partir de sus porras
  * resueltas. Devuelve los usuarios ordenados por puntos descendente.
+ *
+ * @param memberSince  Mapa userId → fecha ISO: solo se cuentan porras cuyo
+ *                     `createdAt` es igual o posterior a esa fecha.
+ *                     Si no se pasa (ranking global) se cuentan todas.
  */
 export function buildRanking(
   users: User[],
   bets: Bet[],
   matches: Match[],
   rankChanges?: Record<string, number>,
+  memberSince?: Record<string, string>,
 ): RankingEntry[] {
   const matchById = new Map(matches.map((m) => [m.id, m]));
 
   return users
     .map<RankingEntry>((user) => {
-      const userBets = bets.filter((b) => b.userId === user.id);
+      const since = memberSince?.[user.id];
+      const sinceMs = since ? new Date(since).getTime() : null;
+
+      const userBets = bets.filter((b) => {
+        if (b.userId !== user.id) return false;
+        if (sinceMs !== null && new Date(b.createdAt).getTime() < sinceMs) return false;
+        return true;
+      });
+
       const resolvedBets = userBets.filter((b) => {
         const m = matchById.get(b.matchId);
         return m?.status === "FINISHED";

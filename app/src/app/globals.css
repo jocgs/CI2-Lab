@@ -1,16 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f8f7;
+  --background: #cfe8d4;
   --foreground: #0d1f17;
   --surface: #ffffff;
-  --border: #e4e8e5;
-  --muted: #6b7d74;
+  --border: #b8d9c0;
+  --muted: #5a7268;
   --brand: #10b981; /* emerald-500 */
   --brand-strong: #047857; /* emerald-700 */
   --brand-soft: #d1fae5; /* emerald-100 */
   --danger: #dc2626;
   --warning: #f59e0b;
+  --pitch-base: #a8d4b2;
+  --pitch-stripes: repeating-linear-gradient(
+    90deg,
+    rgba(34, 100, 62, 0.04) 0,
+    rgba(34, 100, 62, 0.04) 3rem,
+    rgba(34, 100, 62, 0.01) 3rem,
+    rgba(34, 100, 62, 0.01) 6rem
+  );
+  --pitch-lines: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 64'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.5' opacity='0.11'%3E%3Crect x='4' y='4' width='92' height='56'/%3E%3Cline x1='50' y1='4' x2='50' y2='60'/%3E%3Ccircle cx='50' cy='32' r='9'/%3E%3Crect x='4' y='17' width='15' height='30'/%3E%3Crect x='4' y='25' width='5.5' height='14'/%3E%3Crect x='81' y='17' width='15' height='30'/%3E%3Crect x='90.5' y='25' width='5.5' height='14'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 @theme inline {
@@ -31,7 +40,7 @@
 /* Dark mode: sistema O clase manual */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --background: #0a0f0c;
+    --background: #0c1510;
     --foreground: #e6f4ec;
     --surface: #111714;
     --border: #1f2a25;
@@ -39,11 +48,20 @@
     --brand: #34d399;
     --brand-strong: #6ee7b7;
     --brand-soft: #064e3b;
+    --pitch-base: #0f2218;
+    --pitch-stripes: repeating-linear-gradient(
+      90deg,
+      rgba(52, 140, 90, 0.035) 0,
+      rgba(52, 140, 90, 0.035) 3rem,
+      rgba(52, 140, 90, 0.01) 3rem,
+      rgba(52, 140, 90, 0.01) 6rem
+    );
+    --pitch-lines: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 64'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.5' opacity='0.07'%3E%3Crect x='4' y='4' width='92' height='56'/%3E%3Cline x1='50' y1='4' x2='50' y2='60'/%3E%3Ccircle cx='50' cy='32' r='9'/%3E%3Crect x='4' y='17' width='15' height='30'/%3E%3Crect x='4' y='25' width='5.5' height='14'/%3E%3Crect x='81' y='17' width='15' height='30'/%3E%3Crect x='90.5' y='25' width='5.5' height='14'/%3E%3C/g%3E%3C/svg%3E");
   }
 }
 
 :root.dark {
-  --background: #0a0f0c;
+  --background: #0c1510;
   --foreground: #e6f4ec;
   --surface: #111714;
   --border: #1f2a25;
@@ -51,16 +69,45 @@
   --brand: #34d399;
   --brand-strong: #6ee7b7;
   --brand-soft: #064e3b;
+  --pitch-base: #0f2218;
+  --pitch-stripes: repeating-linear-gradient(
+    90deg,
+    rgba(52, 140, 90, 0.035) 0,
+    rgba(52, 140, 90, 0.035) 3rem,
+    rgba(52, 140, 90, 0.01) 3rem,
+    rgba(52, 140, 90, 0.01) 6rem
+  );
+  --pitch-lines: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 64'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.5' opacity='0.07'%3E%3Crect x='4' y='4' width='92' height='56'/%3E%3Cline x1='50' y1='4' x2='50' y2='60'/%3E%3Ccircle cx='50' cy='32' r='9'/%3E%3Crect x='4' y='17' width='15' height='30'/%3E%3Crect x='4' y='25' width='5.5' height='14'/%3E%3Crect x='81' y='17' width='15' height='30'/%3E%3Crect x='90.5' y='25' width='5.5' height='14'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 html,
 body {
-  background: var(--background);
+  background-color: var(--pitch-base);
   color: var(--foreground);
 }
 
 body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+html {
+  min-height: 100%;
+}
+
+/* Original — césped con franjas y líneas SVG */
+html[data-app-bg="original"] body {
+  background-image: var(--pitch-stripes), var(--pitch-lines);
+  background-size: auto, cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: repeat, no-repeat;
+}
+
+/* Imágenes de fondo: ver AppBackground.tsx */
+html[data-app-bg="futbol"] body,
+html[data-app-bg="futbol-pintado"] body,
+html[data-app-bg="futbol-rayas"] body {
+  background-color: var(--pitch-base);
 }
 
 /* Balón decorativo del hero */

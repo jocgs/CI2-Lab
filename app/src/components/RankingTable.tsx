@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { RankingEntry } from "@/types/domain";
-import { CURRENT_USER_ID } from "@/lib/mocks";
 import { clsx } from "@/lib/utils";
 
-export function RankingTable({ entries }: { entries: RankingEntry[] }) {
+export function RankingTable({ entries, currentUserId }: { entries: RankingEntry[]; currentUserId: string }) {
   if (entries.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-[var(--border)] px-4 py-6 text-center text-sm text-[var(--muted)]">
@@ -15,7 +14,7 @@ export function RankingTable({ entries }: { entries: RankingEntry[] }) {
   return (
     <ol className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
       {entries.map((entry, index) => {
-        const isMe = entry.userId === CURRENT_USER_ID;
+        const isMe = entry.userId === currentUserId;
         return (
           <li
             key={entry.userId}

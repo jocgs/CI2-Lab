@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getGroupById, getGroupRanking, getUserById } from "@/lib/db";
+import { getGroupById, getGroupRanking, getUserById, getCurrentUser } from "@/lib/db";
 import { Card, SectionTitle } from "@/components/ui";
 import { RankingTable } from "@/components/RankingTable";
 
@@ -14,9 +14,10 @@ export default async function GroupDetailPage({
   const group = await getGroupById(id);
   if (!group) notFound();
 
-  const [ranking, owner] = await Promise.all([
+  const [ranking, owner, user] = await Promise.all([
     getGroupRanking(group.id),
     getUserById(group.ownerId),
+    getCurrentUser(),
   ]);
 
   return (
@@ -42,7 +43,7 @@ export default async function GroupDetailPage({
 
       <section>
         <SectionTitle title="Ranking del grupo" subtitle="Puntos acumulados por porras acertadas" />
-        <RankingTable entries={ranking} />
+        <RankingTable entries={ranking} currentUserId={user.id} />
       </section>
     </div>
   );

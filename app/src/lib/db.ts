@@ -3,7 +3,8 @@
  * El resto de la app solo importa estas funciones.
  */
 
-import * as fs from "./firestore-store";
+import * as fs from "./data-store";
+import { usesLocalStore } from "./data-store";
 import { buildRanking, computeStreak, getPointsForBet } from "./scoring";
 import { getSessionUser, getSessionUserId } from "./session";
 import { adminDb } from "./firebase-admin";
@@ -240,13 +241,15 @@ export async function getGroupsForUser(userId: string): Promise<Group[]> {
 
 export async function createGroup(input: { name: string; ownerId: string }): Promise<Group> {
   const inviteCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const now = new Date().toISOString();
   const group: Group = {
     id: `group_${Math.random().toString(36).slice(2, 8)}`,
     name: input.name,
     inviteCode,
     ownerId: input.ownerId,
     memberIds: [input.ownerId],
-    createdAt: new Date().toISOString(),
+    memberJoinedAt: { [input.ownerId]: now },
+    createdAt: now,
   };
   return fs.insert("groups", group);
 }
@@ -255,8 +258,13 @@ export async function joinGroup(code: string, userId: string): Promise<Group | n
   const group = await fs.queryWhereOne<Group>("groups", "inviteCode", code.toUpperCase());
   if (!group) return null;
   if (!group.memberIds.includes(userId)) {
-    await fs.patch("groups", group.id, { memberIds: [...group.memberIds, userId] });
-    return { ...group, memberIds: [...group.memberIds, userId] };
+    const now = new Date().toISOString();
+    const newMemberJoinedAt = { ...(group.memberJoinedAt ?? {}), [userId]: now };
+    await fs.patch("groups", group.id, {
+      memberIds: [...group.memberIds, userId],
+      memberJoinedAt: newMemberJoinedAt,
+    });
+    return { ...group, memberIds: [...group.memberIds, userId], memberJoinedAt: newMemberJoinedAt };
   }
   return group;
 }
@@ -325,7 +333,17 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
     getMatches(),
   ]);
   const members = users.filter((u) => group.memberIds.includes(u.id));
-  return buildRanking(members, bets, matches);
+
+  // Para cada miembro, calculamos desde qué fecha cuentan sus porras.
+  // Si el grupo no tiene el dato (datos legacy), se usa la fecha de creación
+  // del grupo como punto de corte conservador.
+  const memberSince: Record<string, string> = {};
+  for (const member of members) {
+    memberSince[member.id] =
+      group.memberJoinedAt?.[member.id] ?? group.createdAt;
+  }
+
+  return buildRanking(members, bets, matches, undefined, memberSince);
 }
 
 export async function getStreakForUser(userId: string): Promise<UserStreak> {
@@ -348,7 +366,20 @@ export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved:
   const pending = await fs.queryWhere<Bet>("bets", "status", "PENDING");
   let resolved = 0;
 
-  // Usamos batch para actualizar hasta 500 porras a la vez
+  if (usesLocalStore) {
+    for (const bet of pending) {
+      const match = finishedById.get(bet.matchId);
+      if (!match?.result) continue;
+      const points = getPointsForBet(bet, match);
+      await fs.patch("bets", bet.id, {
+        status: points > 0 ? "WON" : "LOST",
+        points,
+      });
+      resolved++;
+    }
+    return { resolved };
+  }
+
   const BATCH_SIZE = 400;
   for (let i = 0; i < pending.length; i += BATCH_SIZE) {
     const batch = adminDb.batch();
