@@ -59,7 +59,7 @@ export default async function RootLayout({
           className={
             (isLoginPage
               ? "relative z-10 flex flex-1 flex-col"
-              : "relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6")
+              : "relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-24 sm:px-6 sm:pb-6")
           }
         >
           {children}

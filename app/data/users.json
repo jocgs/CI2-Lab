@@ -8,10 +8,10 @@
     "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
     "friendIds": [
       "user_marina",
-      "user_pablo"
+      "user_pablo",
+      "user_diego"
     ],
     "friendRequestSentIds": [
-      "user_diego",
       "user_zcbcj3h4"
     ],
     "friendRequestReceivedIds": [
@@ -77,11 +77,11 @@
     "email": "diego@porrify.app",
     "avatarUrl": "https://ui-avatars.com/api/?name=Diego&background=6366f1&color=fff&bold=true",
     "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
-    "friendIds": [],
-    "friendRequestSentIds": [],
-    "friendRequestReceivedIds": [
+    "friendIds": [
       "user_clara"
     ],
+    "friendRequestSentIds": [],
+    "friendRequestReceivedIds": [],
     "createdAt": "2026-05-05T10:00:00.000Z"
   },
   {
