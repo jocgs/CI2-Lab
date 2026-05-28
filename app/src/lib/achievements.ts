@@ -7,31 +7,31 @@ const FANTASY_COMPETITION_ID = "world_cup_2026";
 
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   { id: "streak_5", category: "streak", emoji: "🔥", title: "En racha", description: "Consigue una racha de 5 aciertos seguidos" },
-  { id: "streak_10", category: "streak", emoji: "🔥", title: "Imparable", description: "Consigue una racha de 10 aciertos seguidos" },
-  { id: "streak_20", category: "streak", emoji: "🔥", title: "Máquina de acertar", description: "Consigue una racha de 20 aciertos seguidos" },
-  { id: "streak_50", category: "streak", emoji: "🔥", title: "Leyenda del acierto", description: "Consigue una racha de 50 aciertos seguidos" },
-  { id: "streak_100", category: "streak", emoji: "🔥", title: "Oráculo del fútbol", description: "Consigue una racha de 100 aciertos seguidos" },
+  { id: "streak_10", category: "streak", emoji: "�", title: "Imparable", description: "Consigue una racha de 10 aciertos seguidos" },
+  { id: "streak_20", category: "streak", emoji: "⚡", title: "Máquina de acertar", description: "Consigue una racha de 20 aciertos seguidos" },
+  { id: "streak_50", category: "streak", emoji: "🌟", title: "Leyenda del acierto", description: "Consigue una racha de 50 aciertos seguidos" },
+  { id: "streak_100", category: "streak", emoji: "👑", title: "Oráculo del fútbol", description: "Consigue una racha de 100 aciertos seguidos" },
 
-  { id: "points_week_10", category: "points", emoji: "📈", title: "Semana redonda", description: "Suma 10 puntos en una semana" },
+  { id: "points_week_10", category: "points", emoji: "💰", title: "Semana redonda", description: "Suma 10 puntos en una semana" },
 
-  { id: "friends_1", category: "friends", emoji: "🤝", title: "Primer amigo", description: "Ten al menos 1 amigo" },
+  { id: "friends_1", category: "friends", emoji: "👋", title: "Primer amigo", description: "Ten al menos 1 amigo" },
   { id: "friends_5", category: "friends", emoji: "👥", title: "Cuadrilla", description: "Ten al menos 5 amigos" },
   { id: "friends_10", category: "friends", emoji: "🌐", title: "Influencer", description: "Ten al menos 10 amigos" },
 
-  { id: "groups_1", category: "groups", emoji: "🏟️", title: "Primer grupo", description: "Participa en 1 grupo" },
+  { id: "groups_1", category: "groups", emoji: "🏘️", title: "Primer grupo", description: "Participa en 1 grupo" },
   { id: "groups_5", category: "groups", emoji: "🏟️", title: "Social", description: "Participa en 5 grupos" },
-  { id: "groups_10", category: "groups", emoji: "🏟️", title: "Multiporra", description: "Participa en 10 grupos" },
+  { id: "groups_10", category: "groups", emoji: "🌆", title: "Multiporra", description: "Participa en 10 grupos" },
 
-  { id: "rank_top_50", category: "ranking", emoji: "🏅", title: "Top 50", description: "Entra en el top 50 del ranking global" },
-  { id: "rank_top_20", category: "ranking", emoji: "🏅", title: "Top 20", description: "Entra en el top 20 del ranking global" },
-  { id: "rank_top_10", category: "ranking", emoji: "🏅", title: "Top 10", description: "Entra en el top 10 del ranking global" },
-  { id: "rank_top_5", category: "ranking", emoji: "🏅", title: "Top 5", description: "Entra en el top 5 del ranking global" },
+  { id: "rank_top_50", category: "ranking", emoji: "📊", title: "Top 50", description: "Entra en el top 50 del ranking global" },
+  { id: "rank_top_20", category: "ranking", emoji: "📈", title: "Top 20", description: "Entra en el top 20 del ranking global" },
+  { id: "rank_top_10", category: "ranking", emoji: "🎖️", title: "Top 10", description: "Entra en el top 10 del ranking global" },
+  { id: "rank_top_5", category: "ranking", emoji: "🏆", title: "Top 5", description: "Entra en el top 5 del ranking global" },
   { id: "rank_top_3", category: "ranking", emoji: "🥉", title: "Podio", description: "Entra en el top 3 del ranking global" },
   { id: "rank_top_2", category: "ranking", emoji: "🥈", title: "Subcampeón", description: "Entra en el top 2 del ranking global" },
   { id: "rank_top_1", category: "ranking", emoji: "🥇", title: "Número 1", description: "Lidera el ranking global" },
 
-  { id: "fantasy_first_team", category: "fantasy", emoji: "⚡", title: "Mánager Fantasy", description: "Crea tu primer equipo Fantasy" },
-  { id: "fantasy_streak_5", category: "fantasy", emoji: "⚡", title: "Fantasy en llamas", description: "Con equipo Fantasy, consigue 5 victorias seguidas en porras" },
+  { id: "fantasy_first_team", category: "fantasy", emoji: "🎯", title: "Mánager Fantasy", description: "Crea tu primer equipo Fantasy" },
+  { id: "fantasy_streak_5", category: "fantasy", emoji: "✨", title: "Fantasy en llamas", description: "Con equipo Fantasy, consigue 5 victorias seguidas en porras" },
 ];
 
 const CATEGORY_LABELS: Record<AchievementDefinition["category"], string> = {
