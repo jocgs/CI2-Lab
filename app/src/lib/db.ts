@@ -3,7 +3,8 @@
  * El resto de la app solo importa estas funciones.
  */
 
-import * as fs from "./firestore-store";
+import * as fs from "./data-store";
+import { usesLocalStore } from "./data-store";
 import { buildRanking, computeStreak, getPointsForBet } from "./scoring";
 import { getSessionUser, getSessionUserId } from "./session";
 import { adminDb } from "./firebase-admin";
@@ -365,7 +366,20 @@ export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved:
   const pending = await fs.queryWhere<Bet>("bets", "status", "PENDING");
   let resolved = 0;
 
-  // Usamos batch para actualizar hasta 500 porras a la vez
+  if (usesLocalStore) {
+    for (const bet of pending) {
+      const match = finishedById.get(bet.matchId);
+      if (!match?.result) continue;
+      const points = getPointsForBet(bet, match);
+      await fs.patch("bets", bet.id, {
+        status: points > 0 ? "WON" : "LOST",
+        points,
+      });
+      resolved++;
+    }
+    return { resolved };
+  }
+
   const BATCH_SIZE = 400;
   for (let i = 0; i < pending.length; i += BATCH_SIZE) {
     const batch = adminDb.batch();

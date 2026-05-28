@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import * as fs from "./firestore-store";
+import * as fs from "./data-store";
 import bcrypt from "bcryptjs";
 import type { User } from "@/types/domain";
 

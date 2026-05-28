@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AppBackground, type AppBackgroundId } from "@/components/AppBackground";
 import { Header } from "@/components/Header";
 
 const geistSans = Geist({
@@ -20,6 +21,10 @@ export const metadata: Metadata = {
     "Crea grupos, haz porras de fútbol con amigos y compite por el ranking. Porrify · CI2 Lab.",
 };
 
+/** Fondos: original | futbol | futbol-pintado | futbol-rayas */
+const APP_BACKGROUND = (process.env.NEXT_PUBLIC_APP_BACKGROUND ??
+  "original") as AppBackgroundId;
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -31,6 +36,7 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
+      data-app-bg={APP_BACKGROUND}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
@@ -42,19 +48,24 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">
-        {!isLoginPage && <Header />}
+      <body className="relative min-h-full flex flex-col">
+        <AppBackground variant={APP_BACKGROUND} />
+        {!isLoginPage && (
+          <div className="relative z-10">
+            <Header />
+          </div>
+        )}
         <main
           className={
-            isLoginPage
-              ? "flex flex-1 flex-col"
-              : "mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6"
+            (isLoginPage
+              ? "relative z-10 flex flex-1 flex-col"
+              : "relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6")
           }
         >
           {children}
         </main>
         {!isLoginPage && (
-          <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-[var(--muted)] sm:px-6">
+          <footer className="relative z-10 mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-[var(--muted)] sm:px-6">
             Porrify · CI2 Lab · {new Date().getFullYear()}
           </footer>
         )}

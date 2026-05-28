@@ -9,7 +9,7 @@ import type {
 } from "@/types/fantasy";
 import { FANTASY_PLAYERS } from "./mocks/fantasy-players";
 import { FANTASY_NATIONAL_TEAMS } from "./mocks/fantasy-national-teams";
-import * as fs from "./firestore-store";
+import * as fs from "./data-store";
 import { calculateFantasyTeamPoints, getRankingLabel } from "./fantasy-scoring";
 
 // Los jugadores y selecciones son datos estáticos (seed); se leen del mock.

@@ -116,10 +116,6 @@ export function FantasyTeamDisplay({
 
       {/* Pitch */}
       <div className="relative bg-gradient-to-b from-emerald-800 to-emerald-700 p-4">
-        {/* Field lines decoration */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-10">
-          <div className="h-24 w-24 rounded-full border-2 border-white" />
-        </div>
 
         <div className="relative flex flex-col gap-5">
           {/* Forwards row */}
