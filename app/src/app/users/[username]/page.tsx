@@ -17,7 +17,8 @@ import {
 import { buildRanking } from "@/lib/scoring";
 import { getStreakForUser, getTeams } from "@/lib/db";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
-import { acceptFriendRequestAction, sendFriendRequestAction } from "../../profile/actions";
+import { acceptFriendRequestAction } from "../../profile/actions";
+import AddFriendForm from "@/components/AddFriendForm";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 
@@ -103,16 +104,11 @@ export default async function PublicProfilePage({
                     Solicitud enviada
                   </span>
                 ) : (
-                  <form action={sendFriendRequestAction}>
-                    <input type="hidden" name="friendUsername" value={user.username} />
-                    <input type="hidden" name="redirectTo" value={`/users/${user.username}`} />
-                    <button
-                      type="submit"
-                      className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--brand-strong)] shadow-sm transition hover:bg-white/90"
-                    >
-                      Solicitar amistad
-                    </button>
-                  </form>
+                  <AddFriendForm
+                    variant="inline"
+                    friendUsername={user.username}
+                    redirectTo={`/users/${user.username}`}
+                  />
                 )}
 
                 {supportedNationalTeam ? (

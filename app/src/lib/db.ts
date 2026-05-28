@@ -115,7 +115,9 @@ export async function requestFriendByUsername(userId: string, username: string):
   if (!friend) throw new Error("No existe ningún usuario con ese nombre");
   if (friend.id === user.id) throw new Error("No puedes añadirte a ti mismo");
 
-  if ((user.friendIds ?? []).includes(friend.id)) return stripPassword(friend);
+  if ((user.friendIds ?? []).includes(friend.id)) {
+    throw new Error("Ya es amigo tuyo");
+  }
 
   const userSent = new Set(user.friendRequestSentIds ?? []);
   const userReceived = new Set(user.friendRequestReceivedIds ?? []);

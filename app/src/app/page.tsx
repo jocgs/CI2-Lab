@@ -63,6 +63,7 @@ export default async function HomePage() {
             height={150}
             className="h-28 w-28 object-contain opacity-85 sm:h-36 sm:w-36"
             priority
+            unoptimized
           />
         </div>
 

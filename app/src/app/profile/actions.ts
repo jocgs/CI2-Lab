@@ -83,16 +83,23 @@ function getFriendUsername(formData: FormData) {
   return String(formData.get("friendUsername") ?? "").trim();
 }
 
-export async function sendFriendRequestAction(formData: FormData) {
+export async function sendFriendRequestAction(
+  _prevState: { error: string } | null,
+  formData: FormData
+): Promise<{ error: string } | null> {
   const username = getFriendUsername(formData);
-  if (!username) throw new Error("Introduce un nombre de usuario");
+  if (!username) return { error: "Introduce un nombre de usuario" };
 
   const userId = await getCurrentUserId();
-  if (!userId) throw new Error("No autenticado");
+  if (!userId) return { error: "No autenticado" };
 
   const safeRedirectTo = getSafeRedirectTo(formData);
 
-  await requestFriendByUsername(userId, username);
+  try {
+    await requestFriendByUsername(userId, username);
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
 
   revalidatePath("/profile");
   revalidatePath(safeRedirectTo);
@@ -115,6 +122,9 @@ export async function acceptFriendRequestAction(formData: FormData) {
   redirect(safeRedirectTo);
 }
 
-export async function addFriendAction(formData: FormData) {
-  return sendFriendRequestAction(formData);
+export async function addFriendAction(
+  prevState: { error: string } | null,
+  formData: FormData
+): Promise<{ error: string } | null> {
+  return sendFriendRequestAction(prevState, formData);
 }

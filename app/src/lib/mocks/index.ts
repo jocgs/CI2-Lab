@@ -199,7 +199,7 @@ export function requestFriendByUsername(userId: string, username: string): User 
   if (friend.id === user.id) throw new Error("No puedes añadirte a ti mismo");
 
   if ((user.friendIds ?? []).includes(friend.id)) {
-    return friend;
+    throw new Error("Ya es amigo tuyo");
   }
 
   const userSent = new Set(user.friendRequestSentIds ?? []);

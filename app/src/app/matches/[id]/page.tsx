@@ -159,11 +159,6 @@ export default async function MatchDetailPage({
           />
         )}
 
-        {canBet && userBet && (
-          <p className="mt-3 text-xs text-[var(--muted)]">
-            Tu porra actual: <strong>{formatBetPrediction(userBet.prediction)}</strong>. Puedes cambiarla hasta el inicio del partido.
-          </p>
-        )}
       </Card>
 
       {/* Porras de otros usuarios */}

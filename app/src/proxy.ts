@@ -8,13 +8,18 @@ const PUBLIC_PATHS = ["/login", "/api/auth/session", "/api/sync-matches", "/api/
 export function proxy(req: NextRequest) {
   // Modo mock: sin autenticación, acceso libre a toda la app
   if (USE_MOCKS) {
-    return NextResponse.next();
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-pathname", req.nextUrl.pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   const { pathname } = req.nextUrl;
 
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", pathname);
+
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   const uid = req.cookies.get(SESSION_COOKIE)?.value;
@@ -22,9 +27,9 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|bolines/).*)"],
 };
