@@ -244,13 +244,15 @@ export async function createGroup(input: {
   ownerId: string;
 }): Promise<Group> {
   const inviteCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const now = new Date().toISOString();
   const group: Group = {
     id: `group_${Math.random().toString(36).slice(2, 8)}`,
     name: input.name,
     inviteCode,
     ownerId: input.ownerId,
     memberIds: [input.ownerId],
-    createdAt: new Date().toISOString(),
+    memberJoinedAt: { [input.ownerId]: now },
+    createdAt: now,
   };
   return store.insert("groups", group);
 }
@@ -263,8 +265,10 @@ export async function joinGroup(code: string, userId: string): Promise<Group | n
   if (!group) return null;
 
   if (!group.memberIds.includes(userId)) {
+    const now = new Date().toISOString();
     const updated = store.update<Group>("groups", group.id, {
       memberIds: [...group.memberIds, userId],
+      memberJoinedAt: { ...(group.memberJoinedAt ?? {}), [userId]: now },
     });
     return updated ?? null;
   }
@@ -345,7 +349,17 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
     getMatches(),
   ]);
   const members = users.filter((u) => group.memberIds.includes(u.id));
-  return buildRanking(members, bets, matches);
+
+  // Para cada miembro, calculamos desde qué fecha cuentan sus porras.
+  // Si el grupo no tiene el dato (datos legacy), se usa la fecha de creación
+  // del grupo como punto de corte conservador.
+  const memberSince: Record<string, string> = {};
+  for (const member of members) {
+    memberSince[member.id] =
+      group.memberJoinedAt?.[member.id] ?? group.createdAt;
+  }
+
+  return buildRanking(members, bets, matches, undefined, memberSince);
 }
 
 export async function getStreakForUser(userId: string): Promise<UserStreak> {

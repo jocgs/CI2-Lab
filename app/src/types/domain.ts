@@ -82,6 +82,12 @@ export interface Group {
   inviteCode: string;
   ownerId: ID;
   memberIds: ID[];
+  /**
+   * Registra cuándo se unió cada miembro (userId → ISO 8601).
+   * Se usa para calcular puntos de grupo solo desde esa fecha.
+   * Opcional por compatibilidad con grupos creados antes de este cambio.
+   */
+  memberJoinedAt?: Record<ID, string>;
   createdAt: string;
 }
 
