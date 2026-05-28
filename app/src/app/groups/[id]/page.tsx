@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getGroupById, getGroupRanking, getUserById, getCurrentUser } from "@/lib/db";
 import { Card, SectionTitle } from "@/components/ui";
 import { RankingTable } from "@/components/RankingTable";
+import { GroupChat } from "@/components/GroupChat";
 
 export default async function GroupDetailPage({
   params,
@@ -44,6 +45,11 @@ export default async function GroupDetailPage({
       <section>
         <SectionTitle title="Ranking del grupo" subtitle="Puntos acumulados por porras acertadas" />
         <RankingTable entries={ranking} currentUserId={user.id} />
+      </section>
+
+      <section>
+        <SectionTitle title="Chat" subtitle="Mensajes en tiempo real para los miembros del grupo" />
+        <GroupChat groupId={group.id} currentUserId={user.id} />
       </section>
     </div>
   );
