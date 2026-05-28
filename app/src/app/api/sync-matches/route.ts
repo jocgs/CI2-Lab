@@ -11,6 +11,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchRecentAndUpcomingMatches } from "@/lib/football-api";
 
 export async function GET(req: NextRequest) {
+  // ── Modo mock: omitir la API externa y responder sin tocar Firestore ─────────
+  const useMock =
+    process.env.USE_MOCK_DATA === "true" ||
+    !process.env.FOOTBALL_DATA_API_KEY;
+
+  if (useMock) {
+    return NextResponse.json({
+      ok: true,
+      mock: true,
+      message:
+        "USE_MOCK_DATA=true o FOOTBALL_DATA_API_KEY no configurada — usando datos mock locales.",
+    });
+  }
+
   // ── Protección: solo Vercel Cron o llamadas con el secreto correcto ─────────
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;

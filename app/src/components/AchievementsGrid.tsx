@@ -2,6 +2,39 @@ import type { UserAchievement } from "@/types/achievements";
 import { groupAchievementsByCategory, type UserAchievementWithMeta } from "@/lib/achievements";
 import { clsx } from "@/lib/utils";
 
+// Componente visual simplificado para mostrar logros en perfil público
+export function PublicAchievementsDisplay({ achievements }: { achievements: UserAchievementWithMeta[] }) {
+  const unlockedAchievements = achievements.filter((a) => a.unlocked);
+
+  if (unlockedAchievements.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+        <p>Aún sin logros desbloqueados</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {unlockedAchievements.map((achievement) => (
+        <div
+          key={achievement.definition.id}
+          className="relative group"
+          title={achievement.definition.title}
+        >
+          <div className="h-10 w-10 rounded-xl bg-[var(--brand)]/20 flex items-center justify-center text-xl border border-[var(--brand)]/30 hover:border-[var(--brand)] transition-colors">
+            {achievement.definition.emoji}
+          </div>
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs whitespace-nowrap shadow-lg">
+            <p className="font-semibold">{achievement.definition.title}</p>
+            <p className="text-[var(--muted)] text-[10px] mt-0.5">{achievement.definition.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface AchievementsGridProps {
   achievements: UserAchievementWithMeta[];
 }
