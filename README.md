@@ -77,14 +77,47 @@ añadir bonus por racha o modo "resultado exacto").
 
 Requisitos: Node.js 20+ y npm.
 
+### 1. Configurar variables de entorno
+
+```bash
+cp app/.env.example app/.env.local
+```
+
+Abre `app/.env.local` y rellena las variables de Firebase con los valores de tu proyecto
+(Firebase Console → Configuración del proyecto → Tus apps).
+
+> **Para la demo de clase** no necesitas ninguna API key externa: con `USE_MOCK_DATA=true`
+> (valor por defecto en `.env.example`) la app funciona completamente con datos mock.
+
+> ⚠️ **Nunca subas `.env.local` a GitHub.** Ya está en el `.gitignore`.
+
+### 2. Instalar dependencias y arrancar
+
 ```bash
 cd app
 npm install
 npm run dev
 ```
 
-La app queda en [http://localhost:3000](http://localhost:3000) con el usuario
-"Clara" simulando estar logueado.
+La app queda en [http://localhost:3000](http://localhost:3000).
+
+### Variables de entorno disponibles
+
+| Variable | Descripción | Obligatoria |
+|---|---|---|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase Web API Key | Sí (con Firebase) |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain | Sí (con Firebase) |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | ID del proyecto Firebase | Sí (con Firebase) |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Storage bucket | No |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Messaging sender | No |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | App ID | Sí (con Firebase) |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Analytics | No |
+| `FIREBASE_PROJECT_ID` | Admin SDK — project ID | Solo para seed/admin |
+| `FIREBASE_CLIENT_EMAIL` | Admin SDK — service account email | Solo para seed/admin |
+| `FIREBASE_PRIVATE_KEY` | Admin SDK — clave privada | Solo para seed/admin |
+| `FOOTBALL_DATA_API_KEY` | API de football-data.org | No (mock si está vacío) |
+| `CRON_SECRET` | Protege el endpoint de sync | No (abierto si falta) |
+| `USE_MOCK_DATA` | `true` = datos mock, sin llamadas externas | No (recomendado para MVP) |
 
 ## Roadmap de la semana
 
