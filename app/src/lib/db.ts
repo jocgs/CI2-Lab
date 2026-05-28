@@ -1,12 +1,12 @@
 /**
- * Capa de acceso a datos — base de datos local (archivos JSON en /data).
- * Toda la lógica de persistencia vive aquí; el resto de la app solo importa
- * estas funciones y no sabe dónde se guardan los datos.
+ * Capa de acceso a datos — Firestore (Firebase Admin SDK).
+ * El resto de la app solo importa estas funciones.
  */
 
-import * as store from "./local-store";
+import * as fs from "./firestore-store";
 import { buildRanking, computeStreak, getPointsForBet } from "./scoring";
 import { getSessionUser, getSessionUserId } from "./session";
+import { adminDb } from "./firebase-admin";
 import type {
   Bet,
   Competition,
@@ -40,48 +40,53 @@ export async function getCurrentUserId(): Promise<string | null> {
 // Usuarios
 // ---------------------------------------------------------------------------
 
+type UserWithPassword = User & { passwordHash?: string; email?: string };
+
+function stripPassword(u: UserWithPassword): User {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { passwordHash: _pw, ...user } = u;
+  return user as User;
+}
+
 export async function getUsers(): Promise<User[]> {
-  return store.getAll<User>("users").map(stripPassword);
+  const all = await fs.getAll<UserWithPassword>("users");
+  return all.map(stripPassword);
 }
 
 export async function getUserById(id: string): Promise<User | undefined> {
-  const u = store.getById<UserWithPassword>("users", id);
+  const u = await fs.getById<UserWithPassword>("users", id);
   return u ? stripPassword(u) : undefined;
 }
 
 export async function getUserByUsername(username: string): Promise<User | undefined> {
-  const u = store.findOneWhere<UserWithPassword>(
-    "users",
-    (u) => u.username.toLowerCase() === username.trim().toLowerCase()
-  );
+  const u = await fs.queryWhereOne<UserWithPassword>("users", "username", username.trim().toLowerCase());
   return u ? stripPassword(u) : undefined;
 }
 
 export async function getFriendsForUser(userId: string): Promise<User[]> {
-  const user = store.getById<UserWithPassword>("users", userId);
+  const user = await fs.getById<UserWithPassword>("users", userId);
   if (!user) return [];
-  return (user.friendIds ?? [])
-    .map((id) => store.getById<UserWithPassword>("users", id))
+  const ids = user.friendIds ?? [];
+  const friends = await Promise.all(ids.map((id) => fs.getById<UserWithPassword>("users", id)));
+  return friends
     .filter((u): u is UserWithPassword => Boolean(u))
     .map(stripPassword);
 }
 
 export async function getFriendRequestsReceived(userId: string): Promise<User[]> {
-  const user = store.getById<UserWithPassword>("users", userId);
+  const user = await fs.getById<UserWithPassword>("users", userId);
   if (!user) return [];
-  return (user.friendRequestReceivedIds ?? [])
-    .map((id) => store.getById<UserWithPassword>("users", id))
-    .filter((u): u is UserWithPassword => Boolean(u))
-    .map(stripPassword);
+  const ids = user.friendRequestReceivedIds ?? [];
+  const users = await Promise.all(ids.map((id) => fs.getById<UserWithPassword>("users", id)));
+  return users.filter((u): u is UserWithPassword => Boolean(u)).map(stripPassword);
 }
 
 export async function getFriendRequestsSent(userId: string): Promise<User[]> {
-  const user = store.getById<UserWithPassword>("users", userId);
+  const user = await fs.getById<UserWithPassword>("users", userId);
   if (!user) return [];
-  return (user.friendRequestSentIds ?? [])
-    .map((id) => store.getById<UserWithPassword>("users", id))
-    .filter((u): u is UserWithPassword => Boolean(u))
-    .map(stripPassword);
+  const ids = user.friendRequestSentIds ?? [];
+  const users = await Promise.all(ids.map((id) => fs.getById<UserWithPassword>("users", id)));
+  return users.filter((u): u is UserWithPassword => Boolean(u)).map(stripPassword);
 }
 
 export async function updateUserProfile(
@@ -90,32 +95,29 @@ export async function updateUserProfile(
     avatarUrl?: string | null;
     supportedNationalTeamId?: string | null;
     supportedTeamIds?: string[];
-  }
+  },
 ): Promise<User> {
-  const updated = store.update<UserWithPassword>("users", userId, {
-    avatarUrl: input.avatarUrl?.trim() || undefined,
-    supportedNationalTeamId: input.supportedNationalTeamId?.trim() || undefined,
+  await fs.patch("users", userId, {
+    avatarUrl: input.avatarUrl?.trim() || null,
+    supportedNationalTeamId: input.supportedNationalTeamId?.trim() || null,
     supportedTeamIds: (input.supportedTeamIds ?? []).filter(Boolean),
   });
+  const updated = await fs.getById<UserWithPassword>("users", userId);
   if (!updated) throw new Error("Usuario no encontrado");
   return stripPassword(updated);
 }
 
-export async function requestFriendByUsername(
-  userId: string,
-  username: string
-): Promise<User> {
-  const user = store.getById<UserWithPassword>("users", userId);
+export async function requestFriendByUsername(userId: string, username: string): Promise<User> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
   if (!user) throw new Error("Usuario no encontrado");
 
-  const friend = store.findOneWhere<UserWithPassword>(
-    "users",
-    (u) => u.username.toLowerCase() === username.trim().toLowerCase()
-  );
+  const friend = await fs.queryWhereOne<UserWithPassword>("users", "username", username.trim().toLowerCase());
   if (!friend) throw new Error("No existe ningún usuario con ese nombre");
   if (friend.id === user.id) throw new Error("No puedes añadirte a ti mismo");
 
-  if ((user.friendIds ?? []).includes(friend.id)) return stripPassword(friend);
+  if ((user.friendIds ?? []).includes(friend.id)) {
+    throw new Error("Ya es amigo tuyo");
+  }
 
   const userSent = new Set(user.friendRequestSentIds ?? []);
   const userReceived = new Set(user.friendRequestReceivedIds ?? []);
@@ -128,23 +130,19 @@ export async function requestFriendByUsername(
   userSent.add(friend.id);
   friendReceived.add(user.id);
 
-  store.update<UserWithPassword>("users", user.id, { friendRequestSentIds: [...userSent] });
-  store.update<UserWithPassword>("users", friend.id, { friendRequestReceivedIds: [...friendReceived] });
+  await Promise.all([
+    fs.patch("users", user.id, { friendRequestSentIds: [...userSent] }),
+    fs.patch("users", friend.id, { friendRequestReceivedIds: [...friendReceived] }),
+  ]);
 
   return stripPassword(friend);
 }
 
-export async function acceptFriendRequestByUsername(
-  userId: string,
-  username: string
-): Promise<User> {
-  const user = store.getById<UserWithPassword>("users", userId);
+export async function acceptFriendRequestByUsername(userId: string, username: string): Promise<User> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
   if (!user) throw new Error("Usuario no encontrado");
 
-  const requester = store.findOneWhere<UserWithPassword>(
-    "users",
-    (u) => u.username.toLowerCase() === username.trim().toLowerCase()
-  );
+  const requester = await fs.queryWhereOne<UserWithPassword>("users", "username", username.trim().toLowerCase());
   if (!requester) throw new Error("No existe ningún usuario con ese nombre");
   if (requester.id === user.id) throw new Error("No puedes aceptarte a ti mismo");
 
@@ -152,11 +150,11 @@ export async function acceptFriendRequestByUsername(
   if (!received.has(requester.id))
     throw new Error("No tienes una solicitud pendiente de ese usuario");
 
-  const userFriends = new Set(user.friendIds ?? []);
+  const userFriends      = new Set(user.friendIds ?? []);
   const requesterFriends = new Set(requester.friendIds ?? []);
-  const userSent = new Set(user.friendRequestSentIds ?? []);
+  const userSent         = new Set(user.friendRequestSentIds ?? []);
   const requesterReceived = new Set(requester.friendRequestReceivedIds ?? []);
-  const requesterSent = new Set(requester.friendRequestSentIds ?? []);
+  const requesterSent    = new Set(requester.friendRequestSentIds ?? []);
 
   userFriends.add(requester.id);
   requesterFriends.add(user.id);
@@ -165,16 +163,18 @@ export async function acceptFriendRequestByUsername(
   requesterReceived.delete(user.id);
   requesterSent.delete(user.id);
 
-  store.update<UserWithPassword>("users", user.id, {
-    friendIds: [...userFriends],
-    friendRequestReceivedIds: [...received],
-    friendRequestSentIds: [...userSent],
-  });
-  store.update<UserWithPassword>("users", requester.id, {
-    friendIds: [...requesterFriends],
-    friendRequestReceivedIds: [...requesterReceived],
-    friendRequestSentIds: [...requesterSent],
-  });
+  await Promise.all([
+    fs.patch("users", user.id, {
+      friendIds: [...userFriends],
+      friendRequestReceivedIds: [...received],
+      friendRequestSentIds: [...userSent],
+    }),
+    fs.patch("users", requester.id, {
+      friendIds: [...requesterFriends],
+      friendRequestReceivedIds: [...requesterReceived],
+      friendRequestSentIds: [...requesterSent],
+    }),
+  ]);
 
   return stripPassword(requester);
 }
@@ -188,19 +188,19 @@ export async function addFriendByUsername(userId: string, username: string): Pro
 // ---------------------------------------------------------------------------
 
 export async function getTeams(): Promise<Team[]> {
-  return store.getAll<Team>("teams");
+  return fs.getAll<Team>("teams");
 }
 
 export async function getTeamById(id: string): Promise<Team | undefined> {
-  return store.getById<Team>("teams", id);
+  return fs.getById<Team>("teams", id);
 }
 
 export async function getCompetitions(): Promise<Competition[]> {
-  return store.getAll<Competition>("competitions");
+  return fs.getAll<Competition>("competitions");
 }
 
 export async function getCompetitionById(id: string): Promise<Competition | undefined> {
-  return store.getById<Competition>("competitions", id);
+  return fs.getById<Competition>("competitions", id);
 }
 
 // ---------------------------------------------------------------------------
@@ -208,23 +208,22 @@ export async function getCompetitionById(id: string): Promise<Competition | unde
 // ---------------------------------------------------------------------------
 
 export async function getMatches(): Promise<Match[]> {
-  return store.getAll<Match>("matches").sort(byKickoff);
+  const all = await fs.getAll<Match>("matches");
+  return all.sort(byKickoff);
 }
 
 export async function getMatchById(id: string): Promise<Match | undefined> {
-  return store.getById<Match>("matches", id);
+  return fs.getById<Match>("matches", id);
 }
 
 export async function getUpcomingMatches(): Promise<Match[]> {
-  return store
-    .findWhere<Match>("matches", (m) => m.status === "SCHEDULED" || m.status === "LIVE")
-    .sort(byKickoff);
+  const all = await fs.queryWhereIn<Match>("matches", "status", ["SCHEDULED", "LIVE"]);
+  return all.sort(byKickoff);
 }
 
 export async function getFinishedMatches(): Promise<Match[]> {
-  return store
-    .findWhere<Match>("matches", (m) => m.status === "FINISHED")
-    .sort(byKickoff);
+  const all = await fs.queryWhere<Match>("matches", "status", "FINISHED");
+  return all.sort(byKickoff);
 }
 
 // ---------------------------------------------------------------------------
@@ -232,17 +231,14 @@ export async function getFinishedMatches(): Promise<Match[]> {
 // ---------------------------------------------------------------------------
 
 export async function getGroupById(id: string): Promise<Group | undefined> {
-  return store.getById<Group>("groups", id);
+  return fs.getById<Group>("groups", id);
 }
 
 export async function getGroupsForUser(userId: string): Promise<Group[]> {
-  return store.findWhere<Group>("groups", (g) => g.memberIds.includes(userId));
+  return fs.queryWhereArrayContains<Group>("groups", "memberIds", userId);
 }
 
-export async function createGroup(input: {
-  name: string;
-  ownerId: string;
-}): Promise<Group> {
+export async function createGroup(input: { name: string; ownerId: string }): Promise<Group> {
   const inviteCode = Math.random().toString(36).slice(2, 8).toUpperCase();
   const now = new Date().toISOString();
   const group: Group = {
@@ -254,23 +250,20 @@ export async function createGroup(input: {
     memberJoinedAt: { [input.ownerId]: now },
     createdAt: now,
   };
-  return store.insert("groups", group);
+  return fs.insert("groups", group);
 }
 
 export async function joinGroup(code: string, userId: string): Promise<Group | null> {
-  const group = store.findOneWhere<Group>(
-    "groups",
-    (g) => g.inviteCode === code.toUpperCase()
-  );
+  const group = await fs.queryWhereOne<Group>("groups", "inviteCode", code.toUpperCase());
   if (!group) return null;
-
   if (!group.memberIds.includes(userId)) {
     const now = new Date().toISOString();
-    const updated = store.update<Group>("groups", group.id, {
+    const newMemberJoinedAt = { ...(group.memberJoinedAt ?? {}), [userId]: now };
+    await fs.patch("groups", group.id, {
       memberIds: [...group.memberIds, userId],
-      memberJoinedAt: { ...(group.memberJoinedAt ?? {}), [userId]: now },
+      memberJoinedAt: newMemberJoinedAt,
     });
-    return updated ?? null;
+    return { ...group, memberIds: [...group.memberIds, userId], memberJoinedAt: newMemberJoinedAt };
   }
   return group;
 }
@@ -280,21 +273,15 @@ export async function joinGroup(code: string, userId: string): Promise<Group | n
 // ---------------------------------------------------------------------------
 
 export async function getBetsForUser(userId: string): Promise<Bet[]> {
-  return store.findWhere<Bet>("bets", (b) => b.userId === userId);
+  return fs.queryWhere<Bet>("bets", "userId", userId);
 }
 
 export async function getBetsForMatch(matchId: string): Promise<Bet[]> {
-  return store.findWhere<Bet>("bets", (b) => b.matchId === matchId);
+  return fs.queryWhere<Bet>("bets", "matchId", matchId);
 }
 
-export async function getBetForUserAndMatch(
-  userId: string,
-  matchId: string
-): Promise<Bet | undefined> {
-  return store.findOneWhere<Bet>(
-    "bets",
-    (b) => b.userId === userId && b.matchId === matchId
-  );
+export async function getBetForUserAndMatch(userId: string, matchId: string): Promise<Bet | undefined> {
+  return fs.queryWhereCompoundOne<Bet>("bets", [["userId", userId], ["matchId", matchId]]);
 }
 
 export async function upsertBet(input: {
@@ -302,17 +289,13 @@ export async function upsertBet(input: {
   matchId: string;
   prediction: { outcome: Outcome; homeGoals: number; awayGoals: number };
 }): Promise<Bet> {
-  const existing = store.findOneWhere<Bet>(
-    "bets",
-    (b) => b.userId === input.userId && b.matchId === input.matchId
-  );
-
+  const existing = await getBetForUserAndMatch(input.userId, input.matchId);
   if (existing) {
-    const updated = store.update<Bet>("bets", existing.id, {
+    await fs.patch("bets", existing.id, {
       prediction: input.prediction,
       createdAt: new Date().toISOString(),
     });
-    return updated!;
+    return { ...existing, prediction: input.prediction };
   }
 
   const newBet: Bet = {
@@ -324,7 +307,7 @@ export async function upsertBet(input: {
     status: "PENDING",
     points: 0,
   };
-  return store.insert("bets", newBet);
+  return fs.insert("bets", newBet);
 }
 
 // ---------------------------------------------------------------------------
@@ -334,7 +317,7 @@ export async function upsertBet(input: {
 export async function getGlobalRanking(): Promise<RankingEntry[]> {
   const [users, bets, matches] = await Promise.all([
     getUsers(),
-    store.getAll<Bet>("bets"),
+    fs.getAll<Bet>("bets"),
     getMatches(),
   ]);
   return buildRanking(users, bets, matches);
@@ -345,7 +328,7 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
   if (!group) return [];
   const [users, bets, matches] = await Promise.all([
     getUsers(),
-    store.getAll<Bet>("bets"),
+    fs.getAll<Bet>("bets"),
     getMatches(),
   ]);
   const members = users.filter((u) => group.memberIds.includes(u.id));
@@ -363,10 +346,7 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
 }
 
 export async function getStreakForUser(userId: string): Promise<UserStreak> {
-  const [bets, matches] = await Promise.all([
-    getBetsForUser(userId),
-    getMatches(),
-  ]);
+  const [bets, matches] = await Promise.all([getBetsForUser(userId), getMatches()]);
   return computeStreak(userId, bets, matches);
 }
 
@@ -374,41 +354,33 @@ export async function getStreakForUser(userId: string): Promise<UserStreak> {
 // Resolución de porras
 // ---------------------------------------------------------------------------
 
-export async function resolveFinishedBets(
-  matches: Match[]
-): Promise<{ resolved: number }> {
+export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved: number }> {
   const finishedById = new Map(
     matches
       .filter((m) => m.status === "FINISHED" && m.result)
-      .map((m) => [m.id, m])
+      .map((m) => [m.id, m]),
   );
   if (finishedById.size === 0) return { resolved: 0 };
 
-  const pending = store.findWhere<Bet>("bets", (b) => b.status === "PENDING");
+  const pending = await fs.queryWhere<Bet>("bets", "status", "PENDING");
   let resolved = 0;
 
-  for (const bet of pending) {
-    const match = finishedById.get(bet.matchId);
-    if (!match?.result) continue;
-    const points = getPointsForBet(bet, match);
-    store.update<Bet>("bets", bet.id, {
-      status: points > 0 ? "WON" : "LOST",
-      points,
-    });
-    resolved++;
+  // Usamos batch para actualizar hasta 500 porras a la vez
+  const BATCH_SIZE = 400;
+  for (let i = 0; i < pending.length; i += BATCH_SIZE) {
+    const batch = adminDb.batch();
+    for (const bet of pending.slice(i, i + BATCH_SIZE)) {
+      const match = finishedById.get(bet.matchId);
+      if (!match?.result) continue;
+      const points = getPointsForBet(bet, match);
+      batch.update(adminDb.collection("bets").doc(bet.id), {
+        status: points > 0 ? "WON" : "LOST",
+        points,
+      });
+      resolved++;
+    }
+    await batch.commit();
   }
 
   return { resolved };
-}
-
-// ---------------------------------------------------------------------------
-// Helpers internos
-// ---------------------------------------------------------------------------
-
-type UserWithPassword = User & { passwordHash?: string };
-
-function stripPassword(u: UserWithPassword): User {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { passwordHash: _pw, ...user } = u;
-  return user as User;
 }

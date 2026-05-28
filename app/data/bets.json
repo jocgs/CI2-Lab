@@ -69,11 +69,11 @@
     "userId": "user_clara",
     "matchId": "match_7",
     "prediction": {
-      "outcome": "1",
-      "homeGoals": 2,
+      "outcome": "2",
+      "homeGoals": 0,
       "awayGoals": 1
     },
-    "createdAt": "2026-05-26T08:00:00.000Z",
+    "createdAt": "2026-05-28T08:04:50.538Z",
     "status": "PENDING",
     "points": 0
   },

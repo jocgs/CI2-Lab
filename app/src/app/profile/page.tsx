@@ -7,21 +7,23 @@ import {
   getFriendRequestsSent,
   getFriendsForUser,
   getCurrentUser,
+  getGlobalRanking,
   getGroupsForUser,
   getMatchById,
+  getMatches,
   getStreakForUser,
   getTeams,
   getTeamById,
 } from "@/lib/db";
+import { computeUserAchievements, FANTASY_COMPETITION_ID } from "@/lib/achievements";
+import { getFantasyTeamByUserAndCompetition } from "@/lib/fantasy-db";
+import { AchievementsGrid } from "@/components/AchievementsGrid";
+import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { formatBetPrediction } from "@/lib/scoring";
 import { Badge, Card, EmptyState, SectionTitle } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
-import {
-  acceptFriendRequestAction,
-  saveProfileAction,
-} from "./actions";
+import { acceptFriendRequestAction } from "./actions";
 import AddFriendForm from "@/components/AddFriendForm";
-import { TeamPickerSelect } from "@/components/TeamPickerSelect";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
@@ -29,16 +31,31 @@ const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 export default async function ProfilePage() {
   const user = await getCurrentUser();
 
-  const [streak, bets, groups, friends, receivedRequests, sentRequests, teams, nationalTeams] = await Promise.all([
-    getStreakForUser(user.id),
-    getBetsForUser(user.id),
-    getGroupsForUser(user.id),
-    getFriendsForUser(user.id),
-    getFriendRequestsReceived(user.id),
-    getFriendRequestsSent(user.id),
-    getTeams(),
-    getNationalTeamsByCompetition(NATIONAL_TEAM_COMPETITION_ID),
-  ]);
+  const [streak, bets, groups, friends, receivedRequests, sentRequests, teams, nationalTeams, matches, globalRanking, fantasyTeam] =
+    await Promise.all([
+      getStreakForUser(user.id),
+      getBetsForUser(user.id),
+      getGroupsForUser(user.id),
+      getFriendsForUser(user.id),
+      getFriendRequestsReceived(user.id),
+      getFriendRequestsSent(user.id),
+      getTeams(),
+      getNationalTeamsByCompetition(NATIONAL_TEAM_COMPETITION_ID),
+      getMatches(),
+      getGlobalRanking(),
+      getFantasyTeamByUserAndCompetition(user.id, FANTASY_COMPETITION_ID),
+    ]);
+
+  const achievements = computeUserAchievements({
+    userId: user.id,
+    streak,
+    bets,
+    matches,
+    friendsCount: friends.length,
+    groupsCount: groups.length,
+    globalRanking,
+    fantasyTeam,
+  });
 
   const resolvedBets = bets.filter((b) => b.status !== "PENDING");
   const wonBets = resolvedBets.filter((b) => b.status === "WON");
@@ -108,69 +125,28 @@ export default async function ProfilePage() {
         </div>
       </Card>
 
+      <Card className="p-6">
+        <SectionTitle
+          title="Logros"
+          subtitle="Desbloquea medallas por rachas, amigos, grupos, ranking y Fantasy"
+        />
+        <div className="mt-5">
+          <AchievementsGrid achievements={achievements} />
+        </div>
+      </Card>
+
       <section className="grid gap-4 lg:grid-cols-2">
         <Card className="p-6">
           <SectionTitle
             title="Editar perfil"
             subtitle="Sube una foto, elige una selección y marca tus equipos favoritos"
           />
-          <form action={saveProfileAction} className="mt-5 flex flex-col gap-4">
-            <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium">Foto de perfil</span>
-              <input
-                type="file"
-                name="avatarFile"
-                accept="image/*"
-                className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
-              />
-              <span className="text-xs text-[var(--muted)]">Sube una imagen desde tu dispositivo. Si no eliges ninguna, se mantiene la actual.</span>
-            </label>
-
-            <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium">Selección favorita</span>
-              <select
-                name="supportedNationalTeamId"
-                defaultValue={user.supportedNationalTeamId ?? ""}
-                className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
-              >
-                <option value="">Sin selección</option>
-                {nationalTeams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.flagUrl ? `${team.flagUrl} ` : ""}{team.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-2 text-sm">
-                <span className="font-medium">Equipo favorito 1</span>
-                <TeamPickerSelect
-                  name="supportedTeamId1"
-                  teams={teams}
-                  defaultValue={supportedTeamIds[0] ?? ""}
-                  placeholder="Sin equipo"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2 text-sm">
-                <span className="font-medium">Equipo favorito 2</span>
-                <TeamPickerSelect
-                  name="supportedTeamId2"
-                  teams={teams}
-                  defaultValue={supportedTeamIds[1] ?? ""}
-                  placeholder="Opcional"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-strong)]"
-            >
-              Guardar perfil
-            </button>
-          </form>
+          <ProfileEditForm
+            supportedNationalTeamId={user.supportedNationalTeamId ?? null}
+            supportedTeamIds={supportedTeamIds}
+            teams={teams}
+            nationalTeams={nationalTeams}
+          />
         </Card>
 
         <Card className="p-6">

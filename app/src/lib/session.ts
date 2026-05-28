@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import * as store from "./local-store";
+import * as fs from "./firestore-store";
 import bcrypt from "bcryptjs";
 import type { User } from "@/types/domain";
 
@@ -17,9 +17,10 @@ export async function getSessionUser(): Promise<User | null> {
     const uid = cookieStore.get(SESSION_COOKIE)?.value;
     if (!uid) return null;
 
-    const user = store.getById<UserWithPassword>("users", uid);
+    const user = await fs.getById<UserWithPassword>("users", uid);
     if (!user) return null;
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _pw, ...safeUser } = user;
     return safeUser as User;
   } catch {
@@ -33,20 +34,13 @@ export async function getSessionUserId(): Promise<string | null> {
 }
 
 // ---------------------------------------------------------------------------
-// Login local
+// Login
 // ---------------------------------------------------------------------------
 
-/**
- * Verifica email y contraseña contra la base de datos local.
- * Crea la cookie de sesión si son correctos.
- */
 export async function createSession(email: string, password: string): Promise<string> {
   const normalizedEmail = email.trim().toLowerCase();
-  const user = store.findOneWhere<UserWithPassword>(
-    "users",
-    (u) => (u.email ?? "").toLowerCase() === normalizedEmail
-  );
 
+  const user = await fs.queryWhereOne<UserWithPassword>("users", "email", normalizedEmail);
   if (!user) throw new Error("Correo o contraseña incorrectos");
 
   const passwordHash = user.passwordHash ?? "";
@@ -66,7 +60,7 @@ export async function createSession(email: string, password: string): Promise<st
 }
 
 // ---------------------------------------------------------------------------
-// Registro local
+// Registro
 // ---------------------------------------------------------------------------
 
 export async function registerUser(input: {
@@ -75,14 +69,13 @@ export async function registerUser(input: {
   password: string;
 }): Promise<string> {
   const normalizedEmail = input.email.trim().toLowerCase();
-  const existing = store.findOneWhere<UserWithPassword>(
-    "users",
-    (u) => (u.email ?? "").toLowerCase() === normalizedEmail
-  );
+
+  const existing = await fs.queryWhereOne<UserWithPassword>("users", "email", normalizedEmail);
   if (existing) throw new Error("Ese correo ya está registrado");
 
   const passwordHash = await bcrypt.hash(input.password, 10);
   const uid = `user_${Math.random().toString(36).slice(2, 10)}`;
+  // Los usernames se guardan en minúsculas para poder buscarlos sin case-sensitivity
   const username = normalizedEmail.split("@")[0].replace(/[^a-z0-9_]/g, "_");
 
   const newUser: UserWithPassword = {
@@ -99,7 +92,7 @@ export async function registerUser(input: {
     createdAt: new Date().toISOString(),
   };
 
-  store.insert("users", newUser);
+  await fs.insert("users", newUser);
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, uid, {
