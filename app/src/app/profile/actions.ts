@@ -14,12 +14,15 @@ import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 
-export async function saveProfileAction(formData: FormData) {
+export type SaveProfileResult = { ok: true } | { error: string };
+
+export async function saveProfileAction(formData: FormData): Promise<SaveProfileResult> {
+  try {
   const userId = await getCurrentUserId();
-  if (!userId) throw new Error("No autenticado");
+  if (!userId) return { error: "No autenticado" };
 
   const currentUser = await getUserById(userId);
-  if (!currentUser) throw new Error("Usuario no encontrado");
+  if (!currentUser) return { error: "Usuario no encontrado" };
 
   const avatarFile = formData.get("avatarFile");
   const supportedNationalTeamId = String(formData.get("supportedNationalTeamId") ?? "").trim();
@@ -34,34 +37,40 @@ export async function saveProfileAction(formData: FormData) {
   const nationalSet = new Set(nationalTeams.map((team) => team.id));
 
   if (supportedTeamIds.some((teamId) => !teamSet.has(teamId))) {
-    throw new Error("Hay un equipo que no existe");
+    return { error: "Hay un equipo que no existe" };
   }
 
   if (supportedTeamIds.length > 2) {
-    throw new Error("Solo puedes guardar uno o dos equipos");
+    return { error: "Solo puedes guardar uno o dos equipos" };
   }
 
   if (supportedTeamIds.length === 2 && supportedTeamIds[0] === supportedTeamIds[1]) {
-    throw new Error("Elige dos equipos distintos");
+    return { error: "Elige dos equipos distintos" };
   }
 
   if (supportedNationalTeamId && !nationalSet.has(supportedNationalTeamId)) {
-    throw new Error("La selección elegida no existe");
+    return { error: "La selección elegida no existe" };
   }
 
   let avatarUrl = currentUser.avatarUrl ?? null;
   if (avatarFile instanceof File && avatarFile.size > 0) {
     if (!avatarFile.type.startsWith("image/")) {
-      throw new Error("La foto debe ser una imagen");
+      return { error: "La foto debe ser una imagen" };
     }
 
-    const maxAvatarSize = 2 * 1024 * 1024;
+    const maxAvatarSize = 900 * 1024;
     if (avatarFile.size > maxAvatarSize) {
-      throw new Error("La imagen no puede superar 2 MB");
+      return { error: "La imagen es demasiado grande. Prueba otra foto o hazla más pequeña." };
     }
 
     const buffer = Buffer.from(await avatarFile.arrayBuffer());
-    avatarUrl = `data:${avatarFile.type};base64,${buffer.toString("base64")}`;
+    const mime = avatarFile.type === "image/png" ? "image/png" : "image/jpeg";
+    avatarUrl = `data:${mime};base64,${buffer.toString("base64")}`;
+
+    const maxDataUrlLength = 500_000;
+    if (avatarUrl.length > maxDataUrlLength) {
+      return { error: "La imagen sigue siendo demasiado grande tras comprimir. Elige otra foto." };
+    }
   }
 
   await updateUserProfile(userId, {
@@ -71,7 +80,10 @@ export async function saveProfileAction(formData: FormData) {
   });
 
   revalidatePath("/profile");
-  redirect("/profile");
+  return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "No se pudo guardar el perfil" };
+  }
 }
 
 function getSafeRedirectTo(formData: FormData) {
