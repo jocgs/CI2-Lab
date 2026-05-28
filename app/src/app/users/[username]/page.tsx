@@ -13,10 +13,13 @@ import {
   getMatchById,
   getTeamById,
   getUserByUsername,
+  getGlobalRanking,
 } from "@/lib/db";
 import { buildRanking } from "@/lib/scoring";
 import { getStreakForUser, getTeams } from "@/lib/db";
-import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
+import { getNationalTeamsByCompetition, getFantasyTeamByUserAndCompetition } from "@/lib/fantasy-db";
+import { computeUserAchievements } from "@/lib/achievements";
+import { PublicAchievementsDisplay } from "@/components/AchievementsGrid";
 import { acceptFriendRequestAction } from "../../profile/actions";
 import AddFriendForm from "@/components/AddFriendForm";
 
@@ -33,7 +36,7 @@ export default async function PublicProfilePage({
   if (!user) notFound();
 
   const currentUser = await getCurrentUser();
-  const [friends, groups, bets, finishedMatches, teams, nationalTeams, streak, receivedRequests, sentRequests] = await Promise.all([
+  const [friends, groups, bets, finishedMatches, teams, nationalTeams, streak, receivedRequests, sentRequests, globalRanking, fantasyTeam] = await Promise.all([
     getFriendsForUser(user.id),
     getGroupsForUser(user.id),
     getBetsForUser(user.id),
@@ -43,6 +46,8 @@ export default async function PublicProfilePage({
     getStreakForUser(user.id),
     getFriendRequestsReceived(currentUser.id),
     getFriendRequestsSent(currentUser.id),
+    getGlobalRanking(),
+    getFantasyTeamByUserAndCompetition(user.id, NATIONAL_TEAM_COMPETITION_ID),
   ]);
 
   const profileRanking = buildRanking([user], bets, finishedMatches)[0];
@@ -51,6 +56,18 @@ export default async function PublicProfilePage({
   const correctBets = profileRanking?.correctBets ?? 0;
   const exactBets = profileRanking?.exactBets ?? 0;
   const totalBets = profileRanking?.totalBets ?? 0;
+
+  // Calcular logros del usuario
+  const achievements = computeUserAchievements({
+    userId: user.id,
+    streak,
+    bets,
+    matches: finishedMatches,
+    friendsCount: friends.length,
+    groupsCount: groups.length,
+    globalRanking,
+    fantasyTeam: fantasyTeam ?? null,
+  });
 
   const recentBets = bets
     .slice()
@@ -134,6 +151,13 @@ export default async function PublicProfilePage({
           <Stat label="Precisión" value={`${accuracy}%`} subtitle={`Racha actual: ${streak.current} · Mejor: ${streak.best}`} />
         </div>
       </Card>
+
+      <section>
+        <SectionTitle title="Logros" subtitle="Recompensas desbloqueadas" />
+        <Card className="p-6">
+          <PublicAchievementsDisplay achievements={achievements} />
+        </Card>
+      </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
         <Card className="p-6">

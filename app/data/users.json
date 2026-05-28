@@ -121,5 +121,18 @@
     ],
     "createdAt": "2026-05-27T11:55:09.069Z",
     "supportedNationalTeamId": "usa"
+  },
+  {
+    "id": "user_uig05oo6",
+    "username": "caracola",
+    "displayName": "Diego",
+    "email": "caracola@p.app",
+    "avatarUrl": "https://ui-avatars.com/api/?name=Diego&background=6366f1&color=fff&bold=true",
+    "passwordHash": "$2b$10$t14dF7ME74UYh7i3/mUjxuPOB4LQnHwZT/UKkk4VsAyupLFtMYJDS",
+    "friendIds": [],
+    "friendRequestSentIds": [],
+    "friendRequestReceivedIds": [],
+    "supportedTeamIds": [],
+    "createdAt": "2026-05-28T10:00:13.516Z"
   }
 ]
