@@ -4,6 +4,7 @@ import { getGroupById, getGroupRanking, getUserById, getCurrentUser } from "@/li
 import { Card, SectionTitle } from "@/components/ui";
 import { RankingTable } from "@/components/RankingTable";
 import { GroupChat } from "@/components/GroupChat";
+import { getMessagesAction } from "./actions";
 
 export default async function GroupDetailPage({
   params,
@@ -15,10 +16,11 @@ export default async function GroupDetailPage({
   const group = await getGroupById(id);
   if (!group) notFound();
 
-  const [ranking, owner, user] = await Promise.all([
+  const [ranking, owner, user, initialMessages] = await Promise.all([
     getGroupRanking(group.id),
     getUserById(group.ownerId),
     getCurrentUser(),
+    getMessagesAction(group.id),
   ]);
 
   return (
@@ -49,7 +51,7 @@ export default async function GroupDetailPage({
 
       <section>
         <SectionTitle title="Chat" subtitle="Mensajes en tiempo real para los miembros del grupo" />
-        <GroupChat groupId={group.id} currentUserId={user.id} />
+        <GroupChat groupId={group.id} currentUserId={user.id} initialMessages={initialMessages} />
       </section>
     </div>
   );
