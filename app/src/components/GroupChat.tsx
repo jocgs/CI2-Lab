@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function GroupChat({ groupId, currentUserId, initialMessages }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput]       = useState("");
   const [isPending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);

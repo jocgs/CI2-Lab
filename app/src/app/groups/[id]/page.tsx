@@ -20,7 +20,7 @@ export default async function GroupDetailPage({
     getGroupRanking(group.id),
     getUserById(group.ownerId),
     getCurrentUser(),
-    getMessagesAction(group.id),
+    getMessagesAction(group.id).catch(() => []),
   ]);
 
   return (
