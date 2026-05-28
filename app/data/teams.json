@@ -1,0 +1,17 @@
+[
+  { "id": "team_rma",  "name": "Real Madrid",          "shortName": "RMA", "country": "ES", "logoUrl": "https://crests.football-data.org/86.svg"  },
+  { "id": "team_fcb",  "name": "FC Barcelona",          "shortName": "BAR", "country": "ES", "logoUrl": "https://crests.football-data.org/81.svg"  },
+  { "id": "team_atm",  "name": "Atlético de Madrid",    "shortName": "ATM", "country": "ES", "logoUrl": "https://crests.football-data.org/78.svg"  },
+  { "id": "team_seve", "name": "Sevilla FC",            "shortName": "SEV", "country": "ES", "logoUrl": "https://crests.football-data.org/559.svg" },
+  { "id": "team_bet",  "name": "Real Betis",            "shortName": "BET", "country": "ES", "logoUrl": "https://crests.football-data.org/90.svg"  },
+  { "id": "team_val",  "name": "Valencia CF",           "shortName": "VAL", "country": "ES", "logoUrl": "https://crests.football-data.org/95.svg"  },
+  { "id": "team_vil",  "name": "Villarreal CF",         "shortName": "VIL", "country": "ES", "logoUrl": "https://crests.football-data.org/94.svg"  },
+  { "id": "team_ath",  "name": "Athletic Club",         "shortName": "ATH", "country": "ES", "logoUrl": "https://crests.football-data.org/77.svg"  },
+  { "id": "team_rso",  "name": "Real Sociedad",         "shortName": "RSO", "country": "ES", "logoUrl": "https://crests.football-data.org/92.svg"  },
+  { "id": "team_gir",  "name": "Girona FC",             "shortName": "GIR", "country": "ES", "logoUrl": "https://crests.football-data.org/298.svg" },
+  { "id": "team_mci",  "name": "Manchester City",       "shortName": "MCI", "country": "GB", "logoUrl": "https://crests.football-data.org/65.svg"  },
+  { "id": "team_bay",  "name": "Bayern München",        "shortName": "BAY", "country": "DE", "logoUrl": "https://crests.football-data.org/5.svg"   },
+  { "id": "team_psg",  "name": "Paris Saint-Germain",   "shortName": "PSG", "country": "FR", "logoUrl": "https://crests.football-data.org/524.svg" },
+  { "id": "team_int",  "name": "Inter de Milán",        "shortName": "INT", "country": "IT", "logoUrl": "https://crests.football-data.org/108.svg" },
+  { "id": "team_pca",  "name": "Palencia Cristo Atlético", "shortName": "PCA", "country": "ES", "logoUrl": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2e/Cristo_Atl%C3%A9tico_logo.png/250px-Cristo_Atl%C3%A9tico_logo.png" }
+]

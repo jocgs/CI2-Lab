@@ -12,10 +12,9 @@ import {
 } from "@/lib/db";
 import { Badge, Card } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
-import { placeBetAction } from "./actions";
 import BetForm from "@/components/BetForm";
 import { formatBetPrediction } from "@/lib/scoring";
-import type { Outcome, Team } from "@/types/domain";
+import type { Team } from "@/types/domain";
 
 function flagEmoji(countryCode: string): string {
   return countryCode
@@ -45,12 +44,6 @@ function TeamCrest({ team, size = 64 }: { team: Team; size?: number }) {
     </span>
   );
 }
-
-const OUTCOME_LABELS: { value: Outcome; label: string; helper: string }[] = [
-  { value: "1", label: "1", helper: "Local" },
-  { value: "X", label: "X", helper: "Empate" },
-  { value: "2", label: "2", helper: "Visitante" },
-];
 
 function scoreLabel(homeGoals: number, awayGoals: number) {
   return `${homeGoals}-${awayGoals}`;
@@ -158,16 +151,12 @@ export default async function MatchDetailPage({
         )}
 
         {canBet && (
-          // Client-side form that auto-derives outcome from numeric scores
-          <>
-            {/* @ts-expect-error Server component import allowed */}
-            <BetForm
-              matchId={match.id}
-              defaultHomeGoals={userBet?.prediction.homeGoals ?? null}
-              defaultAwayGoals={userBet?.prediction.awayGoals ?? null}
-              defaultOutcome={userBet?.prediction.outcome ?? null}
-            />
-          </>
+          <BetForm
+            matchId={match.id}
+            defaultHomeGoals={userBet?.prediction.homeGoals ?? null}
+            defaultAwayGoals={userBet?.prediction.awayGoals ?? null}
+            defaultOutcome={userBet?.prediction.outcome ?? null}
+          />
         )}
 
         {canBet && userBet && (

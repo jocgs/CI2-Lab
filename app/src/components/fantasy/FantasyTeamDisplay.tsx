@@ -192,13 +192,15 @@ export function FantasyTeamDisplay({
           Predicciones del torneo
         </p>
         <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-          <PredictionBadge label="Campeona" value={fantasyTeam.championTeamId} nationalTeams={nationalTeams} />
-          <PredictionBadge label="Sorpresa" value={fantasyTeam.surpriseTeamId} nationalTeams={nationalTeams} />
-          <PredictionBadge label="Decepción" value={fantasyTeam.disappointmentTeamId} nationalTeams={nationalTeams} />
+          <PredictionBadge label="Campeona" value={fantasyTeam.championTeamId ?? ""} nationalTeams={nationalTeams} />
+          <PredictionBadge label="Sorpresa" value={fantasyTeam.surpriseTeamId ?? ""} nationalTeams={nationalTeams} />
+          <PredictionBadge label="Decepción" value={fantasyTeam.disappointmentTeamId ?? ""} nationalTeams={nationalTeams} />
           <div className="rounded-lg border border-[var(--border)] p-2">
             <p className="text-[var(--muted)]">MVP</p>
             <p className="font-medium truncate">
-              {pm.get(fantasyTeam.tournamentMvpPlayerId)?.name ?? fantasyTeam.tournamentMvpPlayerId}
+              {fantasyTeam.tournamentMvpPlayerId
+                ? (pm.get(fantasyTeam.tournamentMvpPlayerId)?.name ?? fantasyTeam.tournamentMvpPlayerId)
+                : <span className="text-[var(--muted)]">—</span>}
             </p>
           </div>
         </div>

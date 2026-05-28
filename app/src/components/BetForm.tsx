@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { placeBetAction } from "@/app/matches/[id]/actions";
 import type { Outcome } from "@/types/domain";
 
@@ -35,13 +35,22 @@ export default function BetForm({
   );
   const [outcome, setOutcome] = useState<Outcome | "">(defaultOutcome ?? "");
 
-  useEffect(() => {
-    const h = homeGoals === "" ? null : Number(homeGoals);
-    const a = awayGoals === "" ? null : Number(awayGoals);
+  const syncOutcomeFromGoals = (nextHomeGoals: string, nextAwayGoals: string) => {
+    const h = nextHomeGoals === "" ? null : Number(nextHomeGoals);
+    const a = nextAwayGoals === "" ? null : Number(nextAwayGoals);
     if (h === null || a === null || Number.isNaN(h) || Number.isNaN(a)) return;
-    const derived = outcomeFromGoals(h, a);
-    setOutcome(derived);
-  }, [homeGoals, awayGoals]);
+    setOutcome(outcomeFromGoals(h, a));
+  };
+
+  const handleHomeGoalsChange = (nextHomeGoals: string) => {
+    setHomeGoals(nextHomeGoals);
+    syncOutcomeFromGoals(nextHomeGoals, awayGoals);
+  };
+
+  const handleAwayGoalsChange = (nextAwayGoals: string) => {
+    setAwayGoals(nextAwayGoals);
+    syncOutcomeFromGoals(homeGoals, nextAwayGoals);
+  };
 
   return (
     <form action={placeBetAction} className="mt-4 flex flex-col gap-4">
@@ -92,7 +101,7 @@ export default function BetForm({
               min="0"
               step="1"
               value={homeGoals}
-              onChange={(e) => setHomeGoals(e.target.value)}
+              onChange={(e) => handleHomeGoalsChange(e.target.value)}
               required
               className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center text-base font-semibold outline-none focus:border-[var(--brand)]"
             />
@@ -106,7 +115,7 @@ export default function BetForm({
               min="0"
               step="1"
               value={awayGoals}
-              onChange={(e) => setAwayGoals(e.target.value)}
+              onChange={(e) => handleAwayGoalsChange(e.target.value)}
               required
               className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center text-base font-semibold outline-none focus:border-[var(--brand)]"
             />

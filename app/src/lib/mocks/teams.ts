@@ -17,4 +17,5 @@ export const MOCK_TEAMS: Team[] = [
   { id: "team_bay", name: "Bayern München",        shortName: "BAY", country: "DE", logoUrl: CREST(5)   },
   { id: "team_psg", name: "Paris Saint-Germain",   shortName: "PSG", country: "FR", logoUrl: CREST(524) },
   { id: "team_int", name: "Inter de Milán",        shortName: "INT", country: "IT", logoUrl: CREST(108) },
+  { id: "team_pca", name: "Palencia Cristo Atlético", shortName: "PCA", country: "ES", logoUrl: "https://upload.wikimedia.org/wikipedia/en/thumb/2/2e/Cristo_Atl%C3%A9tico_logo.png/250px-Cristo_Atl%C3%A9tico_logo.png" },
 ];

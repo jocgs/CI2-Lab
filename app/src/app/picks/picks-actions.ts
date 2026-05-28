@@ -9,7 +9,6 @@ import { MOCK_TOURNAMENT, MOCK_TOURNAMENT_TEAMS } from "@/lib/mocks/tournament-t
 export interface SavePicksInput {
   tournamentId: string;
   revelationTeamId: string;
-  disappointmentTeamId: string;
 }
 
 export async function savePicksAction(
@@ -18,17 +17,12 @@ export async function savePicksAction(
   try {
     const user = await getCurrentUser();
 
-    // Tournament lock check
     if (isTournamentLocked(MOCK_TOURNAMENT)) {
-      return {
-        error: "El torneo ya ha empezado. No puedes modificar tus selecciones.",
-      };
+      return { error: "El torneo ya ha empezado. No puedes modificar tus selecciones." };
     }
 
-    // Business rule validation
     const validation = validateSpecialPicks({
       revelationTeamId: data.revelationTeamId,
-      disappointmentTeamId: data.disappointmentTeamId,
       teams: MOCK_TOURNAMENT_TEAMS,
     });
 
@@ -40,7 +34,6 @@ export async function savePicksAction(
       userId: user.id,
       tournamentId: data.tournamentId,
       revelationTeamId: data.revelationTeamId,
-      disappointmentTeamId: data.disappointmentTeamId,
     });
 
     revalidatePath("/picks");

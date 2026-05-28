@@ -38,7 +38,8 @@ export async function GET() {
       const snap = await adminDb.collection(collection).get();
       for (let i = 0; i < snap.docs.length; i += 400) {
         const batch = adminDb.batch();
-        snap.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        snap.docs.slice(i, i + 400).forEach((d: any) => batch.delete(d.ref));
         await batch.commit();
       }
     }

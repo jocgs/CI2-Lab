@@ -21,6 +21,7 @@ import {
   saveProfileAction,
   sendFriendRequestAction,
 } from "./actions";
+import { TeamPickerSelect } from "@/components/TeamPickerSelect";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
@@ -142,37 +143,25 @@ export default async function ProfilePage() {
             </label>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm">
+              <div className="flex flex-col gap-2 text-sm">
                 <span className="font-medium">Equipo favorito 1</span>
-                <select
+                <TeamPickerSelect
                   name="supportedTeamId1"
+                  teams={teams}
                   defaultValue={supportedTeamIds[0] ?? ""}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
-                >
-                  <option value="">Sin equipo</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  placeholder="Sin equipo"
+                />
+              </div>
 
-              <label className="flex flex-col gap-2 text-sm">
+              <div className="flex flex-col gap-2 text-sm">
                 <span className="font-medium">Equipo favorito 2</span>
-                <select
+                <TeamPickerSelect
                   name="supportedTeamId2"
+                  teams={teams}
                   defaultValue={supportedTeamIds[1] ?? ""}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
-                >
-                  <option value="">Opcional</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  placeholder="Opcional"
+                />
+              </div>
             </div>
 
             <button
