@@ -1,28 +1,45 @@
 import Link from "next/link";
 import {
   getBetForUserAndMatch,
+  getCompetitions,
   getCurrentUser,
   getFinishedMatches,
+  getTeams,
   getUpcomingMatches,
 } from "@/lib/db";
 import { MatchCard } from "@/components/MatchCard";
+import { MatchFilters } from "@/components/MatchFilters";
 import { EmptyState } from "@/components/ui";
-import { clsx } from "@/lib/utils";
+import { clsx, computeTeamForms } from "@/lib/utils";
 
 type Tab = "upcoming" | "finished";
 
 export default async function MatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; competition?: string; team?: string }>;
 }) {
   const params = await searchParams;
   const tab: Tab = params.tab === "finished" ? "finished" : "upcoming";
+  const selectedCompetition = params.competition ?? "";
+  const selectedTeam = params.team ?? "";
 
-  const [user, matches] = await Promise.all([
+  const [user, allMatches, finishedMatches, competitions, teams] = await Promise.all([
     getCurrentUser(),
     tab === "upcoming" ? getUpcomingMatches() : getFinishedMatches().then((m) => m.slice().reverse()),
+    getFinishedMatches(),
+    getCompetitions(),
+    getTeams(),
   ]);
+
+  const teamForms = computeTeamForms(finishedMatches);
+
+  // Filtrar por competición o equipo
+  const matches = allMatches.filter((match) => {
+    if (selectedCompetition) return match.competitionId === selectedCompetition;
+    if (selectedTeam) return match.homeTeamId === selectedTeam || match.awayTeamId === selectedTeam;
+    return true;
+  });
 
   const matchesWithBets = await Promise.all(
     matches.map(async (match) => ({
@@ -31,6 +48,10 @@ export default async function MatchesPage({
     }))
   );
 
+  // Ordenar equipos alfabéticamente para el selector
+  const sortedTeams = [...teams].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedCompetitions = [...competitions].sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
@@ -38,21 +59,43 @@ export default async function MatchesPage({
         <p className="text-sm text-[var(--muted)]">Haz tu porra (1, X o 2) antes del pitido inicial.</p>
       </header>
 
-      <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 text-sm w-fit">
-        <TabLink href="/matches?tab=upcoming" active={tab === "upcoming"}>
-          Próximos
-        </TabLink>
-        <TabLink href="/matches?tab=finished" active={tab === "finished"}>
-          Finalizados
-        </TabLink>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 text-sm w-fit">
+          <TabLink href={`/matches?tab=upcoming${selectedCompetition ? `&competition=${selectedCompetition}` : ""}${selectedTeam ? `&team=${selectedTeam}` : ""}`} active={tab === "upcoming"}>
+            Próximos
+          </TabLink>
+          <TabLink href={`/matches?tab=finished${selectedCompetition ? `&competition=${selectedCompetition}` : ""}${selectedTeam ? `&team=${selectedTeam}` : ""}`} active={tab === "finished"}>
+            Finalizados
+          </TabLink>
+        </div>
+
+        <MatchFilters
+          competitions={sortedCompetitions}
+          teams={sortedTeams}
+          selectedCompetition={selectedCompetition}
+          selectedTeam={selectedTeam}
+          tab={tab}
+        />
       </div>
 
+      {selectedCompetition || selectedTeam ? (
+        <p className="text-xs text-[var(--muted)]">
+          {matchesWithBets.length} partido{matchesWithBets.length !== 1 ? "s" : ""} encontrado{matchesWithBets.length !== 1 ? "s" : ""}
+        </p>
+      ) : null}
+
       {matchesWithBets.length === 0 ? (
-        <EmptyState title="No hay partidos para mostrar" />
+        <EmptyState title="No hay partidos para mostrar" description="Prueba cambiando los filtros o la pestaña." />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {matchesWithBets.map(({ match, userBet }) => (
-            <MatchCard key={match.id} match={match} userBet={userBet} />
+            <MatchCard
+              key={match.id}
+              match={match}
+              userBet={userBet}
+              homeForm={teamForms.get(match.homeTeamId)}
+              awayForm={teamForms.get(match.awayTeamId)}
+            />
           ))}
         </div>
       )}
