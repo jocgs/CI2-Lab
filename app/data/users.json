@@ -34,7 +34,9 @@
       "user_clara"
     ],
     "friendRequestSentIds": [],
-    "friendRequestReceivedIds": [],
+    "friendRequestReceivedIds": [
+      "user_pablo"
+    ],
     "createdAt": "2026-05-02T10:00:00.000Z"
   },
   {
@@ -45,12 +47,13 @@
     "avatarUrl": "https://ui-avatars.com/api/?name=Pablo&background=22c55e&color=fff&bold=true",
     "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
     "friendIds": [
-      "user_clara"
-    ],
-    "friendRequestSentIds": [],
-    "friendRequestReceivedIds": [
+      "user_clara",
       "user_zcbcj3h4"
     ],
+    "friendRequestSentIds": [
+      "user_marina"
+    ],
+    "friendRequestReceivedIds": [],
     "createdAt": "2026-05-03T10:00:00.000Z"
   },
   {
@@ -88,10 +91,10 @@
     "email": "jorgealonso@porrify.app",
     "avatarUrl": "https://ui-avatars.com/api/?name=jorgealonso&background=6366f1&color=fff&bold=true",
     "passwordHash": "$2b$10$yRwEL4s4mj5ajH1osQgCN.FTFUBk5.8vpGjER2cch9oBWhB/vRqiC",
-    "friendIds": [],
-    "friendRequestSentIds": [
+    "friendIds": [
       "user_pablo"
     ],
+    "friendRequestSentIds": [],
     "friendRequestReceivedIds": [
       "user_clara"
     ],

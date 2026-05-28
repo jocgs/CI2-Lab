@@ -5,7 +5,15 @@ import { getCurrentUserId, upsertBet } from "@/lib/db";
 import { outcomeFromGoals } from "@/lib/scoring";
 import type { Outcome } from "@/types/domain";
 
-export async function placeBetAction(formData: FormData) {
+export type BetActionState =
+  | null
+  | { ok: true; homeGoals: number; awayGoals: number; outcome: Outcome }
+  | { ok: false; error: string };
+
+export async function placeBetAction(
+  _prev: BetActionState,
+  formData: FormData
+): Promise<BetActionState> {
   const matchId = String(formData.get("matchId") ?? "");
   const outcome = String(formData.get("outcome") ?? "") as Outcome;
   const homeGoals = Number(formData.get("homeGoals") ?? NaN);
@@ -20,11 +28,11 @@ export async function placeBetAction(formData: FormData) {
     awayGoals < 0 ||
     outcomeFromGoals(homeGoals, awayGoals) !== outcome
   ) {
-    throw new Error("Datos de porra inválidos");
+    return { ok: false, error: "Datos de porra inválidos" };
   }
 
   const userId = await getCurrentUserId();
-  if (!userId) throw new Error("No autenticado");
+  if (!userId) return { ok: false, error: "No autenticado" };
 
   await upsertBet({
     userId,
@@ -37,4 +45,6 @@ export async function placeBetAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/profile");
   revalidatePath("/ranking");
+
+  return { ok: true, homeGoals, awayGoals, outcome };
 }
