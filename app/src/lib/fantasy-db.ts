@@ -9,87 +9,49 @@ import type {
 } from "@/types/fantasy";
 import { FANTASY_PLAYERS } from "./mocks/fantasy-players";
 import { FANTASY_NATIONAL_TEAMS } from "./mocks/fantasy-national-teams";
-import { MOCK_USERS } from "./mocks/users";
+import * as fs from "./firestore-store";
 import { calculateFantasyTeamPoints, getRankingLabel } from "./fantasy-scoring";
 
-// ---------------------------------------------------------------------------
-// In-memory mock stores — anchored to `global` so they survive HMR reloads
-// ---------------------------------------------------------------------------
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __fantasyTeams: FantasyTeam[] | undefined;
-  // eslint-disable-next-line no-var
-  var __fantasyStats: FantasyPlayerMatchStats[] | undefined;
-  // eslint-disable-next-line no-var
-  var __fantasyLeagues: FantasyLeague[] | undefined;
-}
-
-const MOCK_FANTASY_TEAMS: FantasyTeam[] = (global.__fantasyTeams ??= []);
-const MOCK_FANTASY_STATS: FantasyPlayerMatchStats[] = (global.__fantasyStats ??= []);
-
-function makeInviteCode(): string {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
-
-// Seed a demo league so Clara has something to see on first load
-const MOCK_FANTASY_LEAGUES: FantasyLeague[] = (global.__fantasyLeagues ??= [
-  {
-    id: "league_demo",
-    name: "La Liga de los Cracks",
-    competitionId: "world_cup_2026",
-    ownerId: "user_clara",
-    memberIds: ["user_clara", "user_marina", "user_pablo"],
-    inviteCode: "CRACKS",
-    createdAt: "2026-05-01T10:00:00.000Z",
-  },
-]);
+// Los jugadores y selecciones son datos estáticos (seed); se leen del mock.
+// Los equipos fantasy, ligas y estadísticas son dinámicos → Firestore.
 
 // ---------------------------------------------------------------------------
-// Players
+// Jugadores (datos estáticos del mock)
 // ---------------------------------------------------------------------------
 
-export async function getPlayersByCompetition(
-  competitionId: string,
-): Promise<FantasyPlayer[]> {
+export async function getPlayersByCompetition(competitionId: string): Promise<FantasyPlayer[]> {
   return FANTASY_PLAYERS.filter((p) => p.competitionId === competitionId);
 }
 
-export async function getPlayerById(
-  id: string,
-): Promise<FantasyPlayer | undefined> {
+export async function getPlayerById(id: string): Promise<FantasyPlayer | undefined> {
   return FANTASY_PLAYERS.find((p) => p.id === id);
 }
 
 // ---------------------------------------------------------------------------
-// National Teams
+// Selecciones nacionales (datos estáticos del mock)
 // ---------------------------------------------------------------------------
 
-export async function getNationalTeamsByCompetition(
-  competitionId: string,
-): Promise<FantasyNationalTeam[]> {
+export async function getNationalTeamsByCompetition(competitionId: string): Promise<FantasyNationalTeam[]> {
   return FANTASY_NATIONAL_TEAMS.filter((t) => t.competitionId === competitionId);
 }
 
 // ---------------------------------------------------------------------------
-// Fantasy Teams
+// Equipos Fantasy → Firestore
 // ---------------------------------------------------------------------------
 
 export async function getFantasyTeamByUserAndCompetition(
   userId: string,
   competitionId: string,
 ): Promise<FantasyTeam | null> {
-  return (
-    MOCK_FANTASY_TEAMS.find(
-      (t) => t.userId === userId && t.competitionId === competitionId,
-    ) ?? null
-  );
+  const result = await fs.queryWhereCompoundOne<FantasyTeam>("fantasy_teams", [
+    ["userId", userId],
+    ["competitionId", competitionId],
+  ]);
+  return result ?? null;
 }
 
-export async function getAllFantasyTeamsByCompetition(
-  competitionId: string,
-): Promise<FantasyTeam[]> {
-  return MOCK_FANTASY_TEAMS.filter((t) => t.competitionId === competitionId);
+export async function getAllFantasyTeamsByCompetition(competitionId: string): Promise<FantasyTeam[]> {
+  return fs.queryWhere<FantasyTeam>("fantasy_teams", "competitionId", competitionId);
 }
 
 export async function createFantasyTeam(
@@ -104,42 +66,39 @@ export async function createFantasyTeam(
     updatedAt: now,
     locked: false,
   };
-  MOCK_FANTASY_TEAMS.push(newTeam);
-  return newTeam;
+  return fs.insert("fantasy_teams", newTeam);
 }
 
 export async function updateFantasyTeam(
   fantasyTeamId: string,
   data: Partial<FantasyTeam>,
 ): Promise<FantasyTeam | null> {
-  const idx = MOCK_FANTASY_TEAMS.findIndex((t) => t.id === fantasyTeamId);
-  if (idx === -1) return null;
-  MOCK_FANTASY_TEAMS[idx] = {
-    ...MOCK_FANTASY_TEAMS[idx],
+  const existing = await fs.getById<FantasyTeam>("fantasy_teams", fantasyTeamId);
+  if (!existing) return null;
+  const updated: FantasyTeam = {
+    ...existing,
     ...data,
     updatedAt: new Date().toISOString(),
   };
-  return MOCK_FANTASY_TEAMS[idx];
+  await fs.upsert("fantasy_teams", updated);
+  return updated;
 }
 
-export async function lockFantasyTeamsByCompetition(
-  competitionId: string,
-): Promise<void> {
-  for (const team of MOCK_FANTASY_TEAMS) {
-    if (team.competitionId === competitionId) {
-      team.locked = true;
-    }
-  }
+export async function lockFantasyTeamsByCompetition(competitionId: string): Promise<void> {
+  const teams = await getAllFantasyTeamsByCompetition(competitionId);
+  await Promise.all(
+    teams.map((t) => fs.patch("fantasy_teams", t.id, { locked: true })),
+  );
 }
 
 // ---------------------------------------------------------------------------
-// Stats
+// Estadísticas → Firestore
 // ---------------------------------------------------------------------------
 
 export async function getFantasyPlayerStatsByCompetition(
   competitionId: string,
 ): Promise<FantasyPlayerMatchStats[]> {
-  return MOCK_FANTASY_STATS.filter((s) => s.competitionId === competitionId);
+  return fs.queryWhere<FantasyPlayerMatchStats>("fantasy_stats", "competitionId", competitionId);
 }
 
 export async function saveFantasyPlayerMatchStats(
@@ -149,61 +108,50 @@ export async function saveFantasyPlayerMatchStats(
     ...stats,
     id: `stats_${Math.random().toString(36).slice(2, 10)}`,
   };
-  MOCK_FANTASY_STATS.push(newStats);
-
-  // Update accumulated points on the player
-  const player = FANTASY_PLAYERS.find((p) => p.id === stats.playerId);
-  if (player) {
-    player.totalFantasyPoints += newStats.fantasyPoints;
-  }
-
+  await fs.insert("fantasy_stats", newStats);
   return newStats;
 }
 
 // ---------------------------------------------------------------------------
-// Points recalculation
+// Recálculo de puntos
 // ---------------------------------------------------------------------------
 
-export async function updateFantasyTeamPoints(
-  fantasyTeamId: string,
-): Promise<void> {
-  const team = MOCK_FANTASY_TEAMS.find((t) => t.id === fantasyTeamId);
+export async function updateFantasyTeamPoints(fantasyTeamId: string): Promise<void> {
+  const team = await fs.getById<FantasyTeam>("fantasy_teams", fantasyTeamId);
   if (!team) return;
 
   const allStats = await getFantasyPlayerStatsByCompetition(team.competitionId);
-  const statsMap = new Map<string, FantasyPlayerMatchStats>();
 
-  // Aggregate per player across all matches
+  // Agregamos por jugador
+  const statsMap = new Map<string, FantasyPlayerMatchStats>();
   for (const stat of allStats) {
     const existing = statsMap.get(stat.playerId);
     if (!existing) {
       statsMap.set(stat.playerId, { ...stat });
     } else {
-      existing.goals += stat.goals;
-      existing.assists += stat.assists;
-      existing.yellowCards += stat.yellowCards;
-      existing.redCards += stat.redCards;
-      existing.penaltySaved += stat.penaltySaved;
-      existing.penaltyMissed += stat.penaltyMissed;
-      existing.minutesPlayed += stat.minutesPlayed;
-      existing.mvp = existing.mvp || stat.mvp;
-      existing.cleanSheet = existing.cleanSheet || stat.cleanSheet;
-      existing.fantasyPoints += stat.fantasyPoints;
+      existing.goals          += stat.goals;
+      existing.assists        += stat.assists;
+      existing.yellowCards    += stat.yellowCards;
+      existing.redCards       += stat.redCards;
+      existing.penaltySaved   += stat.penaltySaved;
+      existing.penaltyMissed  += stat.penaltyMissed;
+      existing.minutesPlayed  += stat.minutesPlayed;
+      existing.mvp             = existing.mvp || stat.mvp;
+      existing.cleanSheet      = existing.cleanSheet || stat.cleanSheet;
+      existing.fantasyPoints  += stat.fantasyPoints;
     }
   }
 
-  const playersMap = new Map<string, FantasyPlayer>(
-    FANTASY_PLAYERS.map((p) => [p.id, p]),
-  );
-
+  const playersMap = new Map<string, FantasyPlayer>(FANTASY_PLAYERS.map((p) => [p.id, p]));
   const breakdown = calculateFantasyTeamPoints(team, statsMap, playersMap, null);
-  team.totalPoints = breakdown.totalPoints;
-  team.updatedAt = new Date().toISOString();
+
+  await fs.patch("fantasy_teams", fantasyTeamId, {
+    totalPoints: breakdown.totalPoints,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
-export async function recalculateFantasyRanking(
-  competitionId: string,
-): Promise<void> {
+export async function recalculateFantasyRanking(competitionId: string): Promise<void> {
   const teams = await getAllFantasyTeamsByCompetition(competitionId);
   await Promise.all(teams.map((t) => updateFantasyTeamPoints(t.id)));
 }
@@ -212,24 +160,70 @@ export async function recalculateFantasyRanking(
 // Ranking
 // ---------------------------------------------------------------------------
 
+export async function getFantasyRankingByCompetition(
+  competitionId: string,
+): Promise<FantasyRankingEntry[]> {
+  const teams = await getAllFantasyTeamsByCompetition(competitionId);
+  const nationalTeams = await getNationalTeamsByCompetition(competitionId);
+  const ntMap = new Map(nationalTeams.map((nt) => [nt.id, nt]));
+
+  // Obtenemos los usuarios de Firestore para los display names
+  const userIds = [...new Set(teams.map((t) => t.userId))];
+  const userDocs = await Promise.all(
+    userIds.map((id) => fs.getById<{ id: string; displayName: string }>("users", id)),
+  );
+  const userMap = new Map(
+    userDocs
+      .filter((u): u is { id: string; displayName: string } => Boolean(u))
+      .map((u) => [u.id, u.displayName]),
+  );
+
+  const sorted = [...teams].sort((a, b) => b.totalPoints - a.totalPoints);
+
+  return sorted.map((team, i) => {
+    const captainPlayer = FANTASY_PLAYERS.find((p) => p.id === team.captainId);
+    const championTeam  = team.championTeamId ? ntMap.get(team.championTeamId) : undefined;
+    const prev          = i > 0 ? sorted[i - 1].totalPoints : team.totalPoints;
+    const pointsDiff    = i === 0 ? 0 : team.totalPoints - prev;
+
+    return {
+      rank: i + 1,
+      userId: team.userId,
+      displayName: userMap.get(team.userId) ?? team.userId,
+      teamName: team.teamName,
+      totalPoints: team.totalPoints,
+      captainName: captainPlayer?.name ?? "—",
+      championTeamName: championTeam?.name ?? team.championTeamId ?? "—",
+      pointsDiff,
+      label: getRankingLabel(i + 1, team.totalPoints),
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
-// Leagues
+// Ligas → Firestore
 // ---------------------------------------------------------------------------
 
+function makeInviteCode(): string {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
 export async function getLeaguesByUserId(userId: string): Promise<FantasyLeague[]> {
-  return MOCK_FANTASY_LEAGUES.filter((l) => l.memberIds.includes(userId));
+  return fs.queryWhereArrayContains<FantasyLeague>("fantasy_leagues", "memberIds", userId);
 }
 
 export async function getFantasyLeagueById(id: string): Promise<FantasyLeague | null> {
-  return MOCK_FANTASY_LEAGUES.find((l) => l.id === id) ?? null;
+  return (await fs.getById<FantasyLeague>("fantasy_leagues", id)) ?? null;
 }
 
-export async function getFantasyLeagueByInviteCode(
-  code: string,
-): Promise<FantasyLeague | null> {
-  return MOCK_FANTASY_LEAGUES.find(
-    (l) => l.inviteCode.toUpperCase() === code.toUpperCase(),
-  ) ?? null;
+export async function getFantasyLeagueByInviteCode(code: string): Promise<FantasyLeague | null> {
+  return (
+    (await fs.queryWhereOne<FantasyLeague>(
+      "fantasy_leagues",
+      "inviteCode",
+      code.toUpperCase(),
+    )) ?? null
+  );
 }
 
 export async function createFantasyLeague(data: {
@@ -246,18 +240,17 @@ export async function createFantasyLeague(data: {
     inviteCode: makeInviteCode(),
     createdAt: new Date().toISOString(),
   };
-  MOCK_FANTASY_LEAGUES.push(league);
-  return league;
+  return fs.insert("fantasy_leagues", league);
 }
 
 export async function joinFantasyLeague(
   leagueId: string,
   userId: string,
 ): Promise<{ error?: string }> {
-  const league = MOCK_FANTASY_LEAGUES.find((l) => l.id === leagueId);
+  const league = await fs.getById<FantasyLeague>("fantasy_leagues", leagueId);
   if (!league) return { error: "Liga no encontrada." };
   if (league.memberIds.includes(userId)) return { error: "Ya eres miembro de esta liga." };
-  league.memberIds.push(userId);
+  await fs.patch("fantasy_leagues", leagueId, { memberIds: [...league.memberIds, userId] });
   return {};
 }
 
@@ -265,58 +258,21 @@ export async function leaveFantasyLeague(
   leagueId: string,
   userId: string,
 ): Promise<{ error?: string }> {
-  const league = MOCK_FANTASY_LEAGUES.find((l) => l.id === leagueId);
+  const league = await fs.getById<FantasyLeague>("fantasy_leagues", leagueId);
   if (!league) return { error: "Liga no encontrada." };
   if (league.ownerId === userId) return { error: "El creador no puede abandonar la liga." };
-  league.memberIds = league.memberIds.filter((id) => id !== userId);
+  await fs.patch("fantasy_leagues", leagueId, {
+    memberIds: league.memberIds.filter((id) => id !== userId),
+  });
   return {};
 }
 
-export async function getFantasyLeagueRanking(
-  leagueId: string,
-): Promise<FantasyLeagueRankingEntry[]> {
-  const league = MOCK_FANTASY_LEAGUES.find((l) => l.id === leagueId);
+export async function getFantasyLeagueRanking(leagueId: string): Promise<FantasyLeagueRankingEntry[]> {
+  const league = await getFantasyLeagueById(leagueId);
   if (!league) return [];
 
   const allEntries = await getFantasyRankingByCompetition(league.competitionId);
   const leagueEntries = allEntries.filter((e) => league.memberIds.includes(e.userId));
 
-  return leagueEntries.map((e, i) => ({
-    ...e,
-    leagueRank: i + 1,
-  }));
-}
-
-export async function getFantasyRankingByCompetition(
-  competitionId: string,
-): Promise<FantasyRankingEntry[]> {
-  const teams = await getAllFantasyTeamsByCompetition(competitionId);
-  const nationalTeams = await getNationalTeamsByCompetition(competitionId);
-  const ntMap = new Map(nationalTeams.map((nt) => [nt.id, nt]));
-
-  const sorted = [...teams].sort((a, b) => b.totalPoints - a.totalPoints);
-
-  const entries: FantasyRankingEntry[] = sorted.map((team, i) => {
-    const user = MOCK_USERS.find((u) => u.id === team.userId);
-    const captainPlayer = FANTASY_PLAYERS.find(
-      (p) => p.id === team.captainId,
-    );
-    const championTeam = team.championTeamId ? ntMap.get(team.championTeamId) : undefined;
-    const prev = i > 0 ? sorted[i - 1].totalPoints : team.totalPoints;
-    const pointsDiff = i === 0 ? 0 : team.totalPoints - prev;
-
-    return {
-      rank: i + 1,
-      userId: team.userId,
-      displayName: user?.displayName ?? team.userId,
-      teamName: team.teamName,
-      totalPoints: team.totalPoints,
-      captainName: captainPlayer?.name ?? "—",
-      championTeamName: championTeam?.name ?? team.championTeamId ?? "—",
-      pointsDiff,
-      label: getRankingLabel(i + 1, team.totalPoints),
-    };
-  });
-
-  return entries;
+  return leagueEntries.map((e, i) => ({ ...e, leagueRank: i + 1 }));
 }
