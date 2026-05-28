@@ -9,6 +9,7 @@ import { adminDb } from "./firebase-admin";
 import { buildRanking, computeStreak, getPointsForBet } from "./scoring";
 import { getSessionUser, getSessionUserId } from "./session";
 import { USE_MOCKS } from "./runtime";
+import { fetchRecentAndUpcomingMatches } from "./football-api";
 import * as MockDb from "./mocks";
 import { MOCK_RANK_CHANGES } from "./mocks/users";
 import {
@@ -29,6 +30,9 @@ import type {
 } from "@/types/domain";
 
 const MOCKS = USE_MOCKS;
+type RemoteMatchData = Awaited<ReturnType<typeof fetchRecentAndUpcomingMatches>>;
+
+let remoteMatchDataPromise: Promise<RemoteMatchData> | null = null;
 
 // ---------------------------------------------------------------------------
 // Helpers — live-store con fallback a mocks estáticos
@@ -47,6 +51,34 @@ function mockMatches(): Match[] {
   const live = getLiveMatches();
   if (live) return [...live].sort(byKickoff);
   return MockDb.getMatches();
+}
+
+async function getRemoteMatchData(): Promise<RemoteMatchData> {
+  if (!remoteMatchDataPromise) {
+    remoteMatchDataPromise = fetchRecentAndUpcomingMatches();
+  }
+  return remoteMatchDataPromise;
+}
+
+async function resolveMatchData(): Promise<RemoteMatchData> {
+  const liveMatches = getLiveMatches();
+  if (liveMatches) {
+    return {
+      competitions: getLiveCompetitions() ?? [],
+      teams: getLiveTeams() ?? [],
+      matches: [...liveMatches].sort(byKickoff),
+    };
+  }
+
+  if (process.env.FOOTBALL_DATA_API_KEY) {
+    return getRemoteMatchData();
+  }
+
+  return {
+    competitions: MockDb.getCompetitions(),
+    teams: MockDb.getTeams(),
+    matches: MockDb.getMatches(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -240,13 +272,13 @@ export async function addFriendByUsername(userId: string, username: string): Pro
 // ---------------------------------------------------------------------------
 
 export async function getTeams(): Promise<Team[]> {
-  if (MOCKS) return mockTeams();
+  if (MOCKS) return (await resolveMatchData()).teams;
   const snap = await adminDb.collection("teams").get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Team);
 }
 
 export async function getTeamById(id: string): Promise<Team | undefined> {
-  if (MOCKS) return mockTeams().find((t) => t.id === id);
+  if (MOCKS) return (await resolveMatchData()).teams.find((t) => t.id === id);
   if (!id) return undefined;
   const doc = await adminDb.collection("teams").doc(id).get();
   if (!doc.exists) return undefined;
@@ -254,7 +286,7 @@ export async function getTeamById(id: string): Promise<Team | undefined> {
 }
 
 export async function getCompetitions(): Promise<Competition[]> {
-  if (MOCKS) return mockCompetitions();
+  if (MOCKS) return (await resolveMatchData()).competitions;
   const snap = await adminDb.collection("competitions").get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Competition);
 }
@@ -262,7 +294,7 @@ export async function getCompetitions(): Promise<Competition[]> {
 export async function getCompetitionById(
   id: string
 ): Promise<Competition | undefined> {
-  if (MOCKS) return mockCompetitions().find((c) => c.id === id);
+  if (MOCKS) return (await resolveMatchData()).competitions.find((c) => c.id === id);
   if (!id) return undefined;
   const doc = await adminDb.collection("competitions").doc(id).get();
   if (!doc.exists) return undefined;
@@ -274,20 +306,24 @@ export async function getCompetitionById(
 // ---------------------------------------------------------------------------
 
 export async function getMatches(): Promise<Match[]> {
-  if (MOCKS) return mockMatches();
+  if (MOCKS) return (await resolveMatchData()).matches;
   const snap = await adminDb.collection("matches").get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Match).sort(byKickoff);
 }
 
 export async function getMatchById(id: string): Promise<Match | undefined> {
-  if (MOCKS) return mockMatches().find((m) => m.id === id);
+  if (MOCKS) return (await resolveMatchData()).matches.find((m) => m.id === id);
   const doc = await adminDb.collection("matches").doc(id).get();
   if (!doc.exists) return undefined;
   return { id: doc.id, ...doc.data() } as Match;
 }
 
 export async function getUpcomingMatches(): Promise<Match[]> {
-  if (MOCKS) return mockMatches().filter((m) => m.status === "SCHEDULED" || m.status === "LIVE");
+  if (MOCKS) {
+    return (await resolveMatchData()).matches.filter(
+      (m) => m.status === "SCHEDULED" || m.status === "LIVE"
+    );
+  }
   const snap = await adminDb
     .collection("matches")
     .where("status", "in", ["SCHEDULED", "LIVE"])
@@ -298,7 +334,9 @@ export async function getUpcomingMatches(): Promise<Match[]> {
 }
 
 export async function getFinishedMatches(): Promise<Match[]> {
-  if (MOCKS) return mockMatches().filter((m) => m.status === "FINISHED");
+  if (MOCKS) {
+    return (await resolveMatchData()).matches.filter((m) => m.status === "FINISHED");
+  }
   const snap = await adminDb
     .collection("matches")
     .where("status", "==", "FINISHED")

@@ -13,6 +13,7 @@ import {
 import { Badge, Card } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
 import { placeBetAction } from "./actions";
+import BetForm from "@/components/BetForm";
 import { formatBetPrediction } from "@/lib/scoring";
 import type { Outcome, Team } from "@/types/domain";
 
@@ -157,79 +158,16 @@ export default async function MatchDetailPage({
         )}
 
         {canBet && (
-          <form action={placeBetAction} className="mt-4 flex flex-col gap-4">
-            <input type="hidden" name="matchId" value={match.id} />
-            <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Quiniela</p>
-              <div className="grid grid-cols-3 gap-3">
-                {OUTCOME_LABELS.map(({ value, label, helper }) => {
-                  const isSelected = userBet?.prediction.outcome === value;
-                  return (
-                    <label
-                      key={value}
-                      className={
-                        "flex cursor-pointer flex-col items-center gap-1 rounded-2xl border px-4 py-4 text-base font-semibold transition-all " +
-                        (isSelected
-                          ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand-strong)] shadow-sm"
-                          : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]/40")
-                      }
-                    >
-                      <input
-                        type="radio"
-                        name="outcome"
-                        value={value}
-                        defaultChecked={isSelected}
-                        required
-                        className="sr-only"
-                      />
-                      <span className="text-2xl">{label}</span>
-                      <span className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                        {helper}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Marcador exacto</p>
-              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                <label className="flex flex-col gap-2 text-sm">
-                  <span className="text-xs text-[var(--muted)]">Goles local</span>
-                  <input
-                    type="number"
-                    name="homeGoals"
-                    min="0"
-                    step="1"
-                    defaultValue={userBet?.prediction.homeGoals ?? ""}
-                    required
-                    className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center text-base font-semibold outline-none focus:border-[var(--brand)]"
-                  />
-                </label>
-                <span className="pb-2 text-lg font-semibold text-[var(--muted)]">-</span>
-                <label className="flex flex-col gap-2 text-sm">
-                  <span className="text-xs text-[var(--muted)]">Goles visitante</span>
-                  <input
-                    type="number"
-                    name="awayGoals"
-                    min="0"
-                    step="1"
-                    defaultValue={userBet?.prediction.awayGoals ?? ""}
-                    required
-                    className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center text-base font-semibold outline-none focus:border-[var(--brand)]"
-                  />
-                </label>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-strong)]"
-            >
-              Guardar porra
-            </button>
-          </form>
+          // Client-side form that auto-derives outcome from numeric scores
+          <>
+            {/* @ts-expect-error Server component import allowed */}
+            <BetForm
+              matchId={match.id}
+              defaultHomeGoals={userBet?.prediction.homeGoals ?? null}
+              defaultAwayGoals={userBet?.prediction.awayGoals ?? null}
+              defaultOutcome={userBet?.prediction.outcome ?? null}
+            />
+          </>
         )}
 
         {canBet && userBet && (
