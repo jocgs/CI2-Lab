@@ -1,8 +1,11 @@
-import { getGlobalRanking } from "@/lib/db";
+import { getGlobalRanking, getCurrentUser } from "@/lib/db";
 import { RankingTable } from "@/components/RankingTable";
 
 export default async function RankingPage() {
-  const ranking = await getGlobalRanking();
+  const [ranking, user] = await Promise.all([
+    getGlobalRanking(),
+    getCurrentUser(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -13,7 +16,7 @@ export default async function RankingPage() {
         </p>
       </header>
 
-      <RankingTable entries={ranking} />
+      <RankingTable entries={ranking} currentUserId={user.id} />
     </div>
   );
 }
