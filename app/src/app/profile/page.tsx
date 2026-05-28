@@ -19,8 +19,8 @@ import { formatKickoff } from "@/lib/utils";
 import {
   acceptFriendRequestAction,
   saveProfileAction,
-  sendFriendRequestAction,
 } from "./actions";
+import AddFriendForm from "@/components/AddFriendForm";
 import { TeamPickerSelect } from "@/components/TeamPickerSelect";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
 
@@ -175,21 +175,7 @@ export default async function ProfilePage() {
 
         <Card className="p-6">
           <SectionTitle title="Amigos" subtitle="Añade amigos por su nombre de usuario" />
-          <form action={sendFriendRequestAction} className="mt-5 flex flex-col gap-3">
-            <input type="hidden" name="redirectTo" value="/profile" />
-            <input
-              type="text"
-              name="friendUsername"
-              placeholder="Ej: marina"
-              className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 outline-none focus:border-[var(--brand)]"
-            />
-            <button
-              type="submit"
-              className="rounded-xl border border-[var(--border)] px-4 py-3 text-sm font-semibold hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]/40"
-            >
-              Añadir amigo
-            </button>
-          </form>
+          <AddFriendForm redirectTo="/profile" />
 
           <div className="mt-5">
             <p className="mb-3 text-xs uppercase tracking-wide text-[var(--muted)]">Tus amigos</p>
