@@ -54,34 +54,36 @@ export default async function HomePage() {
         {/* Balón decorativo — humor según historial de porras */}
         <div
           aria-hidden
-          className="hero-ball pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 sm:right-6"
+          className="hero-ball pointer-events-none absolute right-1 top-3 sm:right-6 sm:top-1/2 sm:-translate-y-1/2"
         >
           <Image
             src={moodToImage(computeMood(userBets))}
             alt=""
             width={150}
             height={150}
-            className="h-28 w-28 object-contain opacity-85 sm:h-36 sm:w-36"
+            className="h-24 w-24 object-contain opacity-85 sm:h-36 sm:w-36"
             priority
             unoptimized
           />
         </div>
 
-        {/* Contenido — max-w para que no solape con el balón */}
-        <div className="relative max-w-[calc(100%-7rem)] sm:max-w-[calc(100%-9rem)]">
-          <p className="text-sm font-medium opacity-80">¡Hola, {user.displayName}!</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            {pendingBetsCount > 0
-              ? <>{pendingBetsCount} {pendingBetsCount === 1 ? "nueva porra" : "nuevas porras"} disponible{pendingBetsCount === 1 ? "" : "s"}</>
-              : "¡Al día con todas tus porras!"}
-          </h1>
-          <p className="mt-1 text-sm text-white/90">
-            {streak.current > 0
-              ? `Racha en marcha: ${streak.current} acierto${streak.current === 1 ? "" : "s"} seguido${streak.current === 1 ? "" : "s"}. ¡Sigue así!`
-              : "No te quedes sin apostar a los próximos partidos."}
-          </p>
+        {/* Texto — deja hueco al balón; las stats van a ancho completo en móvil */}
+        <div className="relative">
+          <div className="pr-[6.5rem] sm:max-w-[calc(100%-9rem)] sm:pr-0">
+            <p className="text-sm font-medium opacity-80">¡Hola, {user.displayName}!</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+              {pendingBetsCount > 0
+                ? <>{pendingBetsCount} {pendingBetsCount === 1 ? "nueva porra" : "nuevas porras"} disponible{pendingBetsCount === 1 ? "" : "s"}</>
+                : "¡Al día con todas tus porras!"}
+            </h1>
+            <p className="mt-1 text-sm text-white/90">
+              {streak.current > 0
+                ? `Racha en marcha: ${streak.current} acierto${streak.current === 1 ? "" : "s"} seguido${streak.current === 1 ? "" : "s"}. ¡Sigue así!`
+                : "No te quedes sin apostar a los próximos partidos."}
+            </p>
+          </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-3 sm:max-w-sm">
+          <div className="mt-5 grid grid-cols-3 gap-2 sm:max-w-sm sm:gap-3">
             <Stat label="Puntos" value={totalPoints} />
             <Stat label="Racha" value={streak.current} />
             <Stat label="Grupos" value={groups.length} />
@@ -152,9 +154,11 @@ export default async function HomePage() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl bg-white/15 px-3 py-2 backdrop-blur">
-      <p className="text-xs uppercase tracking-wide text-white/80">{label}</p>
-      <p className="text-xl font-semibold tabular-nums">{value}</p>
+    <div className="min-w-0 rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur sm:px-3">
+      <p className="truncate text-[10px] font-medium uppercase leading-tight text-white/80 sm:text-xs sm:tracking-wide">
+        {label}
+      </p>
+      <p className="mt-0.5 text-lg font-semibold tabular-nums sm:text-xl">{value}</p>
     </div>
   );
 }
