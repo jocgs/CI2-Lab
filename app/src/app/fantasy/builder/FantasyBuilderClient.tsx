@@ -115,6 +115,10 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
   const [search, setSearch] = useState("");
 
   const config = STEP_CONFIG[step - 1];
+  const ntm = useMemo(
+    () => new Map(nationalTeams.map((team) => [team.id, team])),
+    [nationalTeams],
+  );
 
   // ─── Already selected player IDs ─────────────────────────────────────────
   const allStarterIds = useMemo(

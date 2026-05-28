@@ -12,9 +12,9 @@ import {
 } from "@/lib/db";
 import { Badge, Card } from "@/components/ui";
 import { formatKickoff } from "@/lib/utils";
-import { placeBetAction } from "./actions";
+import BetForm from "@/components/BetForm";
 import { formatBetPrediction } from "@/lib/scoring";
-import type { Outcome, Team } from "@/types/domain";
+import type { Team } from "@/types/domain";
 
 function flagEmoji(countryCode: string): string {
   return countryCode
@@ -44,12 +44,6 @@ function TeamCrest({ team, size = 64 }: { team: Team; size?: number }) {
     </span>
   );
 }
-
-const OUTCOME_LABELS: { value: Outcome; label: string; helper: string }[] = [
-  { value: "1", label: "1", helper: "Local" },
-  { value: "X", label: "X", helper: "Empate" },
-  { value: "2", label: "2", helper: "Visitante" },
-];
 
 function scoreLabel(homeGoals: number, awayGoals: number) {
   return `${homeGoals}-${awayGoals}`;
@@ -157,70 +151,12 @@ export default async function MatchDetailPage({
         )}
 
         {canBet && (
-          <form action={placeBetAction} className="mt-4 flex flex-col gap-4">
-            <input type="hidden" name="matchId" value={match.id} />
-            <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Quiniela</p>
-              <div className="grid grid-cols-3 gap-3">
-                {OUTCOME_LABELS.map(({ value, label, helper }) => (
-                  <label key={value} className="cursor-pointer">
-                    <input
-                      type="radio"
-                      name="outcome"
-                      value={value}
-                      defaultChecked={userBet?.prediction.outcome === value}
-                      required
-                      className="peer sr-only"
-                    />
-                    <div className="flex flex-col items-center gap-1 rounded-2xl border px-4 py-4 text-base font-semibold transition-all border-[var(--border)] bg-[var(--surface)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]/40 peer-checked:border-[var(--brand)] peer-checked:bg-[var(--brand-soft)] peer-checked:text-[var(--brand-strong)] peer-checked:shadow-sm">
-                      <span className="text-2xl">{label}</span>
-                      <span className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                        {helper}
-                      </span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Marcador exacto</p>
-              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                <label className="flex flex-col gap-2 text-sm">
-                  <span className="text-xs text-[var(--muted)]">Goles local</span>
-                  <input
-                    type="number"
-                    name="homeGoals"
-                    min="0"
-                    step="1"
-                    defaultValue={userBet?.prediction.homeGoals ?? ""}
-                    required
-                    className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center text-base font-semibold outline-none focus:border-[var(--brand)]"
-                  />
-                </label>
-                <span className="pb-2 text-lg font-semibold text-[var(--muted)]">-</span>
-                <label className="flex flex-col gap-2 text-sm">
-                  <span className="text-xs text-[var(--muted)]">Goles visitante</span>
-                  <input
-                    type="number"
-                    name="awayGoals"
-                    min="0"
-                    step="1"
-                    defaultValue={userBet?.prediction.awayGoals ?? ""}
-                    required
-                    className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-center text-base font-semibold outline-none focus:border-[var(--brand)]"
-                  />
-                </label>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-strong)]"
-            >
-              Guardar porra
-            </button>
-          </form>
+          <BetForm
+            matchId={match.id}
+            defaultHomeGoals={userBet?.prediction.homeGoals ?? null}
+            defaultAwayGoals={userBet?.prediction.awayGoals ?? null}
+            defaultOutcome={userBet?.prediction.outcome ?? null}
+          />
         )}
 
         {canBet && userBet && (
