@@ -69,11 +69,11 @@
     "userId": "user_clara",
     "matchId": "match_7",
     "prediction": {
-      "outcome": "2",
-      "homeGoals": 0,
+      "outcome": "X",
+      "homeGoals": 1,
       "awayGoals": 1
     },
-    "createdAt": "2026-05-28T08:04:50.538Z",
+    "createdAt": "2026-05-29T07:42:57.686Z",
     "status": "PENDING",
     "points": 0
   },
@@ -386,6 +386,19 @@
       "awayGoals": 0
     },
     "createdAt": "2026-05-28T07:47:15.613Z",
+    "status": "PENDING",
+    "points": 0
+  },
+  {
+    "id": "bet_ezxxyqcf",
+    "userId": "user_clara",
+    "matchId": "fd_match_552096",
+    "prediction": {
+      "outcome": "X",
+      "homeGoals": 1,
+      "awayGoals": 1
+    },
+    "createdAt": "2026-05-29T08:03:29.586Z",
     "status": "PENDING",
     "points": 0
   }

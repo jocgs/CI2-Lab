@@ -1,4 +1,16 @@
 [
-  { "id": "comp_laliga", "name": "LaLiga EA Sports",        "shortName": "LaLiga", "season": "2025/26" },
-  { "id": "comp_ucl",    "name": "UEFA Champions League",   "shortName": "UCL",    "season": "2025/26" }
+  {
+    "id": "fd_comp_CL",
+    "name": "UEFA Champions League",
+    "shortName": "UCL",
+    "season": "2025/26",
+    "logoUrl": "https://crests.football-data.org/CL.png"
+  },
+  {
+    "id": "fd_comp_WC",
+    "name": "FIFA World Cup 2026",
+    "shortName": "Mundial",
+    "season": "2026/27",
+    "logoUrl": "https://crests.football-data.org/wm26.png"
+  }
 ]
