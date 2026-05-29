@@ -20,7 +20,6 @@ import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { Badge, Card, EmptyState, SectionTitle } from "@/components/ui";
 import { acceptFriendRequestAction } from "./actions";
 import AddFriendForm from "@/components/AddFriendForm";
-import CancelFriendRequestForm from "@/components/CancelFriendRequestForm";
 import { getShopAvatarById } from "@/lib/shop-avatars";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
 

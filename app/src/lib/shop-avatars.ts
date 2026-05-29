@@ -1,31 +1,37 @@
-import type { ShopAvatar } from "@/types/domain";
-
 export const COINS_PER_POINT = 10;
-export const AVATAR_PRICE = 100;
+
+export interface ShopAvatar {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  priceCoin: number;
+  competitionTag: string;
+}
 
 export const SHOP_AVATARS: ShopAvatar[] = [
   {
-    id: "wc2026_clutch",
+    id: "avatar_clutch",
     name: "Clutch",
-    description: "El águila calva de EE.UU., rápida y feroz. Mascota de la WC2026.",
+    description: "La mascota de EE.UU., un puma dorado lleno de energía.",
     imageUrl: "/avatares/Clutch.png",
-    priceCoin: AVATAR_PRICE,
+    priceCoin: 100,
     competitionTag: "WC2026",
   },
   {
-    id: "wc2026_maple",
+    id: "avatar_maple",
     name: "Maple",
-    description: "El castor canadiense, astuto y tenaz. Mascota de la WC2026.",
+    description: "La mascota de Canadá, símbolo del espíritu del norte.",
     imageUrl: "/avatares/Maple.png",
-    priceCoin: AVATAR_PRICE,
+    priceCoin: 100,
     competitionTag: "WC2026",
   },
   {
-    id: "wc2026_zayu",
+    id: "avatar_zayu",
     name: "Zayu",
-    description: "El jaguar mexicano, ágil y poderoso. Mascota de la WC2026.",
+    description: "La mascota de México, vibrante y llena de pasión.",
     imageUrl: "/avatares/Zayu.png",
-    priceCoin: AVATAR_PRICE,
+    priceCoin: 100,
     competitionTag: "WC2026",
   },
 ];
