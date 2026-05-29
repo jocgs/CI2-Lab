@@ -53,13 +53,14 @@ export function NewsTicker({ articles }: { articles: NewsArticle[] }) {
       if (progressRef.current) clearInterval(progressRef.current);
       return;
     }
-    setProgress(0);
+    const resetId = setTimeout(() => setProgress(0), 0);
     progressRef.current = setInterval(
       () => setProgress((p) => Math.min(p + 100 / (INTERVAL_MS / 50), 100)),
       50,
     );
     intervalRef.current = setInterval(next, INTERVAL_MS);
     return () => {
+      clearTimeout(resetId);
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (progressRef.current) clearInterval(progressRef.current);
     };

@@ -18,6 +18,13 @@ export async function sendMessageAction(groupId: string, text: string): Promise<
 
   const user = await getCurrentUser();
 
+  const groupSnap = await adminDb.collection("groups").doc(groupId).get();
+  if (!groupSnap.exists) throw new Error("Grupo no encontrado");
+  const groupData = groupSnap.data() as { memberIds?: string[] };
+  if (!groupData.memberIds?.includes(user.id)) {
+    throw new Error("No eres miembro de este grupo");
+  }
+
   await adminDb
     .collection("groups")
     .doc(groupId)

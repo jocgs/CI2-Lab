@@ -5,7 +5,7 @@ import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { DesktopNav, MobileNav } from "./NavLinks";
 
-export async function Header() {
+export async function Header({ initialTheme }: { initialTheme: "light" | "dark" }) {
   const user = await getSessionUser();
 
   return (
@@ -27,7 +27,7 @@ export async function Header() {
 
         {/* Usuario + ajustes */}
         <div className="flex items-center gap-2">
-          <ThemeToggle />
+          <ThemeToggle initialTheme={initialTheme} />
           {user && (
             <>
               <Link

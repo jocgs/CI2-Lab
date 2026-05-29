@@ -948,6 +948,14 @@ function ConfirmationPanel({
         </div>
       </div>
 
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <p className="font-medium">🔮 Configura tus predicciones después</p>
+        <p className="mt-0.5 text-amber-700 text-xs">
+          Una vez creado tu equipo, elige tu campeón, MVP, decepción y revelación desde{" "}
+          <strong>Mi equipo</strong>. No se guardan aquí.
+        </p>
+      </div>
+
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
         <p className="mb-2 text-sm font-medium">Predicciones</p>
         <div className="grid grid-cols-2 gap-2 text-xs">

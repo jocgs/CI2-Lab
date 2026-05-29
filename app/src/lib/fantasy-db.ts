@@ -104,12 +104,13 @@ export async function getFantasyPlayerStatsByCompetition(
 export async function saveFantasyPlayerMatchStats(
   stats: Omit<FantasyPlayerMatchStats, "id">,
 ): Promise<FantasyPlayerMatchStats> {
-  const newStats: FantasyPlayerMatchStats = {
+  // ID determinista por (playerId, matchId) — evita duplicados si se llama dos veces
+  const statsWithId: FantasyPlayerMatchStats = {
     ...stats,
-    id: `stats_${Math.random().toString(36).slice(2, 10)}`,
+    id: `${stats.playerId}_${stats.matchId}`,
   };
-  await fs.insert("fantasy_stats", newStats);
-  return newStats;
+  await fs.upsert("fantasy_stats", statsWithId);
+  return statsWithId;
 }
 
 // ---------------------------------------------------------------------------

@@ -22,8 +22,10 @@ export function proxy(req: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  const uid = req.cookies.get(SESSION_COOKIE)?.value;
-  if (!uid) {
+  const raw = req.cookies.get(SESSION_COOKIE)?.value;
+  // Las cookies firmadas siempre tienen la forma "userId.hmacHex".
+  // Un valor sin punto es una cookie antigua (sin firma) o forjada → redirigir.
+  if (!raw || !raw.includes(".")) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
