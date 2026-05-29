@@ -49,8 +49,9 @@
     "competitionId": "comp_laliga",
     "homeTeamId": "team_rso",
     "awayTeamId": "team_gir",
-    "kickoffAt": "2026-05-26T07:30:00.000Z",
-    "status": "LIVE"
+    "kickoffAt": "2026-05-26T19:00:00.000Z",
+    "status": "FINISHED",
+    "result": { "homeGoals": 2, "awayGoals": 0, "outcome": "1" }
   },
   {
     "id": "match_7",
@@ -58,7 +59,8 @@
     "homeTeamId": "team_fcb",
     "awayTeamId": "team_atm",
     "kickoffAt": "2026-05-27T20:00:00.000Z",
-    "status": "SCHEDULED"
+    "status": "FINISHED",
+    "result": { "homeGoals": 1, "awayGoals": 0, "outcome": "1" }
   },
   {
     "id": "match_8",
@@ -66,7 +68,8 @@
     "homeTeamId": "team_psg",
     "awayTeamId": "team_int",
     "kickoffAt": "2026-05-28T19:00:00.000Z",
-    "status": "SCHEDULED"
+    "status": "FINISHED",
+    "result": { "homeGoals": 1, "awayGoals": 1, "outcome": "X" }
   },
   {
     "id": "match_9",
@@ -82,6 +85,62 @@
     "homeTeamId": "team_bet",
     "awayTeamId": "team_vil",
     "kickoffAt": "2026-05-30T17:00:00.000Z",
+    "status": "SCHEDULED"
+  },
+  {
+    "id": "match_11",
+    "competitionId": "comp_ucl",
+    "homeTeamId": "team_rma",
+    "awayTeamId": "team_mci",
+    "kickoffAt": "2026-05-31T20:00:00.000Z",
+    "status": "SCHEDULED"
+  },
+  {
+    "id": "match_12",
+    "competitionId": "comp_laliga",
+    "homeTeamId": "team_ath",
+    "awayTeamId": "team_fcb",
+    "kickoffAt": "2026-06-01T16:00:00.000Z",
+    "status": "SCHEDULED"
+  },
+  {
+    "id": "match_13",
+    "competitionId": "comp_mundial",
+    "homeTeamId": "team_esp",
+    "awayTeamId": "team_cro",
+    "kickoffAt": "2026-06-15T17:00:00.000Z",
+    "status": "SCHEDULED"
+  },
+  {
+    "id": "match_14",
+    "competitionId": "comp_mundial",
+    "homeTeamId": "team_ger",
+    "awayTeamId": "team_fra",
+    "kickoffAt": "2026-06-18T21:00:00.000Z",
+    "status": "SCHEDULED"
+  },
+  {
+    "id": "match_15",
+    "competitionId": "comp_mundial",
+    "homeTeamId": "team_arg",
+    "awayTeamId": "team_bra",
+    "kickoffAt": "2026-06-21T21:00:00.000Z",
+    "status": "SCHEDULED"
+  },
+  {
+    "id": "match_16",
+    "competitionId": "comp_mundial",
+    "homeTeamId": "team_eng",
+    "awayTeamId": "team_por",
+    "kickoffAt": "2026-06-23T21:00:00.000Z",
+    "status": "SCHEDULED"
+  },
+  {
+    "id": "match_17",
+    "competitionId": "comp_mundial",
+    "homeTeamId": "team_mex",
+    "awayTeamId": "team_usa",
+    "kickoffAt": "2026-06-25T20:00:00.000Z",
     "status": "SCHEDULED"
   }
 ]

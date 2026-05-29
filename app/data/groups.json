@@ -4,17 +4,12 @@
     "name": "Los del finde",
     "inviteCode": "FINDE26",
     "ownerId": "user_clara",
-    "memberIds": [
-      "user_clara",
-      "user_marina",
-      "user_pablo",
-      "user_lucia"
-    ],
+    "memberIds": ["user_clara", "user_marina", "user_pablo", "user_lucia"],
     "memberJoinedAt": {
-      "user_clara": "2026-05-10T10:00:00.000Z",
+      "user_clara":  "2026-05-10T10:00:00.000Z",
       "user_marina": "2026-05-10T10:00:00.000Z",
-      "user_pablo": "2026-05-10T10:00:00.000Z",
-      "user_lucia": "2026-05-10T10:00:00.000Z"
+      "user_pablo":  "2026-05-10T10:00:00.000Z",
+      "user_lucia":  "2026-05-10T10:00:00.000Z"
     },
     "createdAt": "2026-05-10T10:00:00.000Z"
   },
@@ -23,31 +18,12 @@
     "name": "Máster CI2",
     "inviteCode": "CI2LAB",
     "ownerId": "user_diego",
-    "memberIds": [
-      "user_clara",
-      "user_diego",
-      "user_pablo"
-    ],
+    "memberIds": ["user_clara", "user_diego", "user_pablo"],
     "memberJoinedAt": {
       "user_clara": "2026-05-12T10:00:00.000Z",
       "user_diego": "2026-05-12T10:00:00.000Z",
       "user_pablo": "2026-05-12T10:00:00.000Z"
     },
     "createdAt": "2026-05-12T10:00:00.000Z"
-  },
-  {
-    "id": "group_jz9y7a",
-    "name": "pruebas",
-    "inviteCode": "DNPP8B",
-    "ownerId": "user_zcbcj3h4",
-    "memberIds": [
-      "user_zcbcj3h4",
-      "user_clara"
-    ],
-    "memberJoinedAt": {
-      "user_zcbcj3h4": "2026-05-27T10:51:17.491Z",
-      "user_clara": "2026-05-27T10:51:17.491Z"
-    },
-    "createdAt": "2026-05-27T10:51:17.491Z"
   }
 ]
