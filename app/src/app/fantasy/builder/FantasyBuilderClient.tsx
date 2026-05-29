@@ -314,7 +314,7 @@ export function FantasyBuilderClient({
       }
     } else if (step === 5) {
       if (midfielderIds.includes(playerId)) {
-        setMiddlefielderIds(midfielderIds.filter((id) => id !== playerId));
+        setMidfielderIds(midfielderIds.filter((id) => id !== playerId));
       } else if (midfielderIds.length < formationRequirements.midfielders) {
         setMidfielderIds([...midfielderIds, playerId]);
       }
