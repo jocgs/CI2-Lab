@@ -1,23 +1,26 @@
+import * as fs from "./data-store";
 import type { UserTournamentPicks } from "@/types/picks";
 
-// ─── In-memory store anchored to global (survives HMR in dev) ────────────────
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __tournamentPicks: UserTournamentPicks[] | undefined;
+interface StoredPick extends UserTournamentPicks {
+  id: string;
 }
 
-const PICKS_STORE: UserTournamentPicks[] = (global.__tournamentPicks ??= []);
+function pickId(userId: string, tournamentId: string) {
+  return `${userId}_${tournamentId}`;
+}
 
-// ─── CRUD ─────────────────────────────────────────────────────────────────────
+function toPublic(p: StoredPick): UserTournamentPicks {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id: _id, ...rest } = p;
+  return rest as UserTournamentPicks;
+}
 
 export async function getUserTournamentPicks(
   userId: string,
   tournamentId: string,
 ): Promise<UserTournamentPicks | null> {
-  return (
-    PICKS_STORE.find((p) => p.userId === userId && p.tournamentId === tournamentId) ?? null
-  );
+  const pick = await fs.getById<StoredPick>("tournament_picks", pickId(userId, tournamentId));
+  return pick ? toPublic(pick) : null;
 }
 
 export async function saveUserTournamentPicks(data: {
@@ -26,27 +29,33 @@ export async function saveUserTournamentPicks(data: {
   revelationTeamId: string;
 }): Promise<UserTournamentPicks> {
   const now = new Date().toISOString();
-  const existing = PICKS_STORE.find(
-    (p) => p.userId === data.userId && p.tournamentId === data.tournamentId,
-  );
+  const id = pickId(data.userId, data.tournamentId);
+  const existing = await fs.getById<StoredPick>("tournament_picks", id);
 
   if (existing) {
-    existing.revelationTeamId = data.revelationTeamId;
-    existing.updatedAt = now;
-    return existing;
+    await fs.patch("tournament_picks", id, {
+      revelationTeamId: data.revelationTeamId,
+      updatedAt: now,
+    });
+    return toPublic({ ...existing, revelationTeamId: data.revelationTeamId, updatedAt: now });
   }
 
-  const newPick: UserTournamentPicks = {
-    ...data,
+  const newPick: StoredPick = {
+    id,
+    userId: data.userId,
+    tournamentId: data.tournamentId,
+    revelationTeamId: data.revelationTeamId,
+    disappointmentTeamId: null,
     createdAt: now,
     updatedAt: now,
   };
-  PICKS_STORE.push(newPick);
-  return newPick;
+  await fs.insert("tournament_picks", newPick);
+  return toPublic(newPick);
 }
 
 export async function getAllPicksByTournament(
   tournamentId: string,
 ): Promise<UserTournamentPicks[]> {
-  return PICKS_STORE.filter((p) => p.tournamentId === tournamentId);
+  const picks = await fs.queryWhere<StoredPick>("tournament_picks", "tournamentId", tournamentId);
+  return picks.map(toPublic);
 }
