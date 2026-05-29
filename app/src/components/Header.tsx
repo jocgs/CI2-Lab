@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/session";
+import { BRAND_ASSETS } from "@/lib/constants/assets";
 import { USE_MOCKS } from "@/lib/runtime";
 import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "./ThemeToggle";
@@ -12,14 +14,19 @@ export async function Header({ initialTheme }: { initialTheme: "light" | "dark" 
     <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="grid h-8 w-8 place-items-center rounded-full bg-[var(--brand)] text-white text-sm font-bold shadow-sm"
-          >
-            T
+        <Link href="/" className="flex shrink-0 items-center gap-2">
+          <Image
+            src={BRAND_ASSETS.logoIconTransparent}
+            alt="TikiTaka"
+            width={40}
+            height={40}
+            className="h-10 w-10 object-contain"
+            priority
+            unoptimized
+          />
+          <span className="whitespace-nowrap text-lg font-semibold tracking-tight">
+            TikiTaka
           </span>
-          <span className="text-lg font-semibold tracking-tight">TikiTaka</span>
         </Link>
 
         {/* Nav escritorio — componente cliente con pathname activo */}

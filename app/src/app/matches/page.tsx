@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { SectionHero } from "@/components/SectionHero";
+import { HERO_ASSETS } from "@/lib/constants/assets";
 import {
   getBetForUserAndMatch,
   getCompetitions,
@@ -60,10 +62,11 @@ export default async function MatchesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Partidos</h1>
-        <p className="text-sm text-[var(--muted)]">Haz tu porra (1, X o 2) antes del pitido inicial.</p>
-      </header>
+      <SectionHero
+        title="Partidos"
+        subtitle="Haz tu porra antes del kickoff"
+        imageSrc={HERO_ASSETS.partidos}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 text-sm w-fit">

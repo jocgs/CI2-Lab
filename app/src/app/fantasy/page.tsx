@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/db";
+import { HERO_ASSETS } from "@/lib/constants/assets";
 import {
   getGlobalFantasyTeam,
   getFantasyTeamForLeague,
@@ -41,15 +42,19 @@ export default async function FantasyPage() {
   return (
     <div className="flex flex-col gap-8">
       {/* Hero */}
-      <section className="rounded-3xl bg-gradient-to-br from-violet-600 via-[var(--brand)] to-emerald-400 p-6 text-white shadow-md sm:p-8">
-        <p className="text-sm font-medium opacity-80">¡Hola, {user.displayName}!</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-          Fantasy Express ⚡
-        </h1>
-        <p className="mt-1 max-w-md text-sm text-white/90">
-          Elige tu once, predice el campeón y demuestra que sabes más que el
-          seleccionador. O al menos que Google.
-        </p>
+      <section
+        className="page-hero"
+        style={{ backgroundImage: `url(${HERO_ASSETS.fantasy})` }}
+      >
+        <div className="page-hero__content">
+          <p className="text-sm font-medium opacity-80">¡Hola, {user.displayName}!</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+            Fantasy
+          </h1>
+          <p className="mt-1 text-sm">
+            Crea tu equipo ideal y compite jornada a jornada.
+          </p>
+        </div>
       </section>
 
       {/* Competitions */}

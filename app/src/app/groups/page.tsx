@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser, getGroupsForUser } from "@/lib/db";
+import { SectionHero } from "@/components/SectionHero";
+import { HERO_ASSETS } from "@/lib/constants/assets";
 import { Card, EmptyState, SectionTitle } from "@/components/ui";
 import { createGroupAction, joinGroupAction } from "./actions";
 
@@ -9,12 +11,11 @@ export default async function GroupsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Mis grupos</h1>
-        <p className="text-sm text-[var(--muted)]">
-          Crea un grupo o únete con un código para competir con amigos.
-        </p>
-      </header>
+      <SectionHero
+        title="Grupos"
+        subtitle="Compite con tus amigos y crea tu propia liga"
+        imageSrc={HERO_ASSETS.grupos}
+      />
 
       <section className="grid gap-4 sm:grid-cols-2">
         <Card className="p-5">

@@ -1,6 +1,7 @@
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { Badge, Card, SectionTitle } from "@/components/ui";
+import { HERO_ASSETS } from "@/lib/constants/assets";
 import { MOCK_NEWS, type NewsArticle, type NewsCategory } from "@/lib/mocks/news";
 import { NewsTicker } from "@/components/NewsTicker";
 
@@ -44,20 +45,17 @@ export default function NewsPage() {
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[var(--brand-strong)] via-[var(--brand)] to-emerald-400 p-6 text-white shadow-md sm:p-8">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[7rem] opacity-20 sm:right-8 sm:text-[9rem]"
-        >
-          📰
-        </span>
-        <div className="relative max-w-[calc(100%-7rem)] sm:max-w-[calc(100%-9rem)]">
+      <section
+        className="page-hero"
+        style={{ backgroundImage: `url(${HERO_ASSETS.noticias})` }}
+      >
+        <div className="page-hero__content">
           <p className="text-sm font-medium opacity-80">Mundial 2026</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
             Noticias
           </h1>
-          <p className="mt-1 text-sm text-white/90">
-            Todo lo que pasa alrededor del torneo.
+          <p className="mt-1 text-sm">
+            Sigue la actualidad de tus equipos y torneos.
           </p>
         </div>
       </section>

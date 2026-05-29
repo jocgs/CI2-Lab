@@ -110,6 +110,62 @@ html[data-app-bg="futbol-rayas"] body {
   background-color: var(--pitch-base);
 }
 
+/* ── Page Hero con background-image ──────────────────────────────────────── */
+
+.page-hero {
+  position: relative;
+  min-height: 230px;
+  border-radius: 28px;
+  overflow: hidden;
+  padding: clamp(28px, 4vw, 50px);
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
+  box-shadow: 0 18px 40px rgba(5, 150, 105, 0.22);
+}
+
+.page-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(5, 150, 105, 0.82) 0%,
+    rgba(5, 150, 105, 0.65) 35%,
+    rgba(16, 185, 129, 0.18) 60%,
+    rgba(0, 0, 0, 0.00) 100%
+  );
+  z-index: 0;
+}
+
+.page-hero__content {
+  position: relative;
+  z-index: 1;
+  max-width: 620px;
+  color: white;
+}
+
+.page-hero__content h1 { color: white; }
+.page-hero__content p  { color: rgba(255, 255, 255, 0.92); }
+
+@media (max-width: 768px) {
+  .page-hero {
+    min-height: auto;
+    padding: 28px 24px;
+    background-position: center right;
+  }
+
+  .page-hero::before {
+    background: linear-gradient(
+      90deg,
+      rgba(5, 150, 105, 0.88) 0%,
+      rgba(5, 150, 105, 0.72) 100%
+    );
+  }
+}
+
+/* ── Balón decorativo del hero ──────────────────────────────────────────── */
+
 /* Balón decorativo del hero */
 @keyframes ball-float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
