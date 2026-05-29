@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -19,6 +19,17 @@ export const metadata: Metadata = {
   title: "TikiTaka · Porras con amigos",
   description:
     "Crea grupos, haz porras de fútbol con amigos y compite por el ranking. TikiTaka · CI2 Lab.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "TikiTaka",
+  appleWebApp: {
+    capable: true,
+    title: "TikiTaka",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0c1510",
 };
 
 /** Fondos: original | futbol | futbol-pintado | futbol-rayas */
