@@ -31,9 +31,12 @@ export async function Header() {
           {user && (
             <>
               <span className="hidden text-[var(--muted)] sm:block">Hola,</span>
-              <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 font-medium text-[var(--brand-strong)]">
+              <Link
+                href="/profile"
+                className="rounded-full bg-[var(--brand-soft)] px-3 py-1 font-medium text-[var(--brand-strong)] transition-opacity hover:opacity-75"
+              >
                 {user.displayName}
-              </span>
+              </Link>
               {!USE_MOCKS && <SignOutButton />}
             </>
           )}
