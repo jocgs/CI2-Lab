@@ -30,9 +30,8 @@ export default async function PicksPage() {
   const picksLeaderboard = allPicks.map((p) => {
     const u = userMap.get(p.userId);
     const rev = teamMap.get(p.revelationTeamId ?? "");
-    const dis = teamMap.get(p.disappointmentTeamId ?? "");
-    const pts = calculateSpecialPicksTotal(rev?.finalStage, dis?.finalStage);
-    return { userId: p.userId, displayName: u?.displayName ?? p.userId, rev, dis, pts };
+    const pts = calculateSpecialPicksTotal(rev?.finalStage, undefined);
+    return { userId: p.userId, displayName: u?.displayName ?? p.userId, rev, pts };
   });
 
   const startDate = new Date(tournament.startsAt).toLocaleDateString("es-ES", {
@@ -99,7 +98,6 @@ export default async function PicksPage() {
                 <tr className="border-b border-[var(--border)] bg-[var(--surface)] text-xs uppercase tracking-wide text-[var(--muted)]">
                   <th className="px-4 py-3 text-left">Usuario</th>
                   <th className="px-4 py-3 text-left">⭐ Revelación</th>
-                  <th className="px-4 py-3 text-left">💣 Decepción</th>
                   <th className="px-4 py-3 text-right">Puntos</th>
                 </tr>
               </thead>
@@ -124,13 +122,6 @@ export default async function PicksPage() {
                       <td className="px-4 py-3">
                         {entry.rev ? (
                           <span>{entry.rev.flag} {entry.rev.name}</span>
-                        ) : (
-                          <span className="text-[var(--muted)]">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {entry.dis ? (
-                          <span>{entry.dis.flag} {entry.dis.name}</span>
                         ) : (
                           <span className="text-[var(--muted)]">—</span>
                         )}

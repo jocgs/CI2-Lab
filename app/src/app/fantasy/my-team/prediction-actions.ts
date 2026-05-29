@@ -39,6 +39,17 @@ export async function saveAllPredictionsAction(
       return { error: "El campeón y la decepción no pueden ser el mismo equipo." };
     if (data.championTeamId === data.revelationTeamId)
       return { error: "El campeón y la selección revelación no pueden ser el mismo equipo." };
+    if (
+      data.revelationTeamId &&
+      data.disappointmentTeamId &&
+      data.revelationTeamId === data.disappointmentTeamId
+    )
+      return { error: "La revelación y la decepción no pueden ser el mismo equipo." };
+
+    // ── Validar cuota de la decepción ─────────────────────────────────────
+    const disTeam = MOCK_TOURNAMENT_TEAMS.find((t) => t.id === data.disappointmentTeamId);
+    if (!disTeam || disTeam.marketOdds > 25)
+      return { error: "La selección decepción debe tener cuota de mercado ≤ 25." };
 
     // ── Validar selección revelación ──────────────────────────────────────
     if (isTournamentLocked(MOCK_TOURNAMENT))

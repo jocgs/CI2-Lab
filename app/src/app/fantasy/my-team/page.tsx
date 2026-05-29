@@ -88,6 +88,9 @@ export default async function MyFantasyTeamPage() {
         fantasyTeam={fantasyTeam}
         players={players}
         nationalTeams={nationalTeams}
+        revelationTeamName={
+          MOCK_TOURNAMENT_TEAMS.find((t) => t.id === (myPicks?.revelationTeamId ?? ""))?.name
+        }
       />
 
       {/* ── Predicciones del torneo ── */}
