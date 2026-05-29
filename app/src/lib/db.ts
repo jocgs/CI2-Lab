@@ -184,6 +184,48 @@ export async function addFriendByUsername(userId: string, username: string): Pro
   return requestFriendByUsername(userId, username);
 }
 
+export async function removeFriendByUsername(userId: string, username: string): Promise<User> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const friend = await fs.queryWhereOne<UserWithPassword>("users", "username", username.trim().toLowerCase());
+  if (!friend) throw new Error("No existe ningún usuario con ese nombre");
+  if (friend.id === user.id) throw new Error("No puedes eliminarte a ti mismo");
+
+  // Quitamos la amistad en ambos sentidos y limpiamos cualquier solicitud
+  // pendiente que pudiera quedar entre los dos usuarios.
+  const userFriends         = new Set(user.friendIds ?? []);
+  const friendFriends       = new Set(friend.friendIds ?? []);
+  const userSent            = new Set(user.friendRequestSentIds ?? []);
+  const userReceived        = new Set(user.friendRequestReceivedIds ?? []);
+  const friendSent          = new Set(friend.friendRequestSentIds ?? []);
+  const friendReceived      = new Set(friend.friendRequestReceivedIds ?? []);
+
+  if (!userFriends.has(friend.id)) throw new Error("No sois amigos");
+
+  userFriends.delete(friend.id);
+  friendFriends.delete(user.id);
+  userSent.delete(friend.id);
+  userReceived.delete(friend.id);
+  friendSent.delete(user.id);
+  friendReceived.delete(user.id);
+
+  await Promise.all([
+    fs.patch("users", user.id, {
+      friendIds: [...userFriends],
+      friendRequestSentIds: [...userSent],
+      friendRequestReceivedIds: [...userReceived],
+    }),
+    fs.patch("users", friend.id, {
+      friendIds: [...friendFriends],
+      friendRequestSentIds: [...friendSent],
+      friendRequestReceivedIds: [...friendReceived],
+    }),
+  ]);
+
+  return stripPassword(friend);
+}
+
 // ---------------------------------------------------------------------------
 // Equipos y competiciones
 // ---------------------------------------------------------------------------

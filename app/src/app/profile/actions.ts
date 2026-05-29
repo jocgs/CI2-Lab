@@ -7,6 +7,7 @@ import {
   getCurrentUserId,
   getTeams,
   getUserById,
+  removeFriendByUsername,
   requestFriendByUsername,
   updateUserProfile,
 } from "@/lib/db";
@@ -139,4 +140,27 @@ export async function addFriendAction(
   formData: FormData
 ): Promise<{ error: string } | null> {
   return sendFriendRequestAction(prevState, formData);
+}
+
+export async function removeFriendAction(
+  _prevState: { error: string } | null,
+  formData: FormData
+): Promise<{ error: string } | null> {
+  const username = getFriendUsername(formData);
+  if (!username) return { error: "Introduce un nombre de usuario" };
+
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "No autenticado" };
+
+  const safeRedirectTo = getSafeRedirectTo(formData);
+
+  try {
+    await removeFriendByUsername(userId, username);
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+
+  revalidatePath("/profile");
+  revalidatePath(safeRedirectTo);
+  redirect(safeRedirectTo);
 }

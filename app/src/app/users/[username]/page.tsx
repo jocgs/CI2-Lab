@@ -22,6 +22,7 @@ import { computeUserAchievements } from "@/lib/achievements";
 import { PublicAchievementsDisplay } from "@/components/AchievementsGrid";
 import { acceptFriendRequestAction } from "../../profile/actions";
 import AddFriendForm from "@/components/AddFriendForm";
+import RemoveFriendForm from "@/components/RemoveFriendForm";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 
@@ -102,9 +103,15 @@ export default async function PublicProfilePage({
                     Ir a mi perfil privado
                   </Link>
                 ) : isFriend ? (
-                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                    Sois amigos
-                  </span>
+                  <>
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                      Sois amigos
+                    </span>
+                    <RemoveFriendForm
+                      friendUsername={user.username}
+                      redirectTo={`/users/${user.username}`}
+                    />
+                  </>
                 ) : hasIncomingRequestFromThisUser ? (
                   <form action={acceptFriendRequestAction}>
                     <input type="hidden" name="friendUsername" value={user.username} />
