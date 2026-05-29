@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { FantasyPlayer } from "@/types/fantasy";
+import { getPlayerPhotoProxyPath } from "@/lib/player-photo-resolver";
 import { clsx } from "@/lib/utils";
 
 interface PlayerAvatarProps {
@@ -13,9 +14,14 @@ interface PlayerAvatarProps {
 export function PlayerAvatar({ player, size = 36, className }: PlayerAvatarProps) {
   const [imageFailed, setImageFailed] = useState(false);
 
+  const photoSrc = useMemo(
+    () => getPlayerPhotoProxyPath(player.id),
+    [player.id],
+  );
+
   useEffect(() => {
     setImageFailed(false);
-  }, [player.photoUrl]);
+  }, [player.id, player.name]);
 
   const initials = useMemo(
     () =>
@@ -28,8 +34,7 @@ export function PlayerAvatar({ player, size = 36, className }: PlayerAvatarProps
     [player.name],
   );
 
-  const photoUrl = player.photoUrl?.trim();
-  const canRenderPhoto = Boolean(photoUrl && !imageFailed && !photoUrl.includes("images.fifa.com"));
+  const showPhoto = !imageFailed;
 
   return (
     <span
@@ -39,17 +44,16 @@ export function PlayerAvatar({ player, size = 36, className }: PlayerAvatarProps
       )}
       style={{ width: size, height: size }}
     >
-      {canRenderPhoto ? (
+      {showPhoto ? (
         <img
-          src={photoUrl}
+          src={photoSrc}
           alt={player.name}
           width={size}
           height={size}
           loading="lazy"
           decoding="async"
-          referrerPolicy="no-referrer"
           onError={() => setImageFailed(true)}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover object-[center_20%] bg-[var(--surface)]"
         />
       ) : (
         <span className="grid h-full w-full place-items-center bg-[var(--brand-soft)] text-[var(--brand-strong)] text-[10px] font-semibold uppercase">

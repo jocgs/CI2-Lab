@@ -9,7 +9,11 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
-    "seed:local": "tsx scripts/seed-local.ts"
+    "seed:local": "tsx scripts/seed-local.ts",
+    "fantasy:normalize-jugadores": "node scripts/normalize-jugadores.mjs",
+    "fantasy:cache-photos": "node scripts/cache-player-photos.mjs",
+    "fantasy:crest-sources": "node scripts/generate-national-crest-sources.mjs",
+    "fantasy:cache-crests": "node scripts/generate-national-crest-sources.mjs && node scripts/cache-national-crests.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

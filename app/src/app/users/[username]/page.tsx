@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ProfileActiveShopAvatar, profileHeaderContentClass } from "@/components/ProfileActiveShopAvatar";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
+import { getShopAvatarById } from "@/lib/shop-avatars";
 import { Badge, Card, EmptyState, SectionTitle } from "@/components/ui";
 import {
   getBetsForUser,
@@ -25,6 +27,8 @@ import AddFriendForm from "@/components/AddFriendForm";
 import RemoveFriendForm from "@/components/RemoveFriendForm";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
+
+export const dynamic = "force-dynamic";
 
 export default async function PublicProfilePage({
   params,
@@ -82,14 +86,16 @@ export default async function PublicProfilePage({
   const isFriend = (currentUser.friendIds ?? []).includes(user.id);
   const hasIncomingRequestFromThisUser = receivedRequests.some((request) => request.id === user.id);
   const hasOutgoingRequestToThisUser = sentRequests.some((request) => request.id === user.id);
+  const activeShopAvatar = user.activeAvatarId ? getShopAvatarById(user.activeAvatarId) : null;
 
   return (
     <div className="flex flex-col gap-8">
       <Card className="overflow-hidden border-[var(--border)] bg-[var(--surface)]">
-        <div className="bg-gradient-to-r from-[var(--brand)] via-cyan-500 to-emerald-400 px-6 py-8 text-white sm:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-r from-[var(--brand)] via-cyan-500 to-emerald-400 px-6 py-8 text-white sm:px-8">
+          {activeShopAvatar && <ProfileActiveShopAvatar avatar={activeShopAvatar} />}
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <ProfileAvatar avatarUrl={user.avatarUrl} displayName={user.displayName} />
-            <div className="flex-1">
+            <div className={profileHeaderContentClass(!!activeShopAvatar)}>
               <p className="text-xs uppercase tracking-[0.24em] text-white/75">Perfil público</p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight">{user.displayName}</h1>
               <p className="text-sm text-white/85">@{user.username}</p>
@@ -134,6 +140,12 @@ export default async function PublicProfilePage({
                     redirectTo={`/users/${user.username}`}
                   />
                 )}
+
+                {activeShopAvatar ? (
+                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                    Mascota: {activeShopAvatar.name}
+                  </span>
+                ) : null}
 
                 {supportedNationalTeam ? (
                   <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">

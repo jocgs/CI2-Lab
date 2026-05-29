@@ -14,8 +14,10 @@ config({ path: resolve(__dirname, "../.env.local") });
 
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { FANTASY_PLAYERS } from "../src/lib/mocks/fantasy-players";
-import { FANTASY_NATIONAL_TEAMS } from "../src/lib/mocks/fantasy-national-teams";
+import { FANTASY_PLAYERS } from "../src/lib/mocks/fantasy-players-data";
+import { buildNationalTeamsFromPlayers } from "../src/lib/mocks/fantasy-national-teams-data";
+
+const FANTASY_NATIONAL_TEAMS = buildNationalTeamsFromPlayers(FANTASY_PLAYERS);
 
 if (!getApps().length) {
   initializeApp({

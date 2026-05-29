@@ -8,12 +8,14 @@ import type {
   FantasyRankingEntry,
 } from "@/types/fantasy";
 import { unstable_cache } from "next/cache";
-import { FANTASY_PLAYERS } from "./mocks/fantasy-players";
-import { FANTASY_NATIONAL_TEAMS } from "./mocks/fantasy-national-teams";
+import { FANTASY_PLAYERS } from "./mocks/fantasy-players-data";
+import { buildNationalTeamsFromPlayers } from "./mocks/fantasy-national-teams-data";
 import * as fs from "./data-store";
+
+const FANTASY_NATIONAL_TEAMS = buildNationalTeamsFromPlayers(FANTASY_PLAYERS);
 import { calculateFantasyTeamPoints, getRankingLabel } from "./fantasy-scoring";
 
-// Los jugadores y selecciones son datos estáticos (seed); se leen del mock.
+// Jugadores y selecciones: catálogo estático en src/lib/data/jugadores.json.
 // Los equipos fantasy, ligas y estadísticas son dinámicos → Firestore.
 
 // ---------------------------------------------------------------------------
@@ -109,6 +111,10 @@ export async function createFantasyTeam(
     locked: false,
   };
   return fs.insert("fantasy_teams", newTeam);
+}
+
+export async function getFantasyTeamById(id: string): Promise<FantasyTeam | null> {
+  return (await fs.getById<FantasyTeam>("fantasy_teams", id)) ?? null;
 }
 
 export async function updateFantasyTeam(

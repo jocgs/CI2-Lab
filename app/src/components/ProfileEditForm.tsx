@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { NationalTeamPickerSelect } from "@/components/fantasy/NationalTeamPickerSelect";
 import { useState, useTransition } from "react";
 import { saveProfileAction } from "@/app/profile/actions";
 import { TeamPickerSelect } from "@/components/TeamPickerSelect";
@@ -16,6 +17,7 @@ interface NationalTeam {
   id: string;
   name: string;
   flagUrl?: string;
+  logoUrl?: string;
 }
 
 interface ProfileEditFormProps {
@@ -132,26 +134,10 @@ function buildProfileFormData(
   form: HTMLFormElement,
   avatarFile?: File,
 ): FormData {
-  const data = new FormData();
-  const national = form.elements.namedItem("supportedNationalTeamId");
-  if (national instanceof HTMLSelectElement) {
-    data.set("supportedNationalTeamId", national.value);
-  }
-
-  const team1 = form.elements.namedItem("supportedTeamId1");
-  if (team1 instanceof HTMLInputElement || team1 instanceof HTMLSelectElement) {
-    data.set("supportedTeamId1", team1.value);
-  }
-
-  const team2 = form.elements.namedItem("supportedTeamId2");
-  if (team2 instanceof HTMLInputElement || team2 instanceof HTMLSelectElement) {
-    data.set("supportedTeamId2", team2.value);
-  }
-
+  const data = new FormData(form);
   if (avatarFile && avatarFile.size > 0) {
     data.set("avatarFile", avatarFile, "avatar.jpg");
   }
-
   return data;
 }
 
@@ -218,19 +204,12 @@ export function ProfileEditForm({
 
       <label className="flex flex-col gap-2 text-sm">
         <span className="font-medium">Selección favorita</span>
-        <select
+        <NationalTeamPickerSelect
           name="supportedNationalTeamId"
+          teams={nationalTeams}
           defaultValue={supportedNationalTeamId ?? ""}
-          className="min-h-11 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base outline-none focus:border-[var(--brand)]"
-        >
-          <option value="">Sin selección</option>
-          {nationalTeams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.flagUrl ? `${team.flagUrl} ` : ""}
-              {team.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Sin selección"
+        />
       </label>
 
       <div className="grid gap-3 sm:grid-cols-2">

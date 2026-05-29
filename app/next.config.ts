@@ -29,6 +29,16 @@ const nextConfig: NextConfig = {
         hostname: "images.fifa.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "r2.thesportsdb.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.thesportsdb.com",
+        pathname: "/**",
+      },
     ],
   },
 };

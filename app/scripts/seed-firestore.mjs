@@ -105,7 +105,7 @@ async function seedFantasyStaticData() {
   // o los leemos directamente del código fuente como JSON si no hay build.
   // En el momento del seed normalmente tenemos el source; lo parseamos a mano.
 
-  const playersPath = resolve(ROOT, "src/lib/mocks/fantasy-players.ts");
+  const playersPath = resolve(ROOT, "src/lib/data/jugadores.json");
   const teamsPath   = resolve(ROOT, "src/lib/mocks/fantasy-national-teams.ts");
 
   if (!existsSync(playersPath) || !existsSync(teamsPath)) {

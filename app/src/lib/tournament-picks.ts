@@ -4,7 +4,7 @@ import type { TournamentTeam, Tournament, FinalStage } from "@/types/picks";
 // These can be overridden per-tournament in future versions.
 
 export const REVELATION_MIN_ODDS = 40;
-export const DISAPPOINTMENT_MAX_ODDS = 25;
+export const DISAPPOINTMENT_MAX_ODDS = 35;
 
 // ─── Filtering ────────────────────────────────────────────────────────────────
 

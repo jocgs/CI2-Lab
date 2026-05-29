@@ -8,7 +8,8 @@ function flagEmoji(cc: string): string {
     .join("");
 }
 
-export const FANTASY_NATIONAL_TEAMS: FantasyNationalTeam[] = [
+/** Metadatos (grupo, cuotas, banderas) para selecciones del catálogo de jugadores. */
+export const FANTASY_NATIONAL_TEAMS_METADATA: FantasyNationalTeam[] = [
   // Group A
   { id: "usa",         name: "Estados Unidos", flagUrl: flagEmoji("US"), competitionId: "world_cup_2026", group: "A", odds: 18.0 },
   { id: "canada",      name: "Canadá",          flagUrl: flagEmoji("CA"), competitionId: "world_cup_2026", group: "A", odds: 30.0 },

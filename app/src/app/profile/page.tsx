@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ProfileActiveShopAvatar, profileHeaderContentClass } from "@/components/ProfileActiveShopAvatar";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import {
   getBetsForUser,
@@ -22,12 +23,13 @@ import { acceptFriendRequestAction } from "./actions";
 import AddFriendForm from "@/components/AddFriendForm";
 import { getShopAvatarById } from "@/lib/shop-avatars";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
+import { NationalTeamCrest } from "@/components/fantasy/NationalTeamCrest";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
-  const activeWcAvatar = user.activeAvatarId ? getShopAvatarById(user.activeAvatarId) : null;
+  const activeShopAvatar = user.activeAvatarId ? getShopAvatarById(user.activeAvatarId) : null;
 
   const [streak, bets, groups, friends, receivedRequests, sentRequests, teams, nationalTeams, matches, globalRanking, fantasyTeam] =
     await Promise.all([
@@ -72,21 +74,10 @@ export default async function ProfilePage() {
       <Card className="overflow-hidden border-[var(--border)] bg-[var(--surface)]">
         <div className="relative overflow-hidden bg-gradient-to-r from-[var(--brand)] via-cyan-500 to-emerald-400 px-6 py-8 text-white sm:px-8">
           {/* Avatar WC activo — decorativo en el lateral derecho */}
-          {activeWcAvatar && (
-            <div aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 sm:right-6">
-              <Image
-                src={activeWcAvatar.imageUrl}
-                alt=""
-                width={130}
-                height={130}
-                className="h-24 w-24 object-contain opacity-90 drop-shadow-lg sm:h-32 sm:w-32"
-                unoptimized
-              />
-            </div>
-          )}
+          {activeShopAvatar && <ProfileActiveShopAvatar avatar={activeShopAvatar} />}
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <ProfileAvatar avatarUrl={user.avatarUrl} displayName={user.displayName} />
-            <div className={activeWcAvatar ? "flex-1 pr-[6.5rem] sm:pr-36" : "flex-1"}>
+            <div className={profileHeaderContentClass(!!activeShopAvatar)}>
               <p className="text-xs uppercase tracking-[0.24em] text-white/75">Perfil</p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight">{user.displayName}</h1>
               <p className="text-sm text-white/85">@{user.username}</p>
@@ -320,19 +311,11 @@ function TeamBadge({ team }: { team: { name: string; shortName: string; logoUrl?
 function NationalTeamBadge({
   team,
 }: {
-  team: { name: string; flagUrl?: string; logoUrl?: string };
+  team: { id: string; name: string; flagUrl?: string; logoUrl?: string };
 }) {
-  if (team.logoUrl) {
-    return (
-      <span className="grid h-8 w-8 place-items-center rounded-full bg-white/20 p-1">
-        <img src={team.logoUrl} alt={team.name} className="h-6 w-6 object-contain" />
-      </span>
-    );
-  }
-
   return (
-    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-lg leading-none">
-      {team.flagUrl ?? "🏳️"}
+    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/20 p-1">
+      <NationalTeamCrest team={team} size={24} />
     </span>
   );
 }

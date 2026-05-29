@@ -10,7 +10,9 @@ import { saveUserTournamentPicks } from "@/lib/picks-db";
 import {
   validateSpecialPicks,
   isTournamentLocked,
+  DISAPPOINTMENT_MAX_ODDS,
 } from "@/lib/tournament-picks";
+import { isFantasyTeamEditable, fantasyLockMessage } from "@/lib/fantasy-lock";
 import { MOCK_TOURNAMENT, MOCK_TOURNAMENT_TEAMS } from "@/lib/mocks/tournament-teams";
 
 export interface SaveAllPredictionsInput {
@@ -41,7 +43,9 @@ export async function saveAllPredictionsAction(
           : "No tienes equipo en el Fantasy global.",
       };
     }
-    if (team.locked) return { error: "Tu equipo está bloqueado." };
+    if (!isFantasyTeamEditable(team)) {
+      return { error: fantasyLockMessage() };
+    }
 
     if (!data.championTeamId)
       return { error: "Debes seleccionar un campeón." };
@@ -64,8 +68,10 @@ export async function saveAllPredictionsAction(
 
     // ── Validar cuota de la decepción ─────────────────────────────────────
     const disTeam = MOCK_TOURNAMENT_TEAMS.find((t) => t.id === data.disappointmentTeamId);
-    if (!disTeam || disTeam.marketOdds > 25)
-      return { error: "La selección decepción debe tener cuota de mercado ≤ 25." };
+    if (!disTeam || disTeam.marketOdds > DISAPPOINTMENT_MAX_ODDS)
+      return {
+        error: `La selección decepción debe tener cuota de mercado ≤ ${DISAPPOINTMENT_MAX_ODDS}.`,
+      };
 
     // ── Validar selección revelación (solo equipo global) ─────────────────
     if (!leagueId) {

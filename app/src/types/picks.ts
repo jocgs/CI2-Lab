@@ -12,6 +12,8 @@ export interface TournamentTeam {
   id: string;
   name: string;
   flag?: string;
+  /** Escudo local en /imagenes/national-crests/ */
+  crestUrl?: string;
   /** Pre-tournament betting odds to win the championship (e.g. 6.00, 80.00) */
   marketOdds: number;
   group?: string;
