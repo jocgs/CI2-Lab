@@ -9,14 +9,13 @@
     "friendIds": [
       "user_marina",
       "user_pablo",
-      "user_diego"
+      "user_diego",
+      "user_lucia"
     ],
     "friendRequestSentIds": [
       "user_zcbcj3h4"
     ],
-    "friendRequestReceivedIds": [
-      "user_lucia"
-    ],
+    "friendRequestReceivedIds": [],
     "supportedNationalTeamId": "spain",
     "supportedTeamIds": [
       "team_rma"
@@ -63,10 +62,10 @@
     "email": "lucia@porrify.app",
     "avatarUrl": "https://ui-avatars.com/api/?name=Luc%C3%ADa&background=ec4899&color=fff&bold=true",
     "passwordHash": "$2b$10$usgk0p9HfMhybB4nRHFx9.aQzCg20yJnguNbfJoKBdMw032eBtJvS",
-    "friendIds": [],
-    "friendRequestSentIds": [
+    "friendIds": [
       "user_clara"
     ],
+    "friendRequestSentIds": [],
     "friendRequestReceivedIds": [],
     "createdAt": "2026-05-04T10:00:00.000Z"
   },

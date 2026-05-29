@@ -6,7 +6,7 @@ import {
   recalculateFantasyRanking,
 } from "@/lib/fantasy-db";
 import { calculatePlayerFantasyPoints } from "@/lib/fantasy-scoring";
-import { FANTASY_PLAYERS } from "@/lib/mocks/fantasy-players";
+import { FANTASY_PLAYERS } from "@/lib/mocks/fantasy-players-data";
 import type { Position } from "@/types/fantasy";
 
 interface AddStatsInput {

@@ -7,7 +7,7 @@ import type {
   FantasyPlayerMatchStats,
   FantasyRankingEntry,
 } from "@/types/fantasy";
-import { FANTASY_PLAYERS } from "./mocks/fantasy-players";
+import { FANTASY_PLAYERS } from "./mocks/fantasy-players-data";
 import { FANTASY_NATIONAL_TEAMS } from "./mocks/fantasy-national-teams";
 import * as fs from "./data-store";
 import { calculateFantasyTeamPoints, getRankingLabel } from "./fantasy-scoring";

@@ -1,5 +1,6 @@
 export type Position = "GK" | "DEF" | "MID" | "FWD";
 export type BetStatus = "PENDING" | "WON" | "LOST";
+export type Formation = "3-5-2" | "3-4-3" | "4-3-3" | "4-4-2" | "5-3-2" | "5-2-3";
 
 export interface FantasyPlayer {
   id: string;
@@ -25,6 +26,7 @@ export interface FantasyNationalTeam {
 }
 
 export interface FantasyStartingEleven {
+  formation?: Formation;
   goalkeeperId: string;
   defenderIds: [string, string, string, string];
   midfielderIds: [string, string, string];

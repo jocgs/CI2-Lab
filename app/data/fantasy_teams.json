@@ -1,0 +1,38 @@
+[
+  {
+    "userId": "user_marina",
+    "competitionId": "world_cup_2026",
+    "teamName": "Expaña",
+    "startingEleven": {
+      "goalkeeperId": "gk_mex_luis_malagon",
+      "defenderIds": [
+        "def_mex_cesar_montes",
+        "def_mex_israel_reyes",
+        "def_bra_marquinhos_correa",
+        "def_bra_eder_militao"
+      ],
+      "midfielderIds": [
+        "mid_fra_antoine_griezmann",
+        "mid_bra_bruno_guimaraes",
+        "mid_fra_youssouf_fofana"
+      ],
+      "forwardIds": [
+        "fwd_eng_ollie_watkins",
+        "fwd_eng_jack_grealish",
+        "fwd_eng_anthony_gordon"
+      ]
+    },
+    "bench": {
+      "goalkeeperId": "gk_nzl_max_crocombe",
+      "defenderId": "def_usa_miles_robinson",
+      "midfielderId": "mid_usa_weston_mckennie",
+      "forwardId": "fwd_usa_haji_wright"
+    },
+    "captainId": "gk_mex_luis_malagon",
+    "id": "fantasy_team_kh521g6q",
+    "totalPoints": 0,
+    "createdAt": "2026-05-29T08:43:51.311Z",
+    "updatedAt": "2026-05-29T08:43:51.311Z",
+    "locked": false
+  }
+]
