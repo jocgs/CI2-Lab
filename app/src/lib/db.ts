@@ -8,6 +8,7 @@ import { usesLocalStore } from "./data-store";
 import { buildRanking, computeStreak, getPointsForBet } from "./scoring";
 import { getSessionUser, getSessionUserId } from "./session";
 import { adminDb } from "./firebase-admin";
+import { getShopAvatarById, COINS_PER_POINT } from "./shop-avatars";
 import type {
   Bet,
   Competition,
@@ -394,6 +395,58 @@ export async function getStreakForUser(userId: string): Promise<UserStreak> {
 }
 
 // ---------------------------------------------------------------------------
+// Tienda de avatares y monedas
+// ---------------------------------------------------------------------------
+
+export async function purchaseAvatar(userId: string, avatarId: string): Promise<User> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const avatar = getShopAvatarById(avatarId);
+  if (!avatar) throw new Error("Avatar no encontrado");
+
+  const unlocked = user.unlockedAvatarIds ?? [];
+  if (unlocked.includes(avatarId)) throw new Error("Ya tienes este avatar");
+
+  const coins = user.coins ?? 0;
+  if (coins < avatar.priceCoin) {
+    throw new Error(`No tienes suficientes monedas. Necesitas ${avatar.priceCoin} y tienes ${coins}`);
+  }
+
+  await fs.patch("users", userId, {
+    coins: coins - avatar.priceCoin,
+    unlockedAvatarIds: [...unlocked, avatarId],
+  });
+
+  const updated = await fs.getById<UserWithPassword>("users", userId);
+  if (!updated) throw new Error("Usuario no encontrado");
+  return stripPassword(updated);
+}
+
+export async function setActiveAvatar(userId: string, avatarId: string | null): Promise<User> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  if (avatarId !== null) {
+    const unlocked = user.unlockedAvatarIds ?? [];
+    if (!unlocked.includes(avatarId)) throw new Error("No tienes ese avatar desbloqueado");
+  }
+
+  await fs.patch("users", userId, { activeAvatarId: avatarId });
+
+  const updated = await fs.getById<UserWithPassword>("users", userId);
+  if (!updated) throw new Error("Usuario no encontrado");
+  return stripPassword(updated);
+}
+
+export async function awardCoins(userId: string, points: number): Promise<void> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
+  if (!user) return;
+  const current = user.coins ?? 0;
+  await fs.patch("users", userId, { coins: current + points * COINS_PER_POINT });
+}
+
+// ---------------------------------------------------------------------------
 // Resolución de porras
 // ---------------------------------------------------------------------------
 
@@ -417,6 +470,7 @@ export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved:
         status: points > 0 ? "WON" : "LOST",
         points,
       });
+      if (points > 0) await awardCoins(bet.userId, points);
       resolved++;
     }
     return { resolved };
@@ -433,6 +487,7 @@ export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved:
         status: points > 0 ? "WON" : "LOST",
         points,
       });
+      if (points > 0) await awardCoins(bet.userId, points);
       resolved++;
     }
     await batch.commit();

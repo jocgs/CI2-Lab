@@ -7,6 +7,7 @@ import type {
   FantasyPlayerMatchStats,
   FantasyRankingEntry,
 } from "@/types/fantasy";
+import { unstable_cache } from "next/cache";
 import { FANTASY_PLAYERS } from "./mocks/fantasy-players";
 import { FANTASY_NATIONAL_TEAMS } from "./mocks/fantasy-national-teams";
 import * as fs from "./data-store";
@@ -19,9 +20,13 @@ import { calculateFantasyTeamPoints, getRankingLabel } from "./fantasy-scoring";
 // Jugadores (datos estáticos del mock)
 // ---------------------------------------------------------------------------
 
-export async function getPlayersByCompetition(competitionId: string): Promise<FantasyPlayer[]> {
-  return FANTASY_PLAYERS.filter((p) => p.competitionId === competitionId);
-}
+// Cache agresiva: catálogo prácticamente estático.
+export const getPlayersByCompetition = unstable_cache(
+  async (competitionId: string): Promise<FantasyPlayer[]> =>
+    FANTASY_PLAYERS.filter((p) => p.competitionId === competitionId),
+  ["fantasy:getPlayersByCompetition"],
+  { revalidate: 60 * 60 * 24 }, // 24h
+);
 
 export async function getPlayerById(id: string): Promise<FantasyPlayer | undefined> {
   return FANTASY_PLAYERS.find((p) => p.id === id);
@@ -31,9 +36,13 @@ export async function getPlayerById(id: string): Promise<FantasyPlayer | undefin
 // Selecciones nacionales (datos estáticos del mock)
 // ---------------------------------------------------------------------------
 
-export async function getNationalTeamsByCompetition(competitionId: string): Promise<FantasyNationalTeam[]> {
-  return FANTASY_NATIONAL_TEAMS.filter((t) => t.competitionId === competitionId);
-}
+// Cache agresiva: catálogo prácticamente estático.
+export const getNationalTeamsByCompetition = unstable_cache(
+  async (competitionId: string): Promise<FantasyNationalTeam[]> =>
+    FANTASY_NATIONAL_TEAMS.filter((t) => t.competitionId === competitionId),
+  ["fantasy:getNationalTeamsByCompetition"],
+  { revalidate: 60 * 60 * 24 }, // 24h
+);
 
 // ---------------------------------------------------------------------------
 // Equipos Fantasy → Firestore
@@ -78,9 +87,13 @@ export async function getFantasyTeamByUserAndCompetition(
   return getGlobalFantasyTeam(userId, competitionId);
 }
 
-export async function getAllFantasyTeamsByCompetition(competitionId: string): Promise<FantasyTeam[]> {
-  return fs.queryWhere<FantasyTeam>("fantasy_teams", "competitionId", competitionId);
-}
+// Cache corta: reduce “saltos” entre secciones en móvil (navegación).
+export const getAllFantasyTeamsByCompetition = unstable_cache(
+  async (competitionId: string): Promise<FantasyTeam[]> =>
+    fs.queryWhere<FantasyTeam>("fantasy_teams", "competitionId", competitionId),
+  ["fantasy:getAllFantasyTeamsByCompetition"],
+  { revalidate: 5 }, // 5s
+);
 
 export async function createFantasyTeam(
   data: Omit<FantasyTeam, "id" | "totalPoints" | "createdAt" | "updatedAt" | "locked">,
@@ -233,9 +246,16 @@ async function buildRankingEntriesFromTeams(
 export async function getFantasyRankingByCompetition(
   competitionId: string,
 ): Promise<FantasyRankingEntry[]> {
-  const allTeams = await getAllFantasyTeamsByCompetition(competitionId);
-  const teams = allTeams.filter(isGlobalFantasyTeam);
-  return buildRankingEntriesFromTeams(teams, competitionId);
+  // Cache corta: ranking no necesita frescura instantánea en navegación.
+  return unstable_cache(
+    async (cid: string): Promise<FantasyRankingEntry[]> => {
+      const allTeams = await getAllFantasyTeamsByCompetition(cid);
+      const teams = allTeams.filter(isGlobalFantasyTeam);
+      return buildRankingEntriesFromTeams(teams, cid);
+    },
+    ["fantasy:getFantasyRankingByCompetition"],
+    { revalidate: 5 },
+  )(competitionId);
 }
 
 // ---------------------------------------------------------------------------
@@ -306,14 +326,21 @@ export async function leaveFantasyLeague(
 }
 
 export async function getFantasyLeagueRanking(leagueId: string): Promise<FantasyLeagueRankingEntry[]> {
-  const league = await getFantasyLeagueById(leagueId);
-  if (!league) return [];
+  // Cache corta: evita recalcular en cada navegación de móvil.
+  return unstable_cache(
+    async (lid: string): Promise<FantasyLeagueRankingEntry[]> => {
+      const league = await getFantasyLeagueById(lid);
+      if (!league) return [];
 
-  const allTeams = await getAllFantasyTeamsByCompetition(league.competitionId);
-  const leagueTeams = allTeams.filter(
-    (t) => t.leagueId === leagueId && league.memberIds.includes(t.userId),
-  );
-  const entries = await buildRankingEntriesFromTeams(leagueTeams, league.competitionId);
+      const allTeams = await getAllFantasyTeamsByCompetition(league.competitionId);
+      const leagueTeams = allTeams.filter(
+        (t) => t.leagueId === lid && league.memberIds.includes(t.userId),
+      );
+      const entries = await buildRankingEntriesFromTeams(leagueTeams, league.competitionId);
 
-  return entries.map((e, i) => ({ ...e, leagueRank: i + 1 }));
+      return entries.map((e, i) => ({ ...e, leagueRank: i + 1 }));
+    },
+    ["fantasy:getFantasyLeagueRanking"],
+    { revalidate: 5 },
+  )(leagueId);
 }
