@@ -9,19 +9,15 @@ import {
   getCurrentUser,
   getGlobalRanking,
   getGroupsForUser,
-  getMatchById,
   getMatches,
   getStreakForUser,
   getTeams,
-  getTeamById,
 } from "@/lib/db";
 import { computeUserAchievements, FANTASY_COMPETITION_ID } from "@/lib/achievements";
 import { getFantasyTeamByUserAndCompetition } from "@/lib/fantasy-db";
 import { AchievementsGrid } from "@/components/AchievementsGrid";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
-import { formatBetPrediction } from "@/lib/scoring";
 import { Badge, Card, EmptyState, SectionTitle } from "@/components/ui";
-import { formatKickoff } from "@/lib/utils";
 import { acceptFriendRequestAction } from "./actions";
 import AddFriendForm from "@/components/AddFriendForm";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
@@ -64,11 +60,6 @@ export default async function ProfilePage() {
     resolvedBets.length === 0
       ? 0
       : Math.round((wonBets.length / resolvedBets.length) * 100);
-
-  const recentBets = bets
-    .slice()
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 8);
 
   const supportedTeamIds = user.supportedTeamIds ?? [];
   const supportedTeams = teams.filter((team) => supportedTeamIds.includes(team.id));
@@ -122,16 +113,6 @@ export default async function ProfilePage() {
           <Stat label="Aciertos" value={`${wonBets.length}/${resolvedBets.length}`} />
           <Stat label="Precisión" value={`${accuracy}%`} />
           <Stat label="Racha actual" value={streak.current} subtitle={`Mejor: ${streak.best}`} />
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <SectionTitle
-          title="Logros"
-          subtitle="Desbloquea medallas por rachas, amigos, grupos, ranking y Fantasy"
-        />
-        <div className="mt-5">
-          <AchievementsGrid achievements={achievements} />
         </div>
       </Card>
 
@@ -248,70 +229,15 @@ export default async function ProfilePage() {
         </div>
       </Card>
 
-      <section>
+      <Card className="p-6">
         <SectionTitle
-          title="Tus porras recientes"
-          subtitle="Últimas predicciones, ordenadas por fecha"
+          title="Logros"
+          subtitle="Desbloquea medallas por rachas, amigos, grupos, ranking y Fantasy"
         />
-        {recentBets.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">Aún no has hecho ninguna porra.</p>
-        ) : (
-          <ul className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-            {await Promise.all(
-              recentBets.map(async (bet, index) => {
-                const match = await getMatchById(bet.matchId);
-                if (!match) return null;
-                const [home, away] = await Promise.all([
-                  getTeamById(match.homeTeamId),
-                  getTeamById(match.awayTeamId),
-                ]);
-                return (
-                  <li
-                    key={bet.id}
-                    className={
-                      "flex items-center justify-between gap-3 px-4 py-3 text-sm " +
-                      (index !== 0 ? "border-t border-[var(--border)]" : "")
-                    }
-                  >
-                    <Link href={`/matches/${match.id}`} className="flex-1 hover:underline">
-                      <p className="font-medium">
-                        {home?.shortName} vs {away?.shortName}
-                      </p>
-                      <p className="text-xs text-[var(--muted)]">{formatKickoff(match.kickoffAt)}</p>
-                    </Link>
-                    <Badge
-                      tone={
-                        bet.status === "WON"
-                          ? "brand"
-                          : bet.status === "LOST"
-                            ? "danger"
-                            : "warning"
-                      }
-                    >
-                      Predicción: {formatBetPrediction(bet.prediction)}
-                      {bet.status === "WON" && ` · +${bet.points}`}
-                    </Badge>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-        )}
-      </section>
-
-      <section>
-        <SectionTitle title="Tus grupos" />
-        <div className="grid gap-3 sm:grid-cols-2">
-          {groups.map((group) => (
-            <Link key={group.id} href={`/groups/${group.id}`}>
-              <Card className="p-4 transition-shadow hover:shadow-md">
-                <p className="text-xs text-[var(--muted)]">{group.memberIds.length} miembros</p>
-                <p className="font-semibold">{group.name}</p>
-              </Card>
-            </Link>
-          ))}
+        <div className="mt-5">
+          <AchievementsGrid achievements={achievements} />
         </div>
-      </section>
+      </Card>
     </div>
   );
 }
