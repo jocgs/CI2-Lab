@@ -10,7 +10,6 @@ export const NAV_LINKS = [
   { href: "/ranking", label: "Ranking",  icon: "🏆" },
   { href: "/fantasy", label: "Fantasy",  icon: "⚡" },
   { href: "/news",    label: "Noticias", icon: "📰" },
-  { href: "/profile", label: "Perfil",   icon: "👤" },
 ];
 
 /** Comprueba si el enlace está activo según el pathname actual. */

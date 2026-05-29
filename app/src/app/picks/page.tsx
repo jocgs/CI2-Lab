@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/db";
+import { getCurrentUser, getUsers } from "@/lib/db";
 import { getUserTournamentPicks, getAllPicksByTournament } from "@/lib/picks-db";
 import { MOCK_TOURNAMENT, MOCK_TOURNAMENT_TEAMS } from "@/lib/mocks/tournament-teams";
 import {
@@ -8,17 +8,18 @@ import {
   calculateSpecialPicksTotal,
 } from "@/lib/tournament-picks";
 import { SpecialPicksForm } from "@/components/SpecialPicksForm";
-import { MOCK_USERS } from "@/lib/mocks/users";
 
 export default async function PicksPage() {
   const user = await getCurrentUser();
   const tournament = MOCK_TOURNAMENT;
   const locked = isTournamentLocked(tournament);
 
-  const [myPicks, allPicks] = await Promise.all([
+  const [myPicks, allPicks, allUsers] = await Promise.all([
     getUserTournamentPicks(user.id, tournament.id),
     getAllPicksByTournament(tournament.id),
+    getUsers(),
   ]);
+  const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
   const revelationTeams = getEligibleRevelationTeams(MOCK_TOURNAMENT_TEAMS);
   const disappointmentTeams = getEligibleDisappointmentTeams(MOCK_TOURNAMENT_TEAMS);
@@ -27,7 +28,7 @@ export default async function PicksPage() {
 
   // Leaderboard: users who have already picked
   const picksLeaderboard = allPicks.map((p) => {
-    const u = MOCK_USERS.find((u) => u.id === p.userId);
+    const u = userMap.get(p.userId);
     const rev = teamMap.get(p.revelationTeamId ?? "");
     const dis = teamMap.get(p.disappointmentTeamId ?? "");
     const pts = calculateSpecialPicksTotal(rev?.finalStage, dis?.finalStage);

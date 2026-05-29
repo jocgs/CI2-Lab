@@ -3,31 +3,22 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { collection, onSnapshot, orderBy, query, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { sendMessageAction } from "@/app/groups/[id]/actions";
+import { sendMessageAction, type ChatMessage } from "@/app/groups/[id]/actions";
 import { ProfileAvatar } from "./ProfileAvatar";
-import { formatKickoff } from "@/lib/utils";
-
-interface ChatMessage {
-  id: string;
-  userId: string;
-  displayName: string;
-  avatarUrl?: string | null;
-  text: string;
-  createdAt: string;
-}
 
 interface Props {
   groupId: string;
   currentUserId: string;
+  initialMessages: ChatMessage[];
 }
 
-export function GroupChat({ groupId, currentUserId }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export function GroupChat({ groupId, currentUserId, initialMessages }: Props) {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput]       = useState("");
   const [isPending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Suscripción en tiempo real
+  // Suscripción en tiempo real con onSnapshot
   useEffect(() => {
     const q = query(
       collection(db, "groups", groupId, "messages"),
@@ -47,7 +38,7 @@ export function GroupChat({ groupId, currentUserId }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function handleSend(e: React.FormEvent) {
+  function handleSend(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!input.trim()) return;
     const text = input;
@@ -57,12 +48,10 @@ export function GroupChat({ groupId, currentUserId }: Props) {
 
   return (
     <div className="flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-      {/* Cabecera */}
       <div className="border-b border-[var(--border)] px-4 py-3">
         <p className="font-semibold text-sm">💬 Chat del grupo</p>
       </div>
 
-      {/* Mensajes */}
       <div className="flex flex-col gap-3 overflow-y-auto px-4 py-3" style={{ minHeight: 260, maxHeight: 400 }}>
         {messages.length === 0 && (
           <p className="text-center text-sm text-[var(--muted)] mt-8">
@@ -74,7 +63,7 @@ export function GroupChat({ groupId, currentUserId }: Props) {
           return (
             <div key={msg.id} className={`flex gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
               <ProfileAvatar
-                avatarUrl={msg.avatarUrl}
+                avatarUrl={msg.avatarUrl ?? undefined}
                 displayName={msg.displayName}
                 size="sm"
                 zoomable={false}
@@ -102,7 +91,6 @@ export function GroupChat({ groupId, currentUserId }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <form
         onSubmit={handleSend}
         className="flex items-center gap-2 border-t border-[var(--border)] px-3 py-2"

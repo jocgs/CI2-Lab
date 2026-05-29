@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { Bet, Match, Team } from "@/types/domain";
 import { getTeamById, getCompetitionById } from "@/lib/db";
 import { Badge } from "@/components/ui";
-import { formatKickoff } from "@/lib/utils";
+import { formatKickoff, type FormEntry } from "@/lib/utils";
 import { formatBetPrediction } from "@/lib/scoring";
 
 /** Convierte un código ISO 3166-1 alpha-2 en emoji de bandera. */
@@ -15,7 +15,17 @@ function flagEmoji(countryCode: string): string {
     .join("");
 }
 
-export async function MatchCard({ match, userBet }: { match: Match; userBet?: Bet }) {
+export async function MatchCard({
+  match,
+  userBet,
+  homeForm,
+  awayForm,
+}: {
+  match: Match;
+  userBet?: Bet;
+  homeForm?: FormEntry[];
+  awayForm?: FormEntry[];
+}) {
   const [home, away, competition] = await Promise.all([
     getTeamById(match.homeTeamId),
     getTeamById(match.awayTeamId),
@@ -33,9 +43,9 @@ export async function MatchCard({ match, userBet }: { match: Match; userBet?: Be
       </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-        <TeamCell team={home} align="right" />
+        <TeamCell team={home} align="right" form={homeForm} />
         <ScoreCell match={match} />
-        <TeamCell team={away} align="left" />
+        <TeamCell team={away} align="left" form={awayForm} />
       </div>
 
       <div className="mt-3 flex items-center justify-between text-xs text-[var(--muted)]">
@@ -75,10 +85,12 @@ function TeamCrest({ team }: { team: Team }) {
   );
 }
 
-function TeamCell({ team, align }: { team: Team | undefined; align: "left" | "right" }) {
+function TeamCell({ team, align, form }: { team: Team | undefined; align: "left" | "right"; form?: FormEntry[] }) {
+  const isRight = align === "right";
+
   if (!team) {
     return (
-      <div className={`flex flex-col items-${align === "right" ? "end" : "start"} gap-1`}>
+      <div className={`flex flex-col items-${isRight ? "end" : "start"} gap-1`}>
         <div className="h-10 w-10 rounded-full bg-[var(--background)]" />
         <span className="text-sm font-medium text-[var(--muted)]">?</span>
       </div>
@@ -86,11 +98,24 @@ function TeamCell({ team, align }: { team: Team | undefined; align: "left" | "ri
   }
 
   return (
-    <div
-      className={`flex flex-col gap-1.5 ${align === "right" ? "items-end text-right" : "items-start text-left"}`}
-    >
+    <div className={`flex flex-col gap-1.5 ${isRight ? "items-end text-right" : "items-start text-left"}`}>
       <TeamCrest team={team} />
       <span className="text-sm font-medium leading-tight">{team.name}</span>
+      {form && form.length > 0 && (
+        <div className={`flex gap-0.5 ${isRight ? "flex-row-reverse" : "flex-row"}`}>
+          {form.map((entry, i) => (
+            <span
+              key={i}
+              title={entry === "W" ? "Victoria" : entry === "D" ? "Empate" : "Derrota"}
+              className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                entry === "W" ? "bg-green-500" : entry === "D" ? "bg-amber-500" : "bg-red-500"
+              }`}
+            >
+              {entry === "W" ? "V" : entry === "D" ? "E" : "D"}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

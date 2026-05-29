@@ -3,8 +3,18 @@ import * as store from "./data-store";
 
 const COLLECTION = "tournament_picks";
 
-function docId(userId: string, tournamentId: string): string {
+interface StoredPick extends UserTournamentPicks {
+  id: string;
+}
+
+function pickId(userId: string, tournamentId: string): string {
   return `${userId}_${tournamentId}`;
+}
+
+function toPublic(p: StoredPick): UserTournamentPicks {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id: _id, ...rest } = p;
+  return rest as UserTournamentPicks;
 }
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
@@ -13,11 +23,8 @@ export async function getUserTournamentPicks(
   userId: string,
   tournamentId: string,
 ): Promise<UserTournamentPicks | null> {
-  const result = await store.queryWhereCompoundOne<UserTournamentPicks>(COLLECTION, [
-    ["userId", userId],
-    ["tournamentId", tournamentId],
-  ]);
-  return result ?? null;
+  const pick = await store.getById<StoredPick>(COLLECTION, pickId(userId, tournamentId));
+  return pick ? toPublic(pick) : null;
 }
 
 export async function saveUserTournamentPicks(data: {
@@ -26,22 +33,33 @@ export async function saveUserTournamentPicks(data: {
   revelationTeamId: string;
 }): Promise<UserTournamentPicks> {
   const now = new Date().toISOString();
-  const existing = await getUserTournamentPicks(data.userId, data.tournamentId);
+  const id = pickId(data.userId, data.tournamentId);
+  const existing = await store.getById<StoredPick>(COLLECTION, id);
 
-  const pick: UserTournamentPicks = {
+  if (existing) {
+    await store.patch(COLLECTION, id, {
+      revelationTeamId: data.revelationTeamId,
+      updatedAt: now,
+    });
+    return toPublic({ ...existing, revelationTeamId: data.revelationTeamId, updatedAt: now });
+  }
+
+  const newPick: StoredPick = {
+    id,
     userId: data.userId,
     tournamentId: data.tournamentId,
     revelationTeamId: data.revelationTeamId,
-    createdAt: existing?.createdAt ?? now,
+    disappointmentTeamId: null,
+    createdAt: now,
     updatedAt: now,
   };
-
-  await store.upsert(COLLECTION, { id: docId(data.userId, data.tournamentId), ...pick });
-  return pick;
+  await store.insert(COLLECTION, newPick);
+  return toPublic(newPick);
 }
 
 export async function getAllPicksByTournament(
   tournamentId: string,
 ): Promise<UserTournamentPicks[]> {
-  return store.queryWhere<UserTournamentPicks>(COLLECTION, "tournamentId", tournamentId);
+  const picks = await store.queryWhere<StoredPick>(COLLECTION, "tournamentId", tournamentId);
+  return picks.map(toPublic);
 }
