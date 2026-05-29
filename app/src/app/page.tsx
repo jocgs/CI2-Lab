@@ -68,7 +68,7 @@ export default async function HomePage() {
           playsInline
           poster="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200&h=500&auto=format&fit=crop&q=80"
           className="absolute inset-0 h-full w-full object-cover"
-          src="https://videos.pexels.com/video-files/15449021/15449021-hd_1920_1080_60fps.mp4"
+          src="https://videos.pexels.com/video-files/2657257/2657257-uhd_2560_1440_24fps.mp4"
         />
         {/* Overlay con gradiente de marca */}
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-strong)]/90 via-[var(--brand)]/80 to-emerald-500/85" />
