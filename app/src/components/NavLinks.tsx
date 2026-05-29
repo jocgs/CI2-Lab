@@ -9,6 +9,7 @@ export const NAV_LINKS = [
   { href: "/groups",  label: "Grupos",   icon: "👥" },
   { href: "/ranking", label: "Ranking",  icon: "🏆" },
   { href: "/fantasy", label: "Fantasy",  icon: "⚡" },
+  { href: "/tienda",  label: "Tienda",   icon: "🪙" },
   { href: "/news",    label: "Noticias", icon: "📰" },
 ];
 

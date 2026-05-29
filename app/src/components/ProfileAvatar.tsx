@@ -14,10 +14,11 @@ export function ProfileAvatar({
   size?: "sm" | "lg";
   zoomable?: boolean;
 }) {
+  const effectiveUrl = avatarUrl;
   const [isExpanded, setIsExpanded] = useState(false);
   const sizeClass = size === "sm" ? "h-12 w-12 text-lg" : "h-20 w-20 text-3xl";
 
-  if (!avatarUrl) {
+  if (!effectiveUrl) {
     return (
       <div
         className={clsx(
@@ -42,7 +43,7 @@ export function ProfileAvatar({
           )}
           aria-label={`Ampliar foto de ${displayName}`}
         >
-          <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+          <img src={effectiveUrl} alt={displayName} className="h-full w-full object-cover" />
         </button>
       ) : (
         <div
@@ -51,7 +52,7 @@ export function ProfileAvatar({
             sizeClass,
           )}
         >
-          <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+          <img src={effectiveUrl} alt={displayName} className="h-full w-full object-cover" />
         </div>
       )}
 
@@ -64,7 +65,7 @@ export function ProfileAvatar({
             onClick={() => setIsExpanded(false)}
           />
           <div className="relative z-10 max-h-[90vh] max-w-[90vw] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl">
-            <img src={avatarUrl} alt={displayName} className="max-h-[90vh] max-w-[90vw] object-contain" />
+            <img src={effectiveUrl} alt={displayName} className="max-h-[90vh] max-w-[90vw] object-contain" />
           </div>
         </div>
       )}
