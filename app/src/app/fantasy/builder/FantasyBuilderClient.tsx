@@ -109,6 +109,8 @@ interface Props {
   tournamentTeams: TournamentTeam[];
   tournamentId: string;
   competitionId: string;
+  leagueId?: string | null;
+  leagueName?: string;
 }
 
 export function FantasyBuilderClient({
@@ -117,7 +119,10 @@ export function FantasyBuilderClient({
   tournamentTeams,
   tournamentId,
   competitionId,
+  leagueId = null,
+  leagueName,
 }: Props) {
+  const isLeagueTeam = Boolean(leagueId);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -241,12 +246,8 @@ export function FantasyBuilderClient({
       return !!(bench.goalkeeperId && bench.defenderId && bench.midfielderId && bench.forwardId);
     if (step === 7) return !!captainId;
     if (step === 8) {
-      return !!(
-        championTeamId &&
-        disappointmentTeamId &&
-        revelationTeamId &&
-        tournamentMvpId
-      );
+      const base = !!(championTeamId && disappointmentTeamId && tournamentMvpId);
+      return isLeagueTeam ? base : base && !!revelationTeamId;
     }
     return true;
   }, [
@@ -349,8 +350,12 @@ export function FantasyBuilderClient({
       setError("Banquillo incompleto."); return;
     }
     if (!captainId) { setError("Falta el capitán."); return; }
-    if (!championTeamId || !disappointmentTeamId || !revelationTeamId || !tournamentMvpId) {
-      setError("Completa todas las predicciones (campeón, MVP, decepción y revelación).");
+    if (!championTeamId || !disappointmentTeamId || !tournamentMvpId) {
+      setError("Completa campeón, MVP y decepción.");
+      return;
+    }
+    if (!isLeagueTeam && !revelationTeamId) {
+      setError("Elige tu selección revelación (solo en el Fantasy global).");
       return;
     }
 
@@ -370,6 +375,7 @@ export function FantasyBuilderClient({
     startTransition(async () => {
       const result = await createFantasyTeamAction({
         competitionId,
+        leagueId,
         teamName,
         startingEleven,
         bench: fullBench,
@@ -383,15 +389,18 @@ export function FantasyBuilderClient({
       const predResult = await saveAllPredictionsAction({
         competitionId,
         tournamentId,
+        leagueId,
         championTeamId,
         tournamentMvpPlayerId: tournamentMvpId,
         disappointmentTeamId,
-        revelationTeamId,
+        revelationTeamId: revelationTeamId ?? "",
       });
       if (predResult.error) {
         setError(predResult.error);
       } else {
-        router.push("/fantasy/my-team");
+        router.push(
+          leagueId ? `/fantasy/my-team?league=${leagueId}` : "/fantasy/my-team",
+        );
       }
     });
   }
@@ -583,6 +592,8 @@ export function FantasyBuilderClient({
           setDisappointmentTeamId={setDisappointmentTeamId}
           setRevelationTeamId={setRevelationTeamId}
           setTournamentMvpId={setTournamentMvpId}
+          showRevelation={!isLeagueTeam}
+          leagueName={leagueName}
         />
       )}
 
@@ -794,6 +805,8 @@ interface PredictionsPanelProps {
   setDisappointmentTeamId: (id: string | null) => void;
   setRevelationTeamId: (id: string | null) => void;
   setTournamentMvpId: (id: string | null) => void;
+  showRevelation?: boolean;
+  leagueName?: string;
 }
 
 function PredictionsPanel({
@@ -808,6 +821,8 @@ function PredictionsPanel({
   setDisappointmentTeamId,
   setRevelationTeamId,
   setTournamentMvpId,
+  showRevelation = true,
+  leagueName,
 }: PredictionsPanelProps) {
   const revelationTeams = getEligibleRevelationTeams(tournamentTeams);
   const disappointmentTeams = getEligibleDisappointmentTeams(tournamentTeams);
@@ -830,9 +845,16 @@ function PredictionsPanel({
 
   return (
     <div className="flex flex-col gap-4">
+      {leagueName && (
+        <p className="rounded-xl border border-[var(--brand)]/20 bg-[var(--brand-soft)]/30 px-3 py-2 text-xs text-[var(--muted)]">
+          Predicciones para <strong>{leagueName}</strong>. La revelación solo se configura en tu equipo global.
+        </p>
+      )}
       <p className="text-xs text-[var(--muted)]">
-        Campeón y MVP son predicciones clásicas. Decepción (cuota ≤ {DISAPPOINTMENT_MAX_ODDS}) y
-        revelación (tapada, cuota ≥ {REVELATION_MIN_ODDS}) usan las cuotas del torneo.
+        Campeón y MVP son predicciones clásicas. Decepción (cuota ≤ {DISAPPOINTMENT_MAX_ODDS})
+        {showRevelation
+          ? ` y revelación (tapada, cuota ≥ ${REVELATION_MIN_ODDS}) usan las cuotas del torneo.`
+          : " usa las cuotas del torneo."}
       </p>
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
@@ -885,24 +907,26 @@ function PredictionsPanel({
         </select>
       </div>
 
-      <div className="rounded-2xl border-2 border-amber-300 bg-[var(--surface)] p-4 dark:border-amber-700">
-        <p className="mb-1 text-sm font-semibold">⭐ Selección revelación / tapada</p>
-        <p className="mb-2 text-xs text-[var(--muted)]">
-          Underdog que puede sorprender. Solo equipos con cuota ≥ {REVELATION_MIN_ODDS}.
-        </p>
-        <select
-          value={revelationTeamId ?? ""}
-          onChange={(e) => setRevelationTeamId(e.target.value || null)}
-          className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
-        >
-          <option value="">Elige tu tapada…</option>
-          {availableRevelation.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.flag} {t.name} — cuota {formatOdds(t.marketOdds)}
-            </option>
-          ))}
-        </select>
-      </div>
+      {showRevelation && (
+        <div className="rounded-2xl border-2 border-amber-300 bg-[var(--surface)] p-4 dark:border-amber-700">
+          <p className="mb-1 text-sm font-semibold">⭐ Selección revelación / tapada</p>
+          <p className="mb-2 text-xs text-[var(--muted)]">
+            Underdog que puede sorprender. Solo equipos con cuota ≥ {REVELATION_MIN_ODDS}.
+          </p>
+          <select
+            value={revelationTeamId ?? ""}
+            onChange={(e) => setRevelationTeamId(e.target.value || null)}
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+          >
+            <option value="">Elige tu tapada…</option>
+            {availableRevelation.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.flag} {t.name} — cuota {formatOdds(t.marketOdds)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }

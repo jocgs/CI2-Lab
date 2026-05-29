@@ -190,9 +190,13 @@ export function FantasyTeamDisplay({
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
           Predicciones del torneo
         </p>
-        <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+        <div
+          className={`grid grid-cols-2 gap-2 text-xs ${revelationTeamName !== undefined ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}
+        >
           <PredictionBadge label="Campeona" value={fantasyTeam.championTeamId ?? ""} nationalTeams={nationalTeams} />
-          <PredictionBadge label="Revelación" value={revelationTeamName ?? ""} nationalTeams={[]} />
+          {revelationTeamName !== undefined && (
+            <PredictionBadge label="Revelación" value={revelationTeamName} nationalTeams={[]} />
+          )}
           <PredictionBadge label="Decepción" value={fantasyTeam.disappointmentTeamId ?? ""} nationalTeams={nationalTeams} />
           <div className="rounded-lg border border-[var(--border)] p-2">
             <p className="text-[var(--muted)]">MVP</p>

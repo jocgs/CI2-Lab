@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/db";
 import {
-  getFantasyTeamByUserAndCompetition,
+  getGlobalFantasyTeam,
+  getFantasyTeamForLeague,
   getFantasyRankingByCompetition,
   getLeaguesByUserId,
 } from "@/lib/fantasy-db";
@@ -22,13 +23,20 @@ export default async function FantasyPage() {
   const [competitionData, myLeagues] = await Promise.all([
     Promise.all(
       COMPETITIONS.map(async (comp) => {
-        const myTeam = await getFantasyTeamByUserAndCompetition(user.id, comp.id);
+        const myTeam = await getGlobalFantasyTeam(user.id, comp.id);
         const ranking = await getFantasyRankingByCompetition(comp.id);
         return { comp, myTeam, rankingCount: ranking.length };
       }),
     ),
     getLeaguesByUserId(user.id),
   ]);
+
+  const leaguesWithTeams = await Promise.all(
+    myLeagues.map(async (league) => ({
+      league,
+      myTeam: await getFantasyTeamForLeague(user.id, league.competitionId, league.id),
+    })),
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -65,7 +73,7 @@ export default async function FantasyPage() {
                     <div className="mt-3 rounded-xl bg-[var(--brand-soft)] p-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-[var(--muted)]">Tu equipo</p>
+                          <p className="text-xs text-[var(--muted)]">Tu equipo global</p>
                           <p className="font-semibold text-[var(--brand-strong)]">
                             {myTeam.teamName}
                           </p>
@@ -120,7 +128,7 @@ export default async function FantasyPage() {
         <div className="flex items-center justify-between gap-3 mb-3">
           <SectionTitle
             title="Ligas de amigos"
-            subtitle="Compite contra los tuyos"
+            subtitle="Un equipo distinto por cada liga"
           />
           <Link
             href="/fantasy/leagues"
@@ -147,22 +155,49 @@ export default async function FantasyPage() {
           </Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {myLeagues.slice(0, 3).map((league) => (
-              <Link
+            {leaguesWithTeams.slice(0, 3).map(({ league, myTeam }) => (
+              <div
                 key={league.id}
-                href={`/fantasy/leagues/${league.id}`}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 hover:border-[var(--brand)] transition-colors"
+                className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4"
               >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{league.name}</p>
-                  <p className="text-xs text-[var(--muted)]">
-                    {league.memberIds.length} participante{league.memberIds.length !== 1 ? "s" : ""}
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-lg bg-[var(--brand-soft)] px-2 py-1 font-mono text-xs font-bold tracking-wider text-[var(--brand-strong)]">
-                  {league.inviteCode}
-                </span>
-              </Link>
+                <Link
+                  href={`/fantasy/leagues/${league.id}`}
+                  className="flex items-center justify-between gap-3 hover:opacity-90"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{league.name}</p>
+                    <p className="text-xs text-[var(--muted)]">
+                      {league.memberIds.length} participante{league.memberIds.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-[var(--brand-soft)] px-2 py-1 font-mono text-xs font-bold tracking-wider text-[var(--brand-strong)]">
+                    {league.inviteCode}
+                  </span>
+                </Link>
+                {myTeam ? (
+                  <div className="flex items-center justify-between gap-2 rounded-xl bg-[var(--brand-soft)]/50 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[var(--brand-strong)]">
+                        {myTeam.teamName}
+                      </p>
+                      <p className="text-xs text-[var(--muted)]">{myTeam.totalPoints} pts</p>
+                    </div>
+                    <Link
+                      href={`/fantasy/my-team?league=${league.id}`}
+                      className="shrink-0 text-xs font-medium text-[var(--brand-strong)] hover:underline"
+                    >
+                      Ver →
+                    </Link>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/fantasy/builder?league=${league.id}`}
+                    className="rounded-xl border border-dashed border-[var(--brand)] px-3 py-2 text-center text-xs font-medium text-[var(--brand-strong)] hover:bg-[var(--brand-soft)]"
+                  >
+                    Crear equipo de liga →
+                  </Link>
+                )}
+              </div>
             ))}
             {myLeagues.length > 3 && (
               <Link
@@ -201,7 +236,7 @@ const HOW_IT_WORKS = [
     step: 1,
     emoji: "🏗️",
     title: "Elige tu 11",
-    desc: "1 portero, 4 defensas, 3 centros, 3 delanteros. Pon al capitán (×2 puntos).",
+    desc: "Un equipo para el ranking global y otro distinto en cada liga de amigos.",
   },
   {
     step: 2,
