@@ -10,7 +10,7 @@ export function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    document.cookie = `porrify-theme=${next}; path=/; max-age=31536000; SameSite=Lax`;
+    document.cookie = `tikitaka-theme=${next}; path=/; max-age=31536000; SameSite=Lax`;
     document.documentElement.classList.toggle("dark", next === "dark");
     document.documentElement.classList.toggle("light", next === "light");
   }

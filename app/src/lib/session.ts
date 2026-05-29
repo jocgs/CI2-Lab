@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { createHmac, timingSafeEqual } from "crypto";
 import type { User } from "@/types/domain";
 
-export const SESSION_COOKIE = "porrify-session";
+export const SESSION_COOKIE = "tikitaka-session";
 
 // ---------------------------------------------------------------------------
 // HMAC cookie signing — evita que un atacante forge un userId arbitrario

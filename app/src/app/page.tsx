@@ -7,11 +7,15 @@ import {
   getBetsForUser,
   getFinishedMatches,
   getGroupsForUser,
+  getMatchById,
   getStreakForUser,
+  getTeamById,
   getUpcomingMatches,
 } from "@/lib/db";
 import { MatchCard } from "@/components/MatchCard";
-import { Card, SectionTitle } from "@/components/ui";
+import { Badge, Card, SectionTitle } from "@/components/ui";
+import { formatBetPrediction } from "@/lib/scoring";
+import { formatKickoff } from "@/lib/utils";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -22,6 +26,11 @@ export default async function HomePage() {
     getFinishedMatches(),
     getGroupsForUser(user.id),
   ]);
+
+  const recentBets = userBets
+    .slice()
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 6);
 
   const recent = finished.slice(-3).reverse();
 
@@ -147,6 +156,64 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Porras recientes */}
+      {recentBets.length > 0 && (
+        <section>
+          <SectionTitle
+            title="Tus porras recientes"
+            subtitle="Últimas predicciones, ordenadas por fecha"
+            action={
+              <Link
+                href="/profile"
+                className="text-sm font-medium text-[var(--brand-strong)] hover:underline"
+              >
+                Ver perfil →
+              </Link>
+            }
+          />
+          <ul className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+            {await Promise.all(
+              recentBets.map(async (bet, index) => {
+                const match = await getMatchById(bet.matchId);
+                if (!match) return null;
+                const [home, away] = await Promise.all([
+                  getTeamById(match.homeTeamId),
+                  getTeamById(match.awayTeamId),
+                ]);
+                return (
+                  <li
+                    key={bet.id}
+                    className={
+                      "flex items-center justify-between gap-3 px-4 py-3 text-sm " +
+                      (index !== 0 ? "border-t border-[var(--border)]" : "")
+                    }
+                  >
+                    <Link href={`/matches/${match.id}`} className="flex-1 hover:underline">
+                      <p className="font-medium">
+                        {home?.shortName} vs {away?.shortName}
+                      </p>
+                      <p className="text-xs text-[var(--muted)]">{formatKickoff(match.kickoffAt)}</p>
+                    </Link>
+                    <Badge
+                      tone={
+                        bet.status === "WON"
+                          ? "brand"
+                          : bet.status === "LOST"
+                            ? "danger"
+                            : "warning"
+                      }
+                    >
+                      Predicción: {formatBetPrediction(bet.prediction)}
+                      {bet.status === "WON" && ` · +${bet.points}`}
+                    </Badge>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

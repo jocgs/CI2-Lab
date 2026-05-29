@@ -207,7 +207,7 @@ const HOW_IT_WORKS = [
     step: 2,
     emoji: "🔮",
     title: "Predice el torneo",
-    desc: "Campeón, sorpresa, decepción y MVP. Los bonos pueden disparar tu ranking.",
+    desc: "Campeón, revelación (tapada), decepción y MVP. Los bonos pueden disparar tu ranking.",
   },
   {
     step: 3,

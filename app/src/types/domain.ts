@@ -1,5 +1,5 @@
 /**
- * Modelo de dominio de Porrify.
+ * Modelo de dominio de TikiTaka.
  *
  * Todas las entidades viven aquí para que tanto el frontend como un futuro
  * backend (Supabase) compartan los mismos contratos. Cuando conectemos la

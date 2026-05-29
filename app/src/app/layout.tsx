@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Porrify · Porras con amigos",
+  title: "TikiTaka · Porras con amigos",
   description:
-    "Crea grupos, haz porras de fútbol con amigos y compite por el ranking. Porrify · CI2 Lab.",
+    "Crea grupos, haz porras de fútbol con amigos y compite por el ranking. TikiTaka · CI2 Lab.",
 };
 
 /** Fondos: original | futbol | futbol-pintado | futbol-rayas */
@@ -35,7 +35,7 @@ export default async function RootLayout({
   const isLoginPage = pathname === "/login";
 
   // Leer tema desde cookie para aplicar la clase correcta en SSR (evita flash)
-  const themeCookie = cookieStore.get("porrify-theme")?.value;
+  const themeCookie = cookieStore.get("tikitaka-theme")?.value;
   const themeClass = themeCookie === "dark" ? "dark" : themeCookie === "light" ? "light" : "";
 
   return (
@@ -63,7 +63,7 @@ export default async function RootLayout({
         </main>
         {!isLoginPage && (
           <footer className="relative z-10 mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-[var(--muted)] sm:px-6">
-            Porrify · CI2 Lab · {new Date().getFullYear()}
+            TikiTaka · CI2 Lab · {new Date().getFullYear()}
           </footer>
         )}
       </body>
