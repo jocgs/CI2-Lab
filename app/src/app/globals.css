@@ -217,3 +217,33 @@ html[data-app-bg="futbol-rayas"] body {
   display: inline-block;
   transform-origin: bottom center;
 }
+
+/* Tienda — banner naranja un tono más oscuro en modo oscuro */
+.tienda-hero {
+  background-image: linear-gradient(
+    to bottom right,
+    var(--color-amber-500),
+    var(--color-orange-400),
+    var(--color-yellow-300)
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .tienda-hero {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--color-amber-600),
+      var(--color-orange-600),
+      var(--color-amber-700)
+    );
+  }
+}
+
+:root.dark .tienda-hero {
+  background-image: linear-gradient(
+    to bottom right,
+    var(--color-amber-600),
+    var(--color-orange-600),
+    var(--color-amber-700)
+  );
+}

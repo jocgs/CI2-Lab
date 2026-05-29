@@ -40,10 +40,15 @@ export async function Header({ initialTheme }: { initialTheme: "light" | "dark" 
               {/* Saldo de monedas */}
               <Link
                 href="/tienda"
-                className="flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-950/70"
+                className="inline-flex h-9 min-w-9 flex-col items-center justify-center rounded-full border border-amber-300/60 bg-amber-50 px-2 text-amber-700 transition hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-950/70"
                 title="Ir a la tienda"
               >
-                🪙 {(user as { coins?: number }).coins ?? 0}
+                <span className="text-[10px] leading-none" aria-hidden>
+                  🪙
+                </span>
+                <span className="text-[11px] font-bold leading-none tabular-nums">
+                  {(user as { coins?: number }).coins ?? 0}
+                </span>
               </Link>
               <Link
                 href="/profile"
