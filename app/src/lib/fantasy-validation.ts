@@ -1,4 +1,5 @@
 import type { FantasyTeam, FantasyPlayer } from "@/types/fantasy";
+import { getFormationRequirements } from "@/lib/fantasy-formations";
 
 export interface ValidationError {
   field: string;
@@ -48,23 +49,30 @@ export function validateFantasyTeam(
     return errors;
   }
 
-  // Check exactly 1 GK, 4 DEF, 3 MID, 3 FWD
+  if (!se.formation) {
+    errors.push({ field: "startingEleven.formation", message: "Debes elegir una formación." });
+    return errors;
+  }
+
+  const requirements = getFormationRequirements(se.formation);
+
+  // Check exactly 1 GK and the counts required by the selected formation
   const { goalkeeperId, defenderIds, midfielderIds, forwardIds } = se;
 
   if (!goalkeeperId) {
     errors.push({ field: "startingEleven.goalkeeperId", message: "Debes seleccionar un portero titular." });
   }
 
-  if (!defenderIds || defenderIds.length !== 4 || defenderIds.some((id) => !id)) {
-    errors.push({ field: "startingEleven.defenderIds", message: "Debes seleccionar exactamente 4 defensas." });
+  if (!defenderIds || defenderIds.length !== requirements.defenders || defenderIds.some((id) => !id)) {
+    errors.push({ field: "startingEleven.defenderIds", message: `Debes seleccionar exactamente ${requirements.defenders} defensas.` });
   }
 
-  if (!midfielderIds || midfielderIds.length !== 3 || midfielderIds.some((id) => !id)) {
-    errors.push({ field: "startingEleven.midfielderIds", message: "Debes seleccionar exactamente 3 centrocampistas." });
+  if (!midfielderIds || midfielderIds.length !== requirements.midfielders || midfielderIds.some((id) => !id)) {
+    errors.push({ field: "startingEleven.midfielderIds", message: `Debes seleccionar exactamente ${requirements.midfielders} centrocampistas.` });
   }
 
-  if (!forwardIds || forwardIds.length !== 3 || forwardIds.some((id) => !id)) {
-    errors.push({ field: "startingEleven.forwardIds", message: "Debes seleccionar exactamente 3 delanteros." });
+  if (!forwardIds || forwardIds.length !== requirements.forwards || forwardIds.some((id) => !id)) {
+    errors.push({ field: "startingEleven.forwardIds", message: `Debes seleccionar exactamente ${requirements.forwards} delanteros.` });
   }
 
   if (!bench) {

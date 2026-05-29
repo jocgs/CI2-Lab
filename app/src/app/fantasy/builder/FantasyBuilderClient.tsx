@@ -6,12 +6,15 @@ import type {
   FantasyPlayer,
   FantasyNationalTeam,
   Position,
+  Formation,
   FantasyStartingEleven,
   FantasyBench,
 } from "@/types/fantasy";
 import type { TournamentTeam } from "@/types/picks";
 import { FantasyPlayerCard } from "@/components/fantasy/FantasyPlayerCard";
+import { PlayerAvatar } from "@/components/fantasy/PlayerAvatar";
 import { createFantasyTeamAction } from "./actions";
+import { FORMATION_OPTIONS, getFormationRequirements } from "@/lib/fantasy-formations";
 import { saveAllPredictionsAction } from "@/app/fantasy/my-team/prediction-actions";
 import {
   getEligibleRevelationTeams,
@@ -24,71 +27,75 @@ import { clsx } from "@/lib/utils";
 
 // ─── Step hints ─────────────────────────────────────────────────────────────
 
-const STEP_CONFIG = [
-  {
-    step: 1,
-    title: "Nombre del equipo",
-    hint: "Algo épico. O una ironía. Ambas valen.",
-    position: null,
-    count: null,
-  },
-  {
-    step: 2,
-    title: "Portero titular",
-    hint: "El muro o el meme. Tú decides.",
-    position: "GK" as Position,
-    count: 1,
-  },
-  {
-    step: 3,
-    title: "4 Defensas titulares",
-    hint: "Gente que sabe lo que es un fuera de juego (más o menos).",
-    position: "DEF" as Position,
-    count: 4,
-  },
-  {
-    step: 4,
-    title: "3 Centrocampistas titulares",
-    hint: "Los que dan el pase de gol y nunca marcan.",
-    position: "MID" as Position,
-    count: 3,
-  },
-  {
-    step: 5,
-    title: "3 Delanteros titulares",
-    hint: "Aquí van los que supuestamente meten goles.",
-    position: "FWD" as Position,
-    count: 3,
-  },
-  {
-    step: 6,
-    title: "4 Reservas (1 por posición)",
-    hint: "Los que calientan el banquillo y te salvan un día.",
-    position: null,
-    count: 4,
-  },
-  {
-    step: 7,
-    title: "Elige tu capitán",
-    hint: "El que lleva el brazalete y los puntos al doble.",
-    position: null,
-    count: 1,
-  },
-  {
-    step: 8,
-    title: "Predicciones del torneo",
-    hint: "Campeón, MVP, decepción y tu selección revelación (tapada).",
-    position: null,
-    count: null,
-  },
-  {
-    step: 9,
-    title: "Confirmación",
-    hint: "Última oportunidad para arrepentirte.",
-    position: null,
-    count: null,
-  },
-];
+function buildStepConfig(formation: Formation) {
+  const requirements = getFormationRequirements(formation);
+
+  return [
+    {
+      step: 1,
+      title: "Nombre del equipo",
+      hint: "Algo épico. O una ironía. Ambas valen.",
+      position: null,
+      count: null,
+    },
+    {
+      step: 2,
+      title: "Elige formación",
+      hint: "Escoge tu esquema antes de completar el once.",
+      position: null,
+      count: null,
+    },
+    {
+      step: 3,
+      title: "Portero titular",
+      hint: "El muro o el meme. Tú decides.",
+      position: "GK" as Position,
+      count: 1,
+    },
+    {
+      step: 4,
+      title: `${requirements.defenders} Defensas titulares`,
+      hint: "Gente que sabe lo que es un fuera de juego (más o menos).",
+      position: "DEF" as Position,
+      count: requirements.defenders,
+    },
+    {
+      step: 5,
+      title: `${requirements.midfielders} Centrocampistas titulares`,
+      hint: "Los que dan el pase de gol y nunca marcan.",
+      position: "MID" as Position,
+      count: requirements.midfielders,
+    },
+    {
+      step: 6,
+      title: `${requirements.forwards} Delanteros titulares`,
+      hint: "Aquí van los que supuestamente meten goles.",
+      position: "FWD" as Position,
+      count: requirements.forwards,
+    },
+    {
+      step: 7,
+      title: "4 Reservas (1 por posición)",
+      hint: "Los que calientan el banquillo y te salvan un día.",
+      position: null,
+      count: 4,
+    },
+    {
+      step: 8,
+      title: "Predicciones del torneo",
+      hint: "Campeón, MVP, decepción y tu selección revelación (tapada).",
+      position: null,
+      count: null,
+    },
+    {
+      step: 9,
+      title: "Confirmación",
+      hint: "Última oportunidad para arrepentirte.",
+      position: null,
+      count: null,
+    },
+  ] as const;
+}
 
 // ─── Position labels ────────────────────────────────────────────────────────
 
@@ -132,6 +139,7 @@ export function FantasyBuilderClient({
 
   // ── Form data ──
   const [teamName, setTeamName] = useState("");
+  const [formation, setFormation] = useState<Formation>("4-3-3");
   const [goalkeeperId, setGoalkeeperId] = useState<string | null>(null);
   const [defenderIds, setDefenderIds] = useState<string[]>([]);
   const [midfielderIds, setMidfielderIds] = useState<string[]>([]);
@@ -149,11 +157,22 @@ export function FantasyBuilderClient({
   const [filterTeam, setFilterTeam] = useState<string>("all");
   const [search, setSearch] = useState("");
 
-  const config = STEP_CONFIG[step - 1];
-  const ntm = useMemo(
-    () => new Map(nationalTeams.map((team) => [team.id, team])),
-    [nationalTeams],
-  );
+  const formationRequirements = useMemo(() => getFormationRequirements(formation), [formation]);
+  const stepConfig = useMemo(() => buildStepConfig(formation), [formation]);
+  const config = stepConfig[step - 1];
+
+  function handleFormationSelect(nextFormation: Formation) {
+    setError(null);
+    if (formation === nextFormation) return;
+    setFormation(nextFormation);
+    setGoalkeeperId(null);
+    setDefenderIds([]);
+    setMidfielderIds([]);
+    setForwardIds([]);
+    setBench({});
+    setCaptainId(null);
+    setBenchPositionIndex(0);
+  }
 
   // ─── Already selected player IDs ─────────────────────────────────────────
   const allStarterIds = useMemo(
@@ -189,7 +208,7 @@ export function FantasyBuilderClient({
     if (!player) return false;
     const alreadySelected =
       allStarterIds.includes(playerId) || allBenchIds.includes(playerId);
-    if (alreadySelected) return false; // puede deseleccionarse siempre
+    if (alreadySelected) return false;
     return (teamCountMap.get(player.nationalTeamId) ?? 0) >= 3;
   }
 
@@ -209,14 +228,8 @@ export function FantasyBuilderClient({
       pool = pool.filter((p) => p.position === config.position);
     }
 
-    if (step === 6) {
-      // Bench step — show all positions but only non-starters
-      pool = pool.filter((p) => !allStarterIds.includes(p.id));
-    }
-
     if (step === 7) {
-      // Captain step — only starters
-      pool = players.filter((p) => allStarterIds.includes(p.id));
+      pool = pool.filter((p) => !allStarterIds.includes(p.id));
     }
 
     if (step === 8 || step === 9) {
@@ -238,13 +251,13 @@ export function FantasyBuilderClient({
   // ─── Step validation ──────────────────────────────────────────────────────
   const canAdvance = useMemo(() => {
     if (step === 1) return teamName.trim().length > 0;
-    if (step === 2) return !!goalkeeperId;
-    if (step === 3) return defenderIds.length === 4;
-    if (step === 4) return midfielderIds.length === 3;
-    if (step === 5) return forwardIds.length === 3;
-    if (step === 6)
+    if (step === 2) return !!formation;
+    if (step === 3) return !!goalkeeperId;
+    if (step === 4) return defenderIds.length === formationRequirements.defenders;
+    if (step === 5) return midfielderIds.length === formationRequirements.midfielders;
+    if (step === 6) return forwardIds.length === formationRequirements.forwards;
+    if (step === 7)
       return !!(bench.goalkeeperId && bench.defenderId && bench.midfielderId && bench.forwardId);
-    if (step === 7) return !!captainId;
     if (step === 8) {
       const base = !!(championTeamId && disappointmentTeamId && tournamentMvpId);
       return isLeagueTeam ? base : base && !!revelationTeamId;
@@ -253,16 +266,20 @@ export function FantasyBuilderClient({
   }, [
     step,
     teamName,
+    formation,
+    formationRequirements.defenders,
+    formationRequirements.midfielders,
+    formationRequirements.forwards,
     goalkeeperId,
     defenderIds,
     midfielderIds,
     forwardIds,
     bench,
-    captainId,
     championTeamId,
     disappointmentTeamId,
     revelationTeamId,
     tournamentMvpId,
+    isLeagueTeam,
   ]);
 
   const squadPlayers = useMemo(() => {
@@ -278,7 +295,6 @@ export function FantasyBuilderClient({
 
   function handlePlayerSelect(playerId: string) {
     setError(null);
-    // Bloquear si el jugador superaría el cupo de 3 por selección
     if (isPlayerDisabled(playerId)) {
       const player = players.find((p) => p.id === playerId);
       setError(
@@ -286,27 +302,29 @@ export function FantasyBuilderClient({
       );
       return;
     }
-    if (step === 2) {
-      setGoalkeeperId(goalkeeperId === playerId ? null : playerId);
+    if (step === 9) {
+      // Handled in confirmation
     } else if (step === 3) {
+      setGoalkeeperId(goalkeeperId === playerId ? null : playerId);
+    } else if (step === 4) {
       if (defenderIds.includes(playerId)) {
         setDefenderIds(defenderIds.filter((id) => id !== playerId));
-      } else if (defenderIds.length < 4) {
+      } else if (defenderIds.length < formationRequirements.defenders) {
         setDefenderIds([...defenderIds, playerId]);
       }
-    } else if (step === 4) {
+    } else if (step === 5) {
       if (midfielderIds.includes(playerId)) {
-        setMidfielderIds(midfielderIds.filter((id) => id !== playerId));
-      } else if (midfielderIds.length < 3) {
+        setMiddlefielderIds(midfielderIds.filter((id) => id !== playerId));
+      } else if (midfielderIds.length < formationRequirements.midfielders) {
         setMidfielderIds([...midfielderIds, playerId]);
       }
-    } else if (step === 5) {
+    } else if (step === 6) {
       if (forwardIds.includes(playerId)) {
         setForwardIds(forwardIds.filter((id) => id !== playerId));
-      } else if (forwardIds.length < 3) {
+      } else if (forwardIds.length < formationRequirements.forwards) {
         setForwardIds([...forwardIds, playerId]);
       }
-    } else if (step === 6) {
+    } else if (step === 7) {
       const player = players.find((p) => p.id === playerId);
       if (!player) return;
       const pos = player.position;
@@ -321,35 +339,30 @@ export function FantasyBuilderClient({
         ...prev,
         [key]: prev[key] === playerId ? undefined : playerId,
       }));
-      // Auto-advance bench position
       const nextIdx = BENCH_POSITIONS.findIndex(
         (p, i) => i > benchPositionIndex && !bench[keyMap[p]],
       );
       if (nextIdx !== -1) setBenchPositionIndex(nextIdx);
-    } else if (step === 7) {
-      setCaptainId(captainId === playerId ? null : playerId);
     }
   }
 
   function isPlayerSelected(playerId: string): boolean {
-    if (step === 2) return goalkeeperId === playerId;
-    if (step === 3) return defenderIds.includes(playerId);
-    if (step === 4) return midfielderIds.includes(playerId);
-    if (step === 5) return forwardIds.includes(playerId);
-    if (step === 6) return allBenchIds.includes(playerId);
-    if (step === 7) return captainId === playerId;
+    if (step === 3) return goalkeeperId === playerId;
+    if (step === 4) return defenderIds.includes(playerId);
+    if (step === 5) return midfielderIds.includes(playerId);
+    if (step === 6) return forwardIds.includes(playerId);
+    if (step === 7) return allBenchIds.includes(playerId);
     return false;
   }
 
   function handleSubmit() {
     if (!goalkeeperId) { setError("Falta el portero."); return; }
-    if (defenderIds.length !== 4) { setError("Faltan defensas."); return; }
-    if (midfielderIds.length !== 3) { setError("Faltan centrocampistas."); return; }
-    if (forwardIds.length !== 3) { setError("Faltan delanteros."); return; }
+    if (defenderIds.length !== formationRequirements.defenders) { setError("Faltan defensas."); return; }
+    if (midfielderIds.length !== formationRequirements.midfielders) { setError("Faltan centrocampistas."); return; }
+    if (forwardIds.length !== formationRequirements.forwards) { setError("Faltan delanteros."); return; }
     if (!bench.goalkeeperId || !bench.defenderId || !bench.midfielderId || !bench.forwardId) {
       setError("Banquillo incompleto."); return;
     }
-    if (!captainId) { setError("Falta el capitán."); return; }
     if (!championTeamId || !disappointmentTeamId || !tournamentMvpId) {
       setError("Completa campeón, MVP y decepción.");
       return;
@@ -359,11 +372,15 @@ export function FantasyBuilderClient({
       return;
     }
 
+    // Auto-asignación de capitán por defecto al primer delantero o jugador disponible si no se asignó explícitamente
+    const finalCaptainId = captainId ?? forwardIds[0] ?? midfielderIds[0] ?? goalkeeperId;
+
     const startingEleven: FantasyStartingEleven = {
+      formation,
       goalkeeperId,
-      defenderIds: defenderIds as [string, string, string, string],
-      midfielderIds: midfielderIds as [string, string, string],
-      forwardIds: forwardIds as [string, string, string],
+      defenderIds: defenderIds as any,
+      midfielderIds: midfielderIds as any,
+      forwardIds: forwardIds as any,
     };
     const fullBench: FantasyBench = {
       goalkeeperId: bench.goalkeeperId!,
@@ -379,7 +396,7 @@ export function FantasyBuilderClient({
         teamName,
         startingEleven,
         bench: fullBench,
-        captainId,
+        captainId: finalCaptainId,
       });
       if (result.error) {
         setError(result.error);
@@ -406,8 +423,6 @@ export function FantasyBuilderClient({
   }
 
   const pm = new Map(players.map((p) => [p.id, p]));
-
-  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-4">
@@ -454,15 +469,55 @@ export function FantasyBuilderClient({
         </div>
       )}
 
-      {/* ── STEPS 2-5: Starter selection ── */}
-      {step >= 2 && step <= 5 && (
+      {/* ── STEP 2: Formation ── */}
+      {step === 2 && (
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="mb-3">
+            <label className="block text-sm font-medium">Formación</label>
+            <p className="text-xs text-[var(--muted)]">
+              Elige el esquema de juego antes de completar el once.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {FORMATION_OPTIONS.map((option) => {
+              const isActive = formation === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleFormationSelect(option.value)}
+                  className={clsx(
+                    "rounded-2xl border p-4 text-left transition-all",
+                    isActive
+                      ? "border-[var(--brand)] bg-[var(--brand-soft)] shadow-sm"
+                      : "border-[var(--border)] bg-[var(--background)] hover:border-[var(--brand)] hover:shadow-sm",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-semibold">{option.label}</p>
+                      <p className="mt-1 text-xs text-[var(--muted)]">
+                        {option.description}
+                      </p>
+                    </div>
+                    {isActive && <span className="text-sm">✅</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── STEPS 3-6: Starter selection ── */}
+      {step >= 3 && step <= 6 && (
         <PlayerPickerPanel
           players={filteredPlayers}
           allPlayers={players}
           nationalTeams={nationalTeams}
           onSelect={handlePlayerSelect}
           isSelected={isPlayerSelected}
-          isCaptain={(id) => captainId === id}
+          isCaptain={() => false}
           isDisabled={isPlayerDisabled}
           getDisabledReason={disabledReason}
           teamCountMap={teamCountMap}
@@ -471,9 +526,9 @@ export function FantasyBuilderClient({
           search={search}
           setSearch={setSearch}
           selectedCount={
-            step === 2 ? (goalkeeperId ? 1 : 0)
-            : step === 3 ? defenderIds.length
-            : step === 4 ? midfielderIds.length
+            step === 3 ? (goalkeeperId ? 1 : 0)
+            : step === 4 ? defenderIds.length
+            : step === 5 ? midfielderIds.length
             : forwardIds.length
           }
           maxCount={config.count ?? 1}
@@ -481,10 +536,9 @@ export function FantasyBuilderClient({
         />
       )}
 
-      {/* ── STEP 6: Bench ── */}
-      {step === 6 && (
+      {/* ── STEP 7: Bench ── */}
+      {step === 7 && (
         <div className="flex flex-col gap-3">
-          {/* Current bench */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
             <p className="text-sm font-medium mb-3">Banquillo actual</p>
             <div className="grid grid-cols-4 gap-2">
@@ -512,10 +566,18 @@ export function FantasyBuilderClient({
                         : "border-[var(--border)] bg-[var(--background)]",
                     )}
                   >
-                    <p className="font-semibold">{POS_LABELS[pos].slice(0, 3)}</p>
-                    <p className="mt-0.5 truncate text-[10px] text-[var(--muted)]">
-                      {player ? player.name.split(" ").slice(-1)[0] : "—"}
-                    </p>
+                    <div className="flex flex-col items-center gap-1">
+                      {player ? (
+                        <PlayerAvatar player={player} size={40} />
+                      ) : (
+                        <span className="grid h-10 w-10 place-items-center rounded-full border border-dashed border-[var(--border)] text-[10px] text-[var(--muted)]">
+                          —
+                        </span>
+                      )}
+                      <p className="truncate text-[10px] text-[var(--muted)]">
+                        {player ? player.name : POS_LABELS[pos]}
+                      </p>
+                    </div>
                   </div>
                 );
               })}
@@ -526,6 +588,7 @@ export function FantasyBuilderClient({
           </div>
 
           <PlayerPickerPanel
+            boxPlayers={filteredPlayers.filter((p) => p.position === currentBenchPosition)}
             players={filteredPlayers.filter(
               (p) => p.position === currentBenchPosition,
             )}
@@ -544,36 +607,6 @@ export function FantasyBuilderClient({
             selectedCount={allBenchIds.length}
             maxCount={4}
             label={`Reserva ${POS_LABELS[currentBenchPosition]}`}
-          />
-        </div>
-      )}
-
-      {/* ── STEP 7: Captain ── */}
-      {step === 7 && (
-        <div className="flex flex-col gap-3">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="text-sm text-[var(--muted)]">
-              El capitán recibe el <strong>doble de puntos</strong> (si son positivos).
-              Elige sabiamente — o no.
-            </p>
-          </div>
-          <PlayerPickerPanel
-            players={filteredPlayers}
-            allPlayers={players}
-            nationalTeams={nationalTeams}
-            onSelect={handlePlayerSelect}
-            isSelected={isPlayerSelected}
-            isCaptain={(id) => captainId === id}
-            isDisabled={() => false}
-            getDisabledReason={() => undefined}
-            teamCountMap={teamCountMap}
-            filterTeam={filterTeam}
-            setFilterTeam={setFilterTeam}
-            search={search}
-            setSearch={setSearch}
-            selectedCount={captainId ? 1 : 0}
-            maxCount={1}
-            label="Capitán"
           />
         </div>
       )}
@@ -606,7 +639,7 @@ export function FantasyBuilderClient({
           midfielderIds={midfielderIds}
           forwardIds={forwardIds}
           bench={bench}
-          captainId={captainId}
+          captainId={captainId ?? forwardIds[0]}
           players={players}
           nationalTeams={nationalTeams}
           tournamentTeams={tournamentTeams}
@@ -639,7 +672,7 @@ export function FantasyBuilderClient({
               setStep(step + 1);
               setFilterTeam("all");
               setSearch("");
-              if (step === 5) setBenchPositionIndex(0);
+              if (step === 6) setBenchPositionIndex(0);
             }}
             disabled={!canAdvance}
             className="rounded-xl bg-[var(--brand)] px-6 py-2.5 text-sm font-medium text-white disabled:opacity-40 hover:opacity-90"
@@ -679,6 +712,7 @@ interface PlayerPickerPanelProps {
   selectedCount: number;
   maxCount: number;
   label: string;
+  boxPlayers?: FantasyPlayer[];
 }
 
 function PlayerPickerPanel({
@@ -931,46 +965,6 @@ function PredictionsPanel({
   );
 }
 
-function TeamPicker({
-  label,
-  hint,
-  teams,
-  selected,
-  onSelect,
-}: {
-  label: string;
-  hint: string;
-  teams: FantasyNationalTeam[];
-  selected: string | null;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-      <p className="mb-1 text-sm font-medium">{label}</p>
-      <p className="mb-3 text-xs text-[var(--muted)]">{hint}</p>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-        {teams.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => onSelect(t.id)}
-            className={clsx(
-              "flex flex-col items-center gap-0.5 rounded-xl border p-2 text-xs transition-all",
-              selected === t.id
-                ? "border-[var(--brand)] bg-[var(--brand-soft)] font-medium text-[var(--brand-strong)]"
-                : "border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]",
-            )}
-          >
-            <NationalTeamSymbol team={t} />
-            <span className="truncate w-full text-center text-[10px]">
-              {t.name.split(" ")[0]}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── ConfirmationPanel ────────────────────────────────────────────────────────
 
 interface ConfirmationPanelProps {
@@ -1048,7 +1042,8 @@ function ConfirmationPanel({
                 if (!p) return null;
                 return (
                   <div key={id} className="flex items-center gap-2 py-1 text-sm">
-                    <span>{p.name}</span>
+                    <PlayerAvatar player={p} size={28} />
+                    <span className="truncate">{p.name}</span>
                     {id === captainId && <span className="text-xs">⭐ Capitán</span>}
                   </div>
                 );
@@ -1067,20 +1062,22 @@ function ConfirmationPanel({
             return (
               <span
                 key={label}
-                className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-2 py-1 text-xs"
               >
-                {label}: {p?.name ?? "—"}
+                {p ? <PlayerAvatar player={p} size={20} /> : <span className="text-[var(--muted)]">{label}</span>}
+                <span>{p?.name ?? "—"}</span>
               </span>
             );
           })}
         </div>
       </div>
 
+      {/* Predictions Summary */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
         <p className="mb-2 text-sm font-medium">Predicciones del torneo</p>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span className="text-[var(--muted)]">Campeón: </span>
+            <span className="text-[var(--muted)]">Campeon: </span>
             {ntm.get(championTeamId ?? "") ? (
               <span className="inline-flex items-center gap-1">
                 <NationalTeamSymbol team={ntm.get(championTeamId!)} />

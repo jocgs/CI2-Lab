@@ -5,20 +5,7 @@ import type {
   Position,
 } from "@/types/fantasy";
 import { clsx } from "@/lib/utils";
-
-const POSITION_STYLES: Record<Position, string> = {
-  GK: "bg-amber-100 text-amber-700 border-amber-200",
-  DEF: "bg-blue-100 text-blue-700 border-blue-200",
-  MID: "bg-green-100 text-green-700 border-green-200",
-  FWD: "bg-red-100 text-red-700 border-red-200",
-};
-
-const POSITION_LABELS: Record<Position, string> = {
-  GK: "POR",
-  DEF: "DEF",
-  MID: "CEN",
-  FWD: "DEL",
-};
+import { PlayerAvatar } from "@/components/fantasy/PlayerAvatar";
 
 function NationalTeamSymbol({ team }: { team: FantasyNationalTeam | undefined }) {
   if (!team) return null;
@@ -50,12 +37,11 @@ function PitchPlayer({ player, isCaptain, label, nationalTeams }: PitchPlayerPro
   }
 
   const nt = nationalTeams.find((t) => t.id === player.nationalTeamId);
-  const posStyles = POSITION_STYLES[player.position];
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className={clsx("relative h-10 w-10 rounded-full border-2 flex items-center justify-center text-xs font-bold", posStyles)}>
-        {POSITION_LABELS[player.position]}
+      <div className="relative">
+        <PlayerAvatar player={player} size={40} />
         {isCaptain && (
           <span className="absolute -top-1.5 -right-1.5 text-sm leading-none">⭐</span>
         )}
@@ -64,6 +50,47 @@ function PitchPlayer({ player, isCaptain, label, nationalTeams }: PitchPlayerPro
         {player.name.split(" ").slice(-1)[0]}
       </span>
       {nt && <NationalTeamSymbol team={nt} />}
+    </div>
+  );
+}
+
+function PitchLine({
+  players,
+  nationalTeams,
+  captainId,
+  role,
+}: {
+  players: Array<FantasyPlayer | undefined>;
+  nationalTeams: FantasyNationalTeam[];
+  captainId: string | null;
+  role: "attack" | "midfield" | "defense";
+}) {
+  const count = players.filter(Boolean).length;
+  const widthByCount: Record<number, string> = {
+    1: "26%",
+    2: role === "attack" ? "58%" : role === "midfield" ? "64%" : "72%",
+    3: role === "attack" ? "74%" : role === "midfield" ? "82%" : "88%",
+    4: role === "midfield" ? "92%" : "96%",
+    5: "100%",
+  };
+
+  return (
+    <div
+      className="mx-auto grid gap-4"
+      style={{
+        width: widthByCount[count] ?? "100%",
+        gridTemplateColumns: `repeat(${Math.max(players.length, 1)}, minmax(0, 1fr))`,
+      }}
+    >
+      {players.map((player, index) => (
+        <div key={player?.id ?? `empty-${index}`} className="flex justify-center">
+          <PitchPlayer
+            player={player}
+            isCaptain={player?.id === captainId}
+            nationalTeams={nationalTeams}
+          />
+        </div>
+      ))}
     </div>
   );
 }
@@ -85,6 +112,9 @@ export function FantasyTeamDisplay({
 }: FantasyTeamDisplayProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
   const { startingEleven: se, bench, captainId } = fantasyTeam;
+  const formationLabel =
+    fantasyTeam.startingEleven.formation ??
+    `${se.defenderIds.length}-${se.midfielderIds.length}-${se.forwardIds.length}`;
 
   const gk = pm.get(se.goalkeeperId);
   const defs = se.defenderIds.map((id) => pm.get(id));
@@ -108,6 +138,7 @@ export function FantasyTeamDisplay({
             <p className="text-xs text-[var(--muted)]">
               {fantasyTeam.totalPoints} puntos totales
             </p>
+            <p className="text-xs text-[var(--muted)]">Formación {formationLabel}</p>
           </div>
           {fantasyTeam.locked && (
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
@@ -119,51 +150,12 @@ export function FantasyTeamDisplay({
 
       {/* Pitch */}
       <div className="relative bg-gradient-to-b from-emerald-800 to-emerald-700 p-4">
-
-        <div className="relative flex flex-col gap-5">
-          {/* Forwards row */}
-          <div className="flex justify-around">
-            {fwds.map((p, i) => (
-              <PitchPlayer
-                key={i}
-                player={p}
-                isCaptain={p?.id === captainId}
-                nationalTeams={nationalTeams}
-              />
-            ))}
-          </div>
-
-          {/* Midfielders row */}
-          <div className="flex justify-around">
-            {mids.map((p, i) => (
-              <PitchPlayer
-                key={i}
-                player={p}
-                isCaptain={p?.id === captainId}
-                nationalTeams={nationalTeams}
-              />
-            ))}
-          </div>
-
-          {/* Defenders row */}
-          <div className="flex justify-around">
-            {defs.map((p, i) => (
-              <PitchPlayer
-                key={i}
-                player={p}
-                isCaptain={p?.id === captainId}
-                nationalTeams={nationalTeams}
-              />
-            ))}
-          </div>
-
-          {/* Goalkeeper row */}
+        <div className="relative flex flex-col gap-6 py-2">
+          <PitchLine players={fwds} nationalTeams={nationalTeams} captainId={captainId} role="attack" />
+          <PitchLine players={mids} nationalTeams={nationalTeams} captainId={captainId} role="midfield" />
+          <PitchLine players={defs} nationalTeams={nationalTeams} captainId={captainId} role="defense" />
           <div className="flex justify-center">
-            <PitchPlayer
-              player={gk}
-              isCaptain={gk?.id === captainId}
-              nationalTeams={nationalTeams}
-            />
+            <PitchPlayer player={gk} isCaptain={gk?.id === captainId} nationalTeams={nationalTeams} />
           </div>
         </div>
       </div>

@@ -50,7 +50,7 @@ export default async function FantasyBuilderPage({ searchParams }: Props) {
           {leagueId ? `Crear equipo · ${leagueName}` : "Crear equipo · Fantasy global"}
         </h1>
         <p className="text-sm text-[var(--muted)]">
-          Mundial 2026 · 9 pasos
+          Mundial 2026 · 9 pasos para demostrar que eres un genio del fútbol (o no)
           {leagueId
             ? " — Este once compite solo en tu liga."
             : " — Ranking general y predicciones con revelación."}
