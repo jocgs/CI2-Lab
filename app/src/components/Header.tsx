@@ -26,16 +26,26 @@ export async function Header() {
         <DesktopNav />
 
         {/* Usuario + ajustes */}
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           {user && (
             <>
-              <span className="hidden text-[var(--muted)] sm:block">Hola,</span>
               <Link
                 href="/profile"
-                className="rounded-full bg-[var(--brand-soft)] px-3 py-1 font-medium text-[var(--brand-strong)] transition-opacity hover:opacity-75"
+                title={user.displayName}
+                className="block h-8 w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-[var(--brand-soft)] transition-opacity hover:opacity-80"
               >
-                {user.displayName}
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center bg-[var(--brand)] text-xs font-bold text-white">
+                    {user.displayName.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </Link>
               {!USE_MOCKS && <SignOutButton />}
             </>
