@@ -1,13 +1,19 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/db";
-import { createFantasyTeam, getFantasyTeamByUserAndCompetition } from "@/lib/fantasy-db";
+import {
+  createFantasyTeam,
+  getGlobalFantasyTeam,
+  getFantasyTeamForLeague,
+  getFantasyLeagueById,
+} from "@/lib/fantasy-db";
 import { getPlayersByCompetition } from "@/lib/fantasy-db";
 import { validateFantasyTeam } from "@/lib/fantasy-validation";
 import type { FantasyStartingEleven, FantasyBench } from "@/types/fantasy";
 
 export interface CreateFantasyTeamInput {
   competitionId: string;
+  leagueId?: string | null;
   teamName: string;
   startingEleven: FantasyStartingEleven;
   bench: FantasyBench;
@@ -19,13 +25,31 @@ export async function createFantasyTeamAction(
 ): Promise<{ error?: string }> {
   try {
     const user = await getCurrentUser();
+    const leagueId = data.leagueId ?? null;
 
-    const existing = await getFantasyTeamByUserAndCompetition(
-      user.id,
-      data.competitionId,
-    );
-    if (existing) {
-      return { error: "Ya tienes un equipo en esta competición." };
+    if (leagueId) {
+      const league = await getFantasyLeagueById(leagueId);
+      if (!league) return { error: "Liga no encontrada." };
+      if (!league.memberIds.includes(user.id)) {
+        return { error: "Debes ser miembro de la liga para crear un equipo." };
+      }
+      if (league.competitionId !== data.competitionId) {
+        return { error: "La liga no pertenece a esta competición." };
+      }
+
+      const existingLeague = await getFantasyTeamForLeague(
+        user.id,
+        data.competitionId,
+        leagueId,
+      );
+      if (existingLeague) {
+        return { error: "Ya tienes un equipo en esta liga." };
+      }
+    } else {
+      const existingGlobal = await getGlobalFantasyTeam(user.id, data.competitionId);
+      if (existingGlobal) {
+        return { error: "Ya tienes un equipo en el Fantasy global." };
+      }
     }
 
     const players = await getPlayersByCompetition(data.competitionId);
@@ -45,6 +69,7 @@ export async function createFantasyTeamAction(
     await createFantasyTeam({
       userId: user.id,
       competitionId: data.competitionId,
+      leagueId,
       teamName: data.teamName,
       startingEleven: data.startingEleven,
       bench: data.bench,
