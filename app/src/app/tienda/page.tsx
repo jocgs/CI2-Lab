@@ -14,7 +14,7 @@ export default async function TiendaPage() {
   return (
     <div className="flex flex-col gap-8">
       {/* Cabecera */}
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-orange-400 to-yellow-300 p-6 text-white shadow-md sm:p-8">
+      <section className="tienda-hero overflow-hidden rounded-3xl p-6 text-white shadow-md sm:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium uppercase tracking-widest text-white/80">Tienda</p>
