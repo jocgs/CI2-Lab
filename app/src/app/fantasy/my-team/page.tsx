@@ -97,7 +97,7 @@ export default async function MyFantasyTeamPage() {
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
         <h2 className="mb-1 text-base font-semibold">🔮 Predicciones del torneo</h2>
         <p className="mb-5 text-xs text-[var(--muted)]">
-          Elige tu campeón, MVP y las selecciones especiales con cuotas. Todo suma puntos al final del Mundial.
+          Campeón, MVP, decepción y selección revelación (tapada). Todo suma puntos al final del Mundial.
         </p>
         {(() => {
           const { startingEleven: se, bench: b } = fantasyTeam;
