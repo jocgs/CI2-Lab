@@ -1,459 +1,57 @@
 [
   {
-    "id": "fd_match_552096",
+    "id": "match_1",
+    "competitionId": "comp_laliga",
+    "homeTeamId": "team_rma",
+    "awayTeamId": "team_fcb",
+    "kickoffAt": "2026-05-18T20:00:00.000Z",
+    "status": "FINISHED",
+    "result": { "homeGoals": 2, "awayGoals": 1, "outcome": "1" }
+  },
+  {
+    "id": "match_2",
+    "competitionId": "comp_laliga",
+    "homeTeamId": "team_atm",
+    "awayTeamId": "team_seve",
+    "kickoffAt": "2026-05-19T18:30:00.000Z",
+    "status": "FINISHED",
+    "result": { "homeGoals": 3, "awayGoals": 0, "outcome": "1" }
+  },
+  {
+    "id": "match_3",
+    "competitionId": "comp_laliga",
+    "homeTeamId": "team_bet",
+    "awayTeamId": "team_val",
+    "kickoffAt": "2026-05-20T19:00:00.000Z",
+    "status": "FINISHED",
+    "result": { "homeGoals": 1, "awayGoals": 1, "outcome": "X" }
+  },
+  {
+    "id": "match_4",
     "competitionId": "fd_comp_CL",
-    "homeTeamId": "fd_team_524",
-    "awayTeamId": "fd_team_57",
-    "kickoffAt": "2026-05-30T16:00:00Z",
-    "status": "SCHEDULED"
+    "homeTeamId": "team_mci",
+    "awayTeamId": "team_bay",
+    "kickoffAt": "2026-05-22T19:00:00.000Z",
+    "status": "FINISHED",
+    "result": { "homeGoals": 1, "awayGoals": 2, "outcome": "2" }
   },
   {
-    "id": "fd_match_537327",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_769",
-    "awayTeamId": "fd_team_774",
-    "kickoffAt": "2026-06-11T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537328",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_772",
-    "awayTeamId": "fd_team_798",
-    "kickoffAt": "2026-06-12T02:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537333",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_828",
-    "awayTeamId": "fd_team_1060",
-    "kickoffAt": "2026-06-12T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537345",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_771",
-    "awayTeamId": "fd_team_761",
-    "kickoffAt": "2026-06-13T01:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537334",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8030",
-    "awayTeamId": "fd_team_788",
-    "kickoffAt": "2026-06-13T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537339",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_764",
-    "awayTeamId": "fd_team_815",
-    "kickoffAt": "2026-06-13T22:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537340",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_836",
-    "awayTeamId": "fd_team_8873",
-    "kickoffAt": "2026-06-14T01:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537346",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_779",
-    "awayTeamId": "fd_team_803",
-    "kickoffAt": "2026-06-14T04:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537351",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_759",
-    "awayTeamId": "fd_team_9460",
-    "kickoffAt": "2026-06-14T17:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537357",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8601",
-    "awayTeamId": "fd_team_766",
-    "kickoffAt": "2026-06-14T20:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537352",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_1935",
-    "awayTeamId": "fd_team_791",
-    "kickoffAt": "2026-06-14T23:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537358",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_792",
-    "awayTeamId": "fd_team_802",
-    "kickoffAt": "2026-06-15T02:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537369",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_760",
-    "awayTeamId": "fd_team_1930",
-    "kickoffAt": "2026-06-15T16:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537363",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_805",
-    "awayTeamId": "fd_team_825",
-    "kickoffAt": "2026-06-15T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537370",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_801",
-    "awayTeamId": "fd_team_758",
-    "kickoffAt": "2026-06-15T22:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537364",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_840",
-    "awayTeamId": "fd_team_783",
-    "kickoffAt": "2026-06-16T01:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537391",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_773",
-    "awayTeamId": "fd_team_804",
-    "kickoffAt": "2026-06-16T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537392",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8062",
-    "awayTeamId": "fd_team_8872",
-    "kickoffAt": "2026-06-16T22:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537397",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_762",
-    "awayTeamId": "fd_team_778",
-    "kickoffAt": "2026-06-17T01:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537398",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_816",
-    "awayTeamId": "fd_team_8049",
-    "kickoffAt": "2026-06-17T04:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537403",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_765",
-    "awayTeamId": "fd_team_1934",
-    "kickoffAt": "2026-06-17T17:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537409",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_770",
-    "awayTeamId": "fd_team_799",
-    "kickoffAt": "2026-06-17T20:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537410",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_763",
-    "awayTeamId": "fd_team_1836",
-    "kickoffAt": "2026-06-17T23:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537404",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8070",
-    "awayTeamId": "fd_team_818",
-    "kickoffAt": "2026-06-18T02:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537329",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_798",
-    "awayTeamId": "fd_team_774",
-    "kickoffAt": "2026-06-18T16:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537335",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_788",
-    "awayTeamId": "fd_team_1060",
-    "kickoffAt": "2026-06-18T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537336",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_828",
-    "awayTeamId": "fd_team_8030",
-    "kickoffAt": "2026-06-18T22:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537330",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_769",
-    "awayTeamId": "fd_team_772",
-    "kickoffAt": "2026-06-19T01:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537348",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_771",
-    "awayTeamId": "fd_team_779",
-    "kickoffAt": "2026-06-19T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537342",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8873",
-    "awayTeamId": "fd_team_815",
-    "kickoffAt": "2026-06-19T22:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537341",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_764",
-    "awayTeamId": "fd_team_836",
-    "kickoffAt": "2026-06-20T00:30:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537347",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_803",
-    "awayTeamId": "fd_team_761",
-    "kickoffAt": "2026-06-20T03:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537359",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8601",
-    "awayTeamId": "fd_team_792",
-    "kickoffAt": "2026-06-20T17:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537353",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_759",
-    "awayTeamId": "fd_team_1935",
-    "kickoffAt": "2026-06-20T20:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537354",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_791",
-    "awayTeamId": "fd_team_9460",
-    "kickoffAt": "2026-06-21T00:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537360",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_802",
-    "awayTeamId": "fd_team_766",
-    "kickoffAt": "2026-06-21T04:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537371",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_760",
-    "awayTeamId": "fd_team_801",
-    "kickoffAt": "2026-06-21T16:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537365",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_805",
-    "awayTeamId": "fd_team_840",
-    "kickoffAt": "2026-06-21T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537372",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_758",
-    "awayTeamId": "fd_team_1930",
-    "kickoffAt": "2026-06-21T22:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537366",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_783",
-    "awayTeamId": "fd_team_825",
-    "kickoffAt": "2026-06-22T01:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537399",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_762",
-    "awayTeamId": "fd_team_816",
-    "kickoffAt": "2026-06-22T17:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537393",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_773",
-    "awayTeamId": "fd_team_8062",
-    "kickoffAt": "2026-06-22T21:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537394",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8872",
-    "awayTeamId": "fd_team_804",
-    "kickoffAt": "2026-06-23T00:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537400",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8049",
-    "awayTeamId": "fd_team_778",
-    "kickoffAt": "2026-06-23T03:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537405",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_765",
-    "awayTeamId": "fd_team_8070",
-    "kickoffAt": "2026-06-23T17:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537411",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_770",
-    "awayTeamId": "fd_team_763",
-    "kickoffAt": "2026-06-23T20:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537412",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_1836",
-    "awayTeamId": "fd_team_799",
-    "kickoffAt": "2026-06-23T23:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537406",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_818",
-    "awayTeamId": "fd_team_1934",
-    "kickoffAt": "2026-06-24T02:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537337",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_788",
-    "awayTeamId": "fd_team_828",
-    "kickoffAt": "2026-06-24T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537338",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_1060",
-    "awayTeamId": "fd_team_8030",
-    "kickoffAt": "2026-06-24T19:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537344",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_815",
-    "awayTeamId": "fd_team_836",
-    "kickoffAt": "2026-06-24T22:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537343",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8873",
-    "awayTeamId": "fd_team_764",
-    "kickoffAt": "2026-06-24T22:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537331",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_798",
-    "awayTeamId": "fd_team_769",
-    "kickoffAt": "2026-06-25T01:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537332",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_774",
-    "awayTeamId": "fd_team_772",
-    "kickoffAt": "2026-06-25T01:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537355",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_791",
-    "awayTeamId": "fd_team_759",
-    "kickoffAt": "2026-06-25T20:00:00Z",
-    "status": "SCHEDULED"
+    "id": "match_5",
+    "competitionId": "comp_laliga",
+    "homeTeamId": "team_vil",
+    "awayTeamId": "team_ath",
+    "kickoffAt": "2026-05-24T16:00:00.000Z",
+    "status": "FINISHED",
+    "result": { "homeGoals": 0, "awayGoals": 2, "outcome": "2" }
   },
   {
     "id": "match_6",
     "competitionId": "comp_laliga",
     "homeTeamId": "team_rso",
     "awayTeamId": "team_gir",
-    "kickoffAt": "2026-05-26T07:30:00.000Z",
-    "status": "LIVE"
+    "kickoffAt": "2026-05-26T19:00:00.000Z",
+    "status": "FINISHED",
+    "result": { "homeGoals": 2, "awayGoals": 0, "outcome": "1" }
   },
   {
     "id": "match_7",
@@ -461,86 +59,16 @@
     "homeTeamId": "team_fcb",
     "awayTeamId": "team_atm",
     "kickoffAt": "2026-05-27T20:00:00.000Z",
-    "status": "SCHEDULED"
+    "status": "FINISHED",
+    "result": { "homeGoals": 1, "awayGoals": 0, "outcome": "1" }
   },
   {
     "id": "match_8",
-    "competitionId": "comp_ucl",
+    "competitionId": "fd_comp_CL",
     "homeTeamId": "team_psg",
     "awayTeamId": "team_int",
     "kickoffAt": "2026-05-28T19:00:00.000Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537401",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_8049",
-    "awayTeamId": "fd_team_762",
-    "kickoffAt": "2026-06-28T02:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "fd_match_537402",
-    "competitionId": "fd_comp_WC",
-    "homeTeamId": "fd_team_778",
-    "awayTeamId": "fd_team_816",
-    "kickoffAt": "2026-06-28T02:00:00Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "match_11",
-    "competitionId": "comp_ucl",
-    "homeTeamId": "team_rma",
-    "awayTeamId": "team_mci",
-    "kickoffAt": "2026-05-31T20:00:00.000Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "match_12",
-    "competitionId": "comp_laliga",
-    "homeTeamId": "team_ath",
-    "awayTeamId": "team_fcb",
-    "kickoffAt": "2026-06-01T16:00:00.000Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "match_13",
-    "competitionId": "comp_mundial",
-    "homeTeamId": "team_esp",
-    "awayTeamId": "team_cro",
-    "kickoffAt": "2026-06-15T17:00:00.000Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "match_14",
-    "competitionId": "comp_mundial",
-    "homeTeamId": "team_ger",
-    "awayTeamId": "team_fra",
-    "kickoffAt": "2026-06-18T21:00:00.000Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "match_15",
-    "competitionId": "comp_mundial",
-    "homeTeamId": "team_arg",
-    "awayTeamId": "team_bra",
-    "kickoffAt": "2026-06-21T21:00:00.000Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "match_16",
-    "competitionId": "comp_mundial",
-    "homeTeamId": "team_eng",
-    "awayTeamId": "team_por",
-    "kickoffAt": "2026-06-23T21:00:00.000Z",
-    "status": "SCHEDULED"
-  },
-  {
-    "id": "match_17",
-    "competitionId": "comp_mundial",
-    "homeTeamId": "team_mex",
-    "awayTeamId": "team_usa",
-    "kickoffAt": "2026-06-25T20:00:00.000Z",
-    "status": "SCHEDULED"
+    "status": "FINISHED",
+    "result": { "homeGoals": 1, "awayGoals": 1, "outcome": "X" }
   }
 ]
