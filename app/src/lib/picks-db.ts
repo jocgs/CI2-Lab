@@ -1,11 +1,13 @@
-import * as fs from "./data-store";
 import type { UserTournamentPicks } from "@/types/picks";
+import * as store from "./data-store";
+
+const COLLECTION = "tournament_picks";
 
 interface StoredPick extends UserTournamentPicks {
   id: string;
 }
 
-function pickId(userId: string, tournamentId: string) {
+function pickId(userId: string, tournamentId: string): string {
   return `${userId}_${tournamentId}`;
 }
 
@@ -15,11 +17,13 @@ function toPublic(p: StoredPick): UserTournamentPicks {
   return rest as UserTournamentPicks;
 }
 
+// ─── CRUD ─────────────────────────────────────────────────────────────────────
+
 export async function getUserTournamentPicks(
   userId: string,
   tournamentId: string,
 ): Promise<UserTournamentPicks | null> {
-  const pick = await fs.getById<StoredPick>("tournament_picks", pickId(userId, tournamentId));
+  const pick = await store.getById<StoredPick>(COLLECTION, pickId(userId, tournamentId));
   return pick ? toPublic(pick) : null;
 }
 
@@ -30,10 +34,10 @@ export async function saveUserTournamentPicks(data: {
 }): Promise<UserTournamentPicks> {
   const now = new Date().toISOString();
   const id = pickId(data.userId, data.tournamentId);
-  const existing = await fs.getById<StoredPick>("tournament_picks", id);
+  const existing = await store.getById<StoredPick>(COLLECTION, id);
 
   if (existing) {
-    await fs.patch("tournament_picks", id, {
+    await store.patch(COLLECTION, id, {
       revelationTeamId: data.revelationTeamId,
       updatedAt: now,
     });
@@ -49,13 +53,13 @@ export async function saveUserTournamentPicks(data: {
     createdAt: now,
     updatedAt: now,
   };
-  await fs.insert("tournament_picks", newPick);
+  await store.insert(COLLECTION, newPick);
   return toPublic(newPick);
 }
 
 export async function getAllPicksByTournament(
   tournamentId: string,
 ): Promise<UserTournamentPicks[]> {
-  const picks = await fs.queryWhere<StoredPick>("tournament_picks", "tournamentId", tournamentId);
+  const picks = await store.queryWhere<StoredPick>(COLLECTION, "tournamentId", tournamentId);
   return picks.map(toPublic);
 }
