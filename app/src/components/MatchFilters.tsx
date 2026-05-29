@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Competition, Team } from "@/types/domain";
 
@@ -22,14 +23,9 @@ export function MatchFilters({ competitions, teams, selectedCompetition, selecte
     } else {
       params.delete(key);
     }
-    // Si cambia el filtro de equipo, limpia competición y viceversa
     if (key === "team") params.delete("competition");
     if (key === "competition") params.delete("team");
     router.push(`/matches?${params.toString()}`);
-  }
-
-  function reset() {
-    router.push(`/matches?tab=${tab}`);
   }
 
   const hasFilter = selectedCompetition || selectedTeam;
@@ -63,12 +59,12 @@ export function MatchFilters({ competitions, teams, selectedCompetition, selecte
       </select>
 
       {hasFilter && (
-        <button
-          onClick={reset}
+        <Link
+          href={`/matches?tab=${tab}`}
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--brand)] hover:text-[var(--brand-strong)] transition-colors"
         >
           ✕ Quitar filtros
-        </button>
+        </Link>
       )}
     </div>
   );
