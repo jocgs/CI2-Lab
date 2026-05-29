@@ -7,9 +7,12 @@ export interface ShopAvatar {
   imageUrl: string;
   priceCoin: number;
   competitionTag: string;
+  /** Si true, se marca como edición limitada / exclusiva del torneo activo. */
+  exclusive?: boolean;
 }
 
 export const SHOP_AVATARS: ShopAvatar[] = [
+  // ── WC 2026 (Edición limitada, exclusiva del Mundial) ─────────────────────
   {
     id: "avatar_clutch",
     name: "Clutch",
@@ -17,6 +20,7 @@ export const SHOP_AVATARS: ShopAvatar[] = [
     imageUrl: "/avatares/Clutch.png",
     priceCoin: 100,
     competitionTag: "WC2026",
+    exclusive: true,
   },
   {
     id: "avatar_maple",
@@ -25,6 +29,7 @@ export const SHOP_AVATARS: ShopAvatar[] = [
     imageUrl: "/avatares/Maple.png",
     priceCoin: 100,
     competitionTag: "WC2026",
+    exclusive: true,
   },
   {
     id: "avatar_zayu",
@@ -33,6 +38,65 @@ export const SHOP_AVATARS: ShopAvatar[] = [
     imageUrl: "/avatares/Zayu.png",
     priceCoin: 100,
     competitionTag: "WC2026",
+    exclusive: true,
+  },
+
+  // ── Mascotas históricas de otros Mundiales ────────────────────────────────
+  {
+    id: "avatar_gauchito",
+    name: "Gauchito",
+    description: "El gaucho argentino del Mundial 1978. Puro folklore rioplatense.",
+    imageUrl: "/avatares/Gauchito.png",
+    priceCoin: 30,
+    competitionTag: "WC_CLASICAS",
+  },
+  {
+    id: "avatar_naranjito",
+    name: "Naranjito",
+    description: "La naranja española del Mundial 1982. Un clásico de los ochenta.",
+    imageUrl: "/avatares/Naranjito.png",
+    priceCoin: 30,
+    competitionTag: "WC_CLASICAS",
+  },
+  {
+    id: "avatar_pique",
+    name: "Pique",
+    description: "El jalapeño picante del Mundial México 1986. ¡Olé!",
+    imageUrl: "/avatares/Pique.png",
+    priceCoin: 30,
+    competitionTag: "WC_CLASICAS",
+  },
+  {
+    id: "avatar_striker",
+    name: "Striker",
+    description: "El perro americano del Mundial USA 1994. Enérgico y simpático.",
+    imageUrl: "/avatares/Striker.png",
+    priceCoin: 30,
+    competitionTag: "WC_CLASICAS",
+  },
+  {
+    id: "avatar_footix",
+    name: "Footix",
+    description: "El gallo galo del Mundial Francia 1998. ¡Allez les Bleus!",
+    imageUrl: "/avatares/Footix.png",
+    priceCoin: 30,
+    competitionTag: "WC_CLASICAS",
+  },
+  {
+    id: "avatar_fuleco",
+    name: "Fuleco",
+    description: "El armadillo brasileño del Mundial Brasil 2014. Divertido y ecológico.",
+    imageUrl: "/avatares/Fuleco.png",
+    priceCoin: 30,
+    competitionTag: "WC_CLASICAS",
+  },
+  {
+    id: "avatar_zabikava",
+    name: "Zabivaka",
+    description: "El lobo ruso del Mundial Rusia 2018. Elegante y veloz.",
+    imageUrl: "/avatares/Zabikava.png",
+    priceCoin: 30,
+    competitionTag: "WC_CLASICAS",
   },
 ];
 
