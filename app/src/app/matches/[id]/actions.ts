@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUserId, upsertBet } from "@/lib/db";
+import { getCurrentUserId, getMatchById, upsertBet } from "@/lib/db";
 import { outcomeFromGoals } from "@/lib/scoring";
 import type { Outcome } from "@/types/domain";
 
@@ -33,6 +33,15 @@ export async function placeBetAction(
 
   const userId = await getCurrentUserId();
   if (!userId) return { ok: false, error: "No autenticado" };
+
+  const match = await getMatchById(matchId);
+  if (!match) return { ok: false, error: "Partido no encontrado" };
+  if (match.status !== "SCHEDULED") {
+    return { ok: false, error: "El partido ya ha comenzado o finalizado" };
+  }
+  if (new Date(match.kickoffAt) <= new Date()) {
+    return { ok: false, error: "El plazo para apostar ha finalizado" };
+  }
 
   await upsertBet({
     userId,

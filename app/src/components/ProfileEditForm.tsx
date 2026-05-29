@@ -139,12 +139,12 @@ function buildProfileFormData(
   }
 
   const team1 = form.elements.namedItem("supportedTeamId1");
-  if (team1 instanceof HTMLSelectElement) {
+  if (team1 instanceof HTMLInputElement || team1 instanceof HTMLSelectElement) {
     data.set("supportedTeamId1", team1.value);
   }
 
   const team2 = form.elements.namedItem("supportedTeamId2");
-  if (team2 instanceof HTMLSelectElement) {
+  if (team2 instanceof HTMLInputElement || team2 instanceof HTMLSelectElement) {
     data.set("supportedTeamId2", team2.value);
   }
 

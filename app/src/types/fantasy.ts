@@ -44,6 +44,8 @@ export interface FantasyTeam {
   id: string;
   userId: string;
   competitionId: string;
+  /** `null` = equipo del ranking global; id de liga = equipo solo para esa liga. */
+  leagueId?: string | null;
   teamName: string;
   startingEleven: FantasyStartingEleven;
   bench: FantasyBench;

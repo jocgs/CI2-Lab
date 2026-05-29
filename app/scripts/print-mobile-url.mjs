@@ -19,7 +19,7 @@ function getLanAddresses() {
 
 const ips = getLanAddresses();
 
-console.log("\n📱 Porrify — acceso desde el móvil (misma Wi‑Fi)\n");
+console.log("\n📱 TikiTaka — acceso desde el móvil (misma Wi‑Fi)\n");
 if (ips.length === 0) {
   console.log("No se detectó IP local. Ejecuta `ipconfig` y busca IPv4 de Wi‑Fi.\n");
 } else {

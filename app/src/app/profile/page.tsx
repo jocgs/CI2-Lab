@@ -9,27 +9,25 @@ import {
   getCurrentUser,
   getGlobalRanking,
   getGroupsForUser,
-  getMatchById,
   getMatches,
   getStreakForUser,
   getTeams,
-  getTeamById,
 } from "@/lib/db";
 import { computeUserAchievements, FANTASY_COMPETITION_ID } from "@/lib/achievements";
 import { getFantasyTeamByUserAndCompetition } from "@/lib/fantasy-db";
 import { AchievementsGrid } from "@/components/AchievementsGrid";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
-import { formatBetPrediction } from "@/lib/scoring";
 import { Badge, Card, EmptyState, SectionTitle } from "@/components/ui";
-import { formatKickoff } from "@/lib/utils";
 import { acceptFriendRequestAction } from "./actions";
 import AddFriendForm from "@/components/AddFriendForm";
+import { getShopAvatarById } from "@/lib/shop-avatars";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
+  const activeWcAvatar = user.activeAvatarId ? getShopAvatarById(user.activeAvatarId) : null;
 
   const [streak, bets, groups, friends, receivedRequests, sentRequests, teams, nationalTeams, matches, globalRanking, fantasyTeam] =
     await Promise.all([
@@ -65,11 +63,6 @@ export default async function ProfilePage() {
       ? 0
       : Math.round((wonBets.length / resolvedBets.length) * 100);
 
-  const recentBets = bets
-    .slice()
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 8);
-
   const supportedTeamIds = user.supportedTeamIds ?? [];
   const supportedTeams = teams.filter((team) => supportedTeamIds.includes(team.id));
   const supportedNationalTeam = nationalTeams.find((team) => team.id === user.supportedNationalTeamId);
@@ -77,10 +70,23 @@ export default async function ProfilePage() {
   return (
     <div className="flex flex-col gap-8">
       <Card className="overflow-hidden border-[var(--border)] bg-[var(--surface)]">
-        <div className="bg-gradient-to-r from-[var(--brand)] via-cyan-500 to-emerald-400 px-6 py-8 text-white sm:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-r from-[var(--brand)] via-cyan-500 to-emerald-400 px-6 py-8 text-white sm:px-8">
+          {/* Avatar WC activo — decorativo en el lateral derecho */}
+          {activeWcAvatar && (
+            <div aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 sm:right-6">
+              <Image
+                src={activeWcAvatar.imageUrl}
+                alt=""
+                width={130}
+                height={130}
+                className="h-24 w-24 object-contain opacity-90 drop-shadow-lg sm:h-32 sm:w-32"
+                unoptimized
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <ProfileAvatar avatarUrl={user.avatarUrl} displayName={user.displayName} />
-            <div className="flex-1">
+            <div className={activeWcAvatar ? "flex-1 pr-[6.5rem] sm:pr-36" : "flex-1"}>
               <p className="text-xs uppercase tracking-[0.24em] text-white/75">Perfil</p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight">{user.displayName}</h1>
               <p className="text-sm text-white/85">@{user.username}</p>
@@ -117,21 +123,12 @@ export default async function ProfilePage() {
             </div>
           </div>
         </div>
-        <div className="grid gap-3 border-t border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-4">
+        <div className="grid gap-3 border-t border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-5">
           <Stat label="Puntos totales" value={totalPoints} accent />
+          <Stat label="Monedas" value={`🪙 ${user.coins ?? 0}`} />
           <Stat label="Aciertos" value={`${wonBets.length}/${resolvedBets.length}`} />
           <Stat label="Precisión" value={`${accuracy}%`} />
           <Stat label="Racha actual" value={streak.current} subtitle={`Mejor: ${streak.best}`} />
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <SectionTitle
-          title="Logros"
-          subtitle="Desbloquea medallas por rachas, amigos, grupos, ranking y Fantasy"
-        />
-        <div className="mt-5">
-          <AchievementsGrid achievements={achievements} />
         </div>
       </Card>
 
@@ -248,70 +245,15 @@ export default async function ProfilePage() {
         </div>
       </Card>
 
-      <section>
+      <Card className="p-6">
         <SectionTitle
-          title="Tus porras recientes"
-          subtitle="Últimas predicciones, ordenadas por fecha"
+          title="Logros"
+          subtitle="Desbloquea medallas por rachas, amigos, grupos, ranking y Fantasy"
         />
-        {recentBets.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">Aún no has hecho ninguna porra.</p>
-        ) : (
-          <ul className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-            {await Promise.all(
-              recentBets.map(async (bet, index) => {
-                const match = await getMatchById(bet.matchId);
-                if (!match) return null;
-                const [home, away] = await Promise.all([
-                  getTeamById(match.homeTeamId),
-                  getTeamById(match.awayTeamId),
-                ]);
-                return (
-                  <li
-                    key={bet.id}
-                    className={
-                      "flex items-center justify-between gap-3 px-4 py-3 text-sm " +
-                      (index !== 0 ? "border-t border-[var(--border)]" : "")
-                    }
-                  >
-                    <Link href={`/matches/${match.id}`} className="flex-1 hover:underline">
-                      <p className="font-medium">
-                        {home?.shortName} vs {away?.shortName}
-                      </p>
-                      <p className="text-xs text-[var(--muted)]">{formatKickoff(match.kickoffAt)}</p>
-                    </Link>
-                    <Badge
-                      tone={
-                        bet.status === "WON"
-                          ? "brand"
-                          : bet.status === "LOST"
-                            ? "danger"
-                            : "warning"
-                      }
-                    >
-                      Predicción: {formatBetPrediction(bet.prediction)}
-                      {bet.status === "WON" && ` · +${bet.points}`}
-                    </Badge>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-        )}
-      </section>
-
-      <section>
-        <SectionTitle title="Tus grupos" />
-        <div className="grid gap-3 sm:grid-cols-2">
-          {groups.map((group) => (
-            <Link key={group.id} href={`/groups/${group.id}`}>
-              <Card className="p-4 transition-shadow hover:shadow-md">
-                <p className="text-xs text-[var(--muted)]">{group.memberIds.length} miembros</p>
-                <p className="font-semibold">{group.name}</p>
-              </Card>
-            </Link>
-          ))}
+        <div className="mt-5">
+          <AchievementsGrid achievements={achievements} />
         </div>
-      </section>
+      </Card>
     </div>
   );
 }

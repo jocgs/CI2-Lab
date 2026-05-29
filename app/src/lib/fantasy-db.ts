@@ -7,7 +7,8 @@ import type {
   FantasyPlayerMatchStats,
   FantasyRankingEntry,
 } from "@/types/fantasy";
-import { FANTASY_PLAYERS } from "./mocks/fantasy-players-data";
+import { unstable_cache } from "next/cache";
+import { FANTASY_PLAYERS } from "./mocks/fantasy-players";
 import { FANTASY_NATIONAL_TEAMS } from "./mocks/fantasy-national-teams";
 import * as fs from "./data-store";
 import { calculateFantasyTeamPoints, getRankingLabel } from "./fantasy-scoring";
@@ -19,9 +20,13 @@ import { calculateFantasyTeamPoints, getRankingLabel } from "./fantasy-scoring";
 // Jugadores (datos estáticos del mock)
 // ---------------------------------------------------------------------------
 
-export async function getPlayersByCompetition(competitionId: string): Promise<FantasyPlayer[]> {
-  return FANTASY_PLAYERS.filter((p) => p.competitionId === competitionId);
-}
+// Cache agresiva: catálogo prácticamente estático.
+export const getPlayersByCompetition = unstable_cache(
+  async (competitionId: string): Promise<FantasyPlayer[]> =>
+    FANTASY_PLAYERS.filter((p) => p.competitionId === competitionId),
+  ["fantasy:getPlayersByCompetition"],
+  { revalidate: 60 * 60 * 24 }, // 24h
+);
 
 export async function getPlayerById(id: string): Promise<FantasyPlayer | undefined> {
   return FANTASY_PLAYERS.find((p) => p.id === id);
@@ -31,28 +36,64 @@ export async function getPlayerById(id: string): Promise<FantasyPlayer | undefin
 // Selecciones nacionales (datos estáticos del mock)
 // ---------------------------------------------------------------------------
 
-export async function getNationalTeamsByCompetition(competitionId: string): Promise<FantasyNationalTeam[]> {
-  return FANTASY_NATIONAL_TEAMS.filter((t) => t.competitionId === competitionId);
-}
+// Cache agresiva: catálogo prácticamente estático.
+export const getNationalTeamsByCompetition = unstable_cache(
+  async (competitionId: string): Promise<FantasyNationalTeam[]> =>
+    FANTASY_NATIONAL_TEAMS.filter((t) => t.competitionId === competitionId),
+  ["fantasy:getNationalTeamsByCompetition"],
+  { revalidate: 60 * 60 * 24 }, // 24h
+);
 
 // ---------------------------------------------------------------------------
 // Equipos Fantasy → Firestore
 // ---------------------------------------------------------------------------
 
+export function isGlobalFantasyTeam(team: FantasyTeam): boolean {
+  return team.leagueId == null;
+}
+
+export async function getFantasyTeamsByUser(
+  userId: string,
+  competitionId: string,
+): Promise<FantasyTeam[]> {
+  const teams = await getAllFantasyTeamsByCompetition(competitionId);
+  return teams.filter((t) => t.userId === userId);
+}
+
+/** Equipo del ranking global (sin liga). */
+export async function getGlobalFantasyTeam(
+  userId: string,
+  competitionId: string,
+): Promise<FantasyTeam | null> {
+  const teams = await getFantasyTeamsByUser(userId, competitionId);
+  return teams.find(isGlobalFantasyTeam) ?? null;
+}
+
+/** Equipo asociado a una liga concreta. */
+export async function getFantasyTeamForLeague(
+  userId: string,
+  competitionId: string,
+  leagueId: string,
+): Promise<FantasyTeam | null> {
+  const teams = await getFantasyTeamsByUser(userId, competitionId);
+  return teams.find((t) => t.leagueId === leagueId) ?? null;
+}
+
+/** @deprecated Usa `getGlobalFantasyTeam` — mantiene compatibilidad con código existente. */
 export async function getFantasyTeamByUserAndCompetition(
   userId: string,
   competitionId: string,
 ): Promise<FantasyTeam | null> {
-  const result = await fs.queryWhereCompoundOne<FantasyTeam>("fantasy_teams", [
-    ["userId", userId],
-    ["competitionId", competitionId],
-  ]);
-  return result ?? null;
+  return getGlobalFantasyTeam(userId, competitionId);
 }
 
-export async function getAllFantasyTeamsByCompetition(competitionId: string): Promise<FantasyTeam[]> {
-  return fs.queryWhere<FantasyTeam>("fantasy_teams", "competitionId", competitionId);
-}
+// Cache corta: reduce “saltos” entre secciones en móvil (navegación).
+export const getAllFantasyTeamsByCompetition = unstable_cache(
+  async (competitionId: string): Promise<FantasyTeam[]> =>
+    fs.queryWhere<FantasyTeam>("fantasy_teams", "competitionId", competitionId),
+  ["fantasy:getAllFantasyTeamsByCompetition"],
+  { revalidate: 5 }, // 5s
+);
 
 export async function createFantasyTeam(
   data: Omit<FantasyTeam, "id" | "totalPoints" | "createdAt" | "updatedAt" | "locked">,
@@ -60,6 +101,7 @@ export async function createFantasyTeam(
   const now = new Date().toISOString();
   const newTeam: FantasyTeam = {
     ...data,
+    leagueId: data.leagueId ?? null,
     id: `fantasy_team_${Math.random().toString(36).slice(2, 10)}`,
     totalPoints: 0,
     createdAt: now,
@@ -104,12 +146,13 @@ export async function getFantasyPlayerStatsByCompetition(
 export async function saveFantasyPlayerMatchStats(
   stats: Omit<FantasyPlayerMatchStats, "id">,
 ): Promise<FantasyPlayerMatchStats> {
-  const newStats: FantasyPlayerMatchStats = {
+  // ID determinista por (playerId, matchId) — evita duplicados si se llama dos veces
+  const statsWithId: FantasyPlayerMatchStats = {
     ...stats,
-    id: `stats_${Math.random().toString(36).slice(2, 10)}`,
+    id: `${stats.playerId}_${stats.matchId}`,
   };
-  await fs.insert("fantasy_stats", newStats);
-  return newStats;
+  await fs.upsert("fantasy_stats", statsWithId);
+  return statsWithId;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,10 +203,10 @@ export async function recalculateFantasyRanking(competitionId: string): Promise<
 // Ranking
 // ---------------------------------------------------------------------------
 
-export async function getFantasyRankingByCompetition(
+async function buildRankingEntriesFromTeams(
+  teams: FantasyTeam[],
   competitionId: string,
 ): Promise<FantasyRankingEntry[]> {
-  const teams = await getAllFantasyTeamsByCompetition(competitionId);
   const nationalTeams = await getNationalTeamsByCompetition(competitionId);
   const ntMap = new Map(nationalTeams.map((nt) => [nt.id, nt]));
 
@@ -198,6 +241,21 @@ export async function getFantasyRankingByCompetition(
       label: getRankingLabel(i + 1, team.totalPoints),
     };
   });
+}
+
+export async function getFantasyRankingByCompetition(
+  competitionId: string,
+): Promise<FantasyRankingEntry[]> {
+  // Cache corta: ranking no necesita frescura instantánea en navegación.
+  return unstable_cache(
+    async (cid: string): Promise<FantasyRankingEntry[]> => {
+      const allTeams = await getAllFantasyTeamsByCompetition(cid);
+      const teams = allTeams.filter(isGlobalFantasyTeam);
+      return buildRankingEntriesFromTeams(teams, cid);
+    },
+    ["fantasy:getFantasyRankingByCompetition"],
+    { revalidate: 5 },
+  )(competitionId);
 }
 
 // ---------------------------------------------------------------------------
@@ -268,11 +326,21 @@ export async function leaveFantasyLeague(
 }
 
 export async function getFantasyLeagueRanking(leagueId: string): Promise<FantasyLeagueRankingEntry[]> {
-  const league = await getFantasyLeagueById(leagueId);
-  if (!league) return [];
+  // Cache corta: evita recalcular en cada navegación de móvil.
+  return unstable_cache(
+    async (lid: string): Promise<FantasyLeagueRankingEntry[]> => {
+      const league = await getFantasyLeagueById(lid);
+      if (!league) return [];
 
-  const allEntries = await getFantasyRankingByCompetition(league.competitionId);
-  const leagueEntries = allEntries.filter((e) => league.memberIds.includes(e.userId));
+      const allTeams = await getAllFantasyTeamsByCompetition(league.competitionId);
+      const leagueTeams = allTeams.filter(
+        (t) => t.leagueId === lid && league.memberIds.includes(t.userId),
+      );
+      const entries = await buildRankingEntriesFromTeams(leagueTeams, league.competitionId);
 
-  return leagueEntries.map((e, i) => ({ ...e, leagueRank: i + 1 }));
+      return entries.map((e, i) => ({ ...e, leagueRank: i + 1 }));
+    },
+    ["fantasy:getFantasyLeagueRanking"],
+    { revalidate: 5 },
+  )(leagueId);
 }

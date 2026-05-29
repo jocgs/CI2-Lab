@@ -100,12 +100,15 @@ interface FantasyTeamDisplayProps {
   players: FantasyPlayer[];
   nationalTeams: FantasyNationalTeam[];
   isEditable?: boolean;
+  /** Nombre resuelto de la selección revelación (viene de tournament_picks) */
+  revelationTeamName?: string;
 }
 
 export function FantasyTeamDisplay({
   fantasyTeam,
   players,
   nationalTeams,
+  revelationTeamName,
 }: FantasyTeamDisplayProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
   const { startingEleven: se, bench, captainId } = fantasyTeam;
@@ -179,9 +182,13 @@ export function FantasyTeamDisplay({
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
           Predicciones del torneo
         </p>
-        <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+        <div
+          className={`grid grid-cols-2 gap-2 text-xs ${revelationTeamName !== undefined ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}
+        >
           <PredictionBadge label="Campeona" value={fantasyTeam.championTeamId ?? ""} nationalTeams={nationalTeams} />
-          <PredictionBadge label="Sorpresa" value={fantasyTeam.surpriseTeamId ?? ""} nationalTeams={nationalTeams} />
+          {revelationTeamName !== undefined && (
+            <PredictionBadge label="Revelación" value={revelationTeamName} nationalTeams={[]} />
+          )}
           <PredictionBadge label="Decepción" value={fantasyTeam.disappointmentTeamId ?? ""} nationalTeams={nationalTeams} />
           <div className="rounded-lg border border-[var(--border)] p-2">
             <p className="text-[var(--muted)]">MVP</p>
@@ -216,8 +223,10 @@ function PredictionBadge({
             <NationalTeamSymbol team={nt} />
             <span>{nt.name}</span>
           </span>
-        ) : (
+        ) : value ? (
           value
+        ) : (
+          <span className="text-[var(--muted)]">—</span>
         )}
       </p>
     </div>

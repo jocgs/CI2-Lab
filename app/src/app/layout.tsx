@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppBackground, type AppBackgroundId } from "@/components/AppBackground";
@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Porrify · Porras con amigos",
+  title: "TikiTaka · Porras con amigos",
   description:
-    "Crea grupos, haz porras de fútbol con amigos y compite por el ranking. Porrify · CI2 Lab.",
+    "Crea grupos, haz porras de fútbol con amigos y compite por el ranking. TikiTaka · CI2 Lab.",
 };
 
 /** Fondos: original | futbol | futbol-pintado | futbol-rayas */
@@ -30,29 +30,26 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = (await headers()).get("x-pathname") ?? "";
+  const [headerStore, cookieStore] = await Promise.all([headers(), cookies()]);
+  const pathname = headerStore.get("x-pathname") ?? "";
   const isLoginPage = pathname === "/login";
+
+  // Leer tema desde cookie para aplicar la clase correcta en SSR (evita flash)
+  const themeCookie = cookieStore.get("tikitaka-theme")?.value;
+  const themeClass = themeCookie === "dark" ? "dark" : themeCookie === "light" ? "light" : "";
 
   return (
     <html
       lang="es"
       data-app-bg={APP_BACKGROUND}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased${themeClass ? ` ${themeClass}` : ""}`}
       suppressHydrationWarning
     >
-      <head>
-        {/* Anti-flash: aplica el tema antes del primer render */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('porrify-theme');var d=document.documentElement;if(t==='dark'){d.classList.add('dark')}else if(t==='light'){d.classList.add('light')}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){d.classList.add('dark')}})();`,
-          }}
-        />
-      </head>
       <body className="relative min-h-full flex flex-col">
         <AppBackground variant={APP_BACKGROUND} />
         {!isLoginPage && (
           <div className="relative z-10">
-            <Header />
+            <Header initialTheme={themeCookie === "dark" ? "dark" : "light"} />
           </div>
         )}
         <main
@@ -66,7 +63,7 @@ export default async function RootLayout({
         </main>
         {!isLoginPage && (
           <footer className="relative z-10 mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-[var(--muted)] sm:px-6">
-            Porrify · CI2 Lab · {new Date().getFullYear()}
+            TikiTaka · CI2 Lab · {new Date().getFullYear()}
           </footer>
         )}
       </body>

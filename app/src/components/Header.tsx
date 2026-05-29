@@ -5,7 +5,7 @@ import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { DesktopNav, MobileNav } from "./NavLinks";
 
-export async function Header() {
+export async function Header({ initialTheme }: { initialTheme: "light" | "dark" }) {
   const user = await getSessionUser();
 
   return (
@@ -17,23 +17,40 @@ export async function Header() {
             aria-hidden
             className="grid h-8 w-8 place-items-center rounded-full bg-[var(--brand)] text-white text-sm font-bold shadow-sm"
           >
-            P
+            T
           </span>
-          <span className="text-lg font-semibold tracking-tight">Porrify</span>
+          <span className="text-lg font-semibold tracking-tight">TikiTaka</span>
         </Link>
 
         {/* Nav escritorio — componente cliente con pathname activo */}
         <DesktopNav />
 
         {/* Usuario + ajustes */}
-        <div className="flex items-center gap-2 text-sm">
-          <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <ThemeToggle initialTheme={initialTheme} />
           {user && (
             <>
-              <span className="hidden text-[var(--muted)] sm:block">Hola,</span>
-              <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 font-medium text-[var(--brand-strong)]">
-                {user.displayName}
-              </span>
+              {/* Saldo de monedas */}
+              <Link
+                href="/tienda"
+                className="flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-950/70"
+                title="Ir a la tienda"
+              >
+                🪙 {(user as { coins?: number }).coins ?? 0}
+              </Link>
+              <Link
+                href="/profile"
+                title={user.displayName}
+                className="block h-8 w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-[var(--brand-soft)] transition-opacity hover:opacity-80"
+              >
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user.displayName} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center bg-[var(--brand)] text-xs font-bold text-white">
+                    {user.displayName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </Link>
               {!USE_MOCKS && <SignOutButton />}
             </>
           )}

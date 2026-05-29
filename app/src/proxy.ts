@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { USE_MOCKS } from "./lib/runtime";
 
-const SESSION_COOKIE = "porrify-session";
+const SESSION_COOKIE = "tikitaka-session";
 const PUBLIC_PATHS = ["/login", "/api/auth/session", "/api/sync-matches", "/api/resolve-bets", "/api/sync-status"];
 
 export function proxy(req: NextRequest) {
@@ -22,8 +22,10 @@ export function proxy(req: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  const uid = req.cookies.get(SESSION_COOKIE)?.value;
-  if (!uid) {
+  const raw = req.cookies.get(SESSION_COOKIE)?.value;
+  // Las cookies firmadas siempre tienen la forma "userId.hmacHex".
+  // Un valor sin punto es una cookie antigua (sin firma) o forjada → redirigir.
+  if (!raw || !raw.includes(".")) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 

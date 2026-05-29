@@ -11,14 +11,14 @@ export function LogoIcon({ streak }: Props) {
 
   return (
     <span
-      aria-label={onFire ? `Racha de ${streak} aciertos 🔥` : "Porrify"}
-      title={onFire ? `¡Racha de ${streak}! 🔥` : "Porrify"}
+      aria-label={onFire ? `Racha de ${streak} aciertos 🔥` : "TikiTaka"}
+      title={onFire ? `¡Racha de ${streak}! 🔥` : "TikiTaka"}
       className={
         "grid h-8 w-8 place-items-center rounded-full text-white text-sm font-bold shadow-sm " +
         (onFire ? "logo-on-fire" : "bg-[var(--brand)]")
       }
     >
-      <span>{onFire ? "🔥" : "P"}</span>
+      <span>{onFire ? "🔥" : "T"}</span>
     </span>
   );
 }

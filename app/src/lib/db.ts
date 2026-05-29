@@ -8,6 +8,7 @@ import { usesLocalStore } from "./data-store";
 import { buildRanking, computeStreak, getPointsForBet } from "./scoring";
 import { getSessionUser, getSessionUserId } from "./session";
 import { adminDb } from "./firebase-admin";
+import { getShopAvatarById, COINS_PER_POINT } from "./shop-avatars";
 import type {
   Bet,
   Competition,
@@ -184,6 +185,48 @@ export async function addFriendByUsername(userId: string, username: string): Pro
   return requestFriendByUsername(userId, username);
 }
 
+export async function removeFriendByUsername(userId: string, username: string): Promise<User> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const friend = await fs.queryWhereOne<UserWithPassword>("users", "username", username.trim().toLowerCase());
+  if (!friend) throw new Error("No existe ningún usuario con ese nombre");
+  if (friend.id === user.id) throw new Error("No puedes eliminarte a ti mismo");
+
+  // Quitamos la amistad en ambos sentidos y limpiamos cualquier solicitud
+  // pendiente que pudiera quedar entre los dos usuarios.
+  const userFriends         = new Set(user.friendIds ?? []);
+  const friendFriends       = new Set(friend.friendIds ?? []);
+  const userSent            = new Set(user.friendRequestSentIds ?? []);
+  const userReceived        = new Set(user.friendRequestReceivedIds ?? []);
+  const friendSent          = new Set(friend.friendRequestSentIds ?? []);
+  const friendReceived      = new Set(friend.friendRequestReceivedIds ?? []);
+
+  if (!userFriends.has(friend.id)) throw new Error("No sois amigos");
+
+  userFriends.delete(friend.id);
+  friendFriends.delete(user.id);
+  userSent.delete(friend.id);
+  userReceived.delete(friend.id);
+  friendSent.delete(user.id);
+  friendReceived.delete(user.id);
+
+  await Promise.all([
+    fs.patch("users", user.id, {
+      friendIds: [...userFriends],
+      friendRequestSentIds: [...userSent],
+      friendRequestReceivedIds: [...userReceived],
+    }),
+    fs.patch("users", friend.id, {
+      friendIds: [...friendFriends],
+      friendRequestSentIds: [...friendSent],
+      friendRequestReceivedIds: [...friendReceived],
+    }),
+  ]);
+
+  return stripPassword(friend);
+}
+
 // ---------------------------------------------------------------------------
 // Equipos y competiciones
 // ---------------------------------------------------------------------------
@@ -352,6 +395,58 @@ export async function getStreakForUser(userId: string): Promise<UserStreak> {
 }
 
 // ---------------------------------------------------------------------------
+// Tienda de avatares y monedas
+// ---------------------------------------------------------------------------
+
+export async function purchaseAvatar(userId: string, avatarId: string): Promise<User> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const avatar = getShopAvatarById(avatarId);
+  if (!avatar) throw new Error("Avatar no encontrado");
+
+  const unlocked = user.unlockedAvatarIds ?? [];
+  if (unlocked.includes(avatarId)) throw new Error("Ya tienes este avatar");
+
+  const coins = user.coins ?? 0;
+  if (coins < avatar.priceCoin) {
+    throw new Error(`No tienes suficientes monedas. Necesitas ${avatar.priceCoin} y tienes ${coins}`);
+  }
+
+  await fs.patch("users", userId, {
+    coins: coins - avatar.priceCoin,
+    unlockedAvatarIds: [...unlocked, avatarId],
+  });
+
+  const updated = await fs.getById<UserWithPassword>("users", userId);
+  if (!updated) throw new Error("Usuario no encontrado");
+  return stripPassword(updated);
+}
+
+export async function setActiveAvatar(userId: string, avatarId: string | null): Promise<User> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
+  if (!user) throw new Error("Usuario no encontrado");
+
+  if (avatarId !== null) {
+    const unlocked = user.unlockedAvatarIds ?? [];
+    if (!unlocked.includes(avatarId)) throw new Error("No tienes ese avatar desbloqueado");
+  }
+
+  await fs.patch("users", userId, { activeAvatarId: avatarId });
+
+  const updated = await fs.getById<UserWithPassword>("users", userId);
+  if (!updated) throw new Error("Usuario no encontrado");
+  return stripPassword(updated);
+}
+
+export async function awardCoins(userId: string, points: number): Promise<void> {
+  const user = await fs.getById<UserWithPassword>("users", userId);
+  if (!user) return;
+  const current = user.coins ?? 0;
+  await fs.patch("users", userId, { coins: current + points * COINS_PER_POINT });
+}
+
+// ---------------------------------------------------------------------------
 // Resolución de porras
 // ---------------------------------------------------------------------------
 
@@ -375,6 +470,7 @@ export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved:
         status: points > 0 ? "WON" : "LOST",
         points,
       });
+      if (points > 0) await awardCoins(bet.userId, points);
       resolved++;
     }
     return { resolved };
@@ -391,6 +487,7 @@ export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved:
         status: points > 0 ? "WON" : "LOST",
         points,
       });
+      if (points > 0) await awardCoins(bet.userId, points);
       resolved++;
     }
     await batch.commit();

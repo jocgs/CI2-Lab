@@ -1,5 +1,5 @@
 /**
- * Modelo de dominio de Porrify.
+ * Modelo de dominio de TikiTaka.
  *
  * Todas las entidades viven aquí para que tanto el frontend como un futuro
  * backend (Supabase) compartan los mismos contratos. Cuando conectemos la
@@ -73,6 +73,27 @@ export interface User {
   supportedNationalTeamId?: ID;
   supportedTeamIds?: ID[];
   createdAt: string;
+  /** Saldo actual de monedas (se descuenta al comprar avatares). */
+  coins?: number;
+  /** IDs de avatares de tienda desbloqueados. */
+  unlockedAvatarIds?: ID[];
+  /** ID del avatar de tienda activo (si null, se usa avatarUrl). */
+  activeAvatarId?: ID | null;
+}
+
+// ---------------------------------------------------------------------------
+// Tienda de avatares
+// ---------------------------------------------------------------------------
+
+export interface ShopAvatar {
+  id: ID;
+  name: string;
+  description: string;
+  /** Ruta relativa a /public (ej. "/avatares/Clutch.png"). */
+  imageUrl: string;
+  priceCoin: number;
+  /** Competición a la que pertenece (para agrupar por liga). */
+  competitionTag: string;
 }
 
 export interface Group {

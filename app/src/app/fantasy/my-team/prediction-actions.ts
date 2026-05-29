@@ -1,7 +1,11 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/db";
-import { getFantasyTeamByUserAndCompetition, updateFantasyTeam } from "@/lib/fantasy-db";
+import {
+  getGlobalFantasyTeam,
+  getFantasyTeamForLeague,
+  updateFantasyTeam,
+} from "@/lib/fantasy-db";
 import { saveUserTournamentPicks } from "@/lib/picks-db";
 import {
   validateSpecialPicks,
@@ -12,6 +16,7 @@ import { MOCK_TOURNAMENT, MOCK_TOURNAMENT_TEAMS } from "@/lib/mocks/tournament-t
 export interface SaveAllPredictionsInput {
   competitionId: string;
   tournamentId: string;
+  leagueId?: string | null;
   championTeamId: string;
   tournamentMvpPlayerId: string;
   disappointmentTeamId: string;
@@ -25,8 +30,17 @@ export async function saveAllPredictionsAction(
     const user = await getCurrentUser();
 
     // ── Validar equipo fantasy ────────────────────────────────────────────
-    const team = await getFantasyTeamByUserAndCompetition(user.id, data.competitionId);
-    if (!team) return { error: "No tienes equipo en esta competición." };
+    const leagueId = data.leagueId ?? null;
+    const team = leagueId
+      ? await getFantasyTeamForLeague(user.id, data.competitionId, leagueId)
+      : await getGlobalFantasyTeam(user.id, data.competitionId);
+    if (!team) {
+      return {
+        error: leagueId
+          ? "No tienes equipo en esta liga."
+          : "No tienes equipo en el Fantasy global.",
+      };
+    }
     if (team.locked) return { error: "Tu equipo está bloqueado." };
 
     if (!data.championTeamId)
@@ -37,33 +51,56 @@ export async function saveAllPredictionsAction(
       return { error: "Debes seleccionar una selección decepción." };
     if (data.championTeamId === data.disappointmentTeamId)
       return { error: "El campeón y la decepción no pueden ser el mismo equipo." };
-    if (data.championTeamId === data.revelationTeamId)
-      return { error: "El campeón y la selección revelación no pueden ser el mismo equipo." };
+    if (!leagueId) {
+      if (data.championTeamId === data.revelationTeamId)
+        return { error: "El campeón y la selección revelación no pueden ser el mismo equipo." };
+      if (
+        data.revelationTeamId &&
+        data.disappointmentTeamId &&
+        data.revelationTeamId === data.disappointmentTeamId
+      )
+        return { error: "La revelación y la decepción no pueden ser el mismo equipo." };
+    }
 
-    // ── Validar selección revelación ──────────────────────────────────────
-    if (isTournamentLocked(MOCK_TOURNAMENT))
-      return { error: "El torneo ya ha empezado. No puedes modificar la selección revelación." };
+    // ── Validar cuota de la decepción ─────────────────────────────────────
+    const disTeam = MOCK_TOURNAMENT_TEAMS.find((t) => t.id === data.disappointmentTeamId);
+    if (!disTeam || disTeam.marketOdds > 25)
+      return { error: "La selección decepción debe tener cuota de mercado ≤ 25." };
 
-    const revelationValidation = validateSpecialPicks({
-      revelationTeamId: data.revelationTeamId || null,
-      teams: MOCK_TOURNAMENT_TEAMS,
-    });
-    if (!revelationValidation.valid)
-      return { error: revelationValidation.error ?? "Error en la selección revelación." };
+    // ── Validar selección revelación (solo equipo global) ─────────────────
+    if (!leagueId) {
+      if (!data.revelationTeamId)
+        return { error: "Debes seleccionar una selección revelación." };
+      if (isTournamentLocked(MOCK_TOURNAMENT))
+        return { error: "El torneo ya ha empezado. No puedes modificar la selección revelación." };
 
-    // ── Guardar en paralelo ───────────────────────────────────────────────
-    await Promise.all([
+      const revelationValidation = validateSpecialPicks({
+        revelationTeamId: data.revelationTeamId || null,
+        teams: MOCK_TOURNAMENT_TEAMS,
+      });
+      if (!revelationValidation.valid)
+        return { error: revelationValidation.error ?? "Error en la selección revelación." };
+    }
+
+  // ── Guardar en paralelo ───────────────────────────────────────────────
+    const saves: Promise<unknown>[] = [
       updateFantasyTeam(team.id, {
-        championTeamId:        data.championTeamId,
+        championTeamId: data.championTeamId,
         tournamentMvpPlayerId: data.tournamentMvpPlayerId,
-        disappointmentTeamId:  data.disappointmentTeamId,
+        disappointmentTeamId: data.disappointmentTeamId,
       }),
-      saveUserTournamentPicks({
-        userId:          user.id,
-        tournamentId:    data.tournamentId,
-        revelationTeamId: data.revelationTeamId,
-      }),
-    ]);
+    ];
+    // La revelación es única por usuario (torneo), solo en el equipo global
+    if (!leagueId) {
+      saves.push(
+        saveUserTournamentPicks({
+          userId: user.id,
+          tournamentId: data.tournamentId,
+          revelationTeamId: data.revelationTeamId,
+        }),
+      );
+    }
+    await Promise.all(saves);
 
     return {};
   } catch (err) {

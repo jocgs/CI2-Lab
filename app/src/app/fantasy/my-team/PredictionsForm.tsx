@@ -23,7 +23,9 @@ interface Props {
   existingPicks: UserTournamentPicks | null;
   competitionId: string;
   tournamentId: string;
+  leagueId?: string | null;
   picksLocked: boolean;
+  showRevelation?: boolean;
 }
 
 export function PredictionsForm({
@@ -34,7 +36,9 @@ export function PredictionsForm({
   existingPicks,
   competitionId,
   tournamentId,
+  leagueId = null,
   picksLocked,
+  showRevelation = true,
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -68,7 +72,11 @@ export function PredictionsForm({
     (t) => t.id === revelationId || (t.id !== championTeamId && t.id !== disappointmentId),
   );
 
-  const allFilled = championTeamId && mvpPlayerId && disappointmentId && revelationId;
+  const allFilled =
+    championTeamId &&
+    mvpPlayerId &&
+    disappointmentId &&
+    (showRevelation ? revelationId : true);
 
   function handleChange(
     setter: (v: string) => void,
@@ -80,13 +88,21 @@ export function PredictionsForm({
   }
 
   function handleSave() {
-    if (!allFilled) { setError("Rellena las cuatro predicciones antes de guardar."); return; }
+    if (!allFilled) {
+      setError(
+        showRevelation
+          ? "Rellena las cuatro predicciones antes de guardar."
+          : "Rellena campeón, MVP y decepción antes de guardar.",
+      );
+      return;
+    }
     setSaved(false);
     setError(null);
     startTransition(async () => {
       const result = await saveAllPredictionsAction({
         competitionId,
         tournamentId,
+        leagueId,
         championTeamId,
         tournamentMvpPlayerId: mvpPlayerId,
         disappointmentTeamId: disappointmentId,
@@ -222,7 +238,7 @@ export function PredictionsForm({
             </div>
           </div>
 
-          {/* ── Revelación ── */}
+          {showRevelation && (
           <div className="rounded-2xl border-2 border-amber-300 overflow-hidden dark:border-amber-700">
             <div className="bg-gradient-to-r from-amber-50 to-yellow-50 px-5 py-3 dark:from-amber-950/40 dark:to-yellow-950/30">
               <div className="flex items-center gap-2">
@@ -273,6 +289,7 @@ export function PredictionsForm({
               )}
             </div>
           </div>
+          )}
         </div>
       </section>
 

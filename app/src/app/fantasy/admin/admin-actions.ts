@@ -6,8 +6,29 @@ import {
   recalculateFantasyRanking,
 } from "@/lib/fantasy-db";
 import { calculatePlayerFantasyPoints } from "@/lib/fantasy-scoring";
-import { FANTASY_PLAYERS } from "@/lib/mocks/fantasy-players-data";
+import { FANTASY_PLAYERS } from "@/lib/mocks/fantasy-players";
+import { getSessionUserId } from "@/lib/session";
 import type { Position } from "@/types/fantasy";
+
+// ---------------------------------------------------------------------------
+// Guard de admin
+// Usa la variable ADMIN_USER_IDS (IDs separados por comas) para autorizar.
+// TODO: cuando el modelo de usuario incluya un campo `role`, sustituir por
+//       una comprobación en DB (getSessionUser()?.role === "admin").
+// ---------------------------------------------------------------------------
+
+async function requireAdmin(): Promise<{ error: string } | null> {
+  const userId = await getSessionUserId();
+  if (!userId) return { error: "No autenticado." };
+
+  const adminIds = (process.env.ADMIN_USER_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (!adminIds.includes(userId)) return { error: "Acción restringida a administradores." };
+  return null;
+}
 
 interface AddStatsInput {
   playerId: string;
@@ -26,6 +47,9 @@ interface AddStatsInput {
 export async function adminAddStatsAction(
   input: AddStatsInput,
 ): Promise<{ error?: string }> {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const player = FANTASY_PLAYERS.find((p) => p.id === input.playerId);
     if (!player) return { error: `Jugador "${input.playerId}" no encontrado.` };
@@ -65,6 +89,9 @@ export async function adminAddStatsAction(
 export async function adminLockTeamsAction(
   competitionId: string,
 ): Promise<{ error?: string }> {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     await lockFantasyTeamsByCompetition(competitionId);
     return {};
@@ -77,6 +104,9 @@ export async function adminLockTeamsAction(
 export async function adminRecalculateAction(
   competitionId: string,
 ): Promise<{ error?: string }> {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     await recalculateFantasyRanking(competitionId);
     return {};

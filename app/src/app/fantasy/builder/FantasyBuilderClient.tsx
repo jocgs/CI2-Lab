@@ -10,10 +10,19 @@ import type {
   FantasyStartingEleven,
   FantasyBench,
 } from "@/types/fantasy";
+import type { TournamentTeam } from "@/types/picks";
 import { FantasyPlayerCard } from "@/components/fantasy/FantasyPlayerCard";
 import { PlayerAvatar } from "@/components/fantasy/PlayerAvatar";
 import { createFantasyTeamAction } from "./actions";
 import { FORMATION_OPTIONS, getFormationRequirements } from "@/lib/fantasy-formations";
+import { saveAllPredictionsAction } from "@/app/fantasy/my-team/prediction-actions";
+import {
+  getEligibleRevelationTeams,
+  getEligibleDisappointmentTeams,
+  formatOdds,
+  REVELATION_MIN_ODDS,
+  DISAPPOINTMENT_MAX_ODDS,
+} from "@/lib/tournament-picks";
 import { clsx } from "@/lib/utils";
 
 // ─── Step hints ─────────────────────────────────────────────────────────────
@@ -73,10 +82,10 @@ function buildStepConfig(formation: Formation) {
     },
     {
       step: 8,
-      title: "Elige tu capitán",
-      hint: "El que lleva el brazalete y los puntos al doble.",
+      title: "Predicciones del torneo",
+      hint: "Campeón, MVP, decepción y tu selección revelación (tapada).",
       position: null,
-      count: 1,
+      count: null,
     },
     {
       step: 9,
@@ -87,6 +96,8 @@ function buildStepConfig(formation: Formation) {
     },
   ] as const;
 }
+
+// ─── Position labels ────────────────────────────────────────────────────────
 
 const POS_LABELS: Record<Position, string> = {
   GK: "Portero",
@@ -102,10 +113,23 @@ const BENCH_POSITIONS: Position[] = ["GK", "DEF", "MID", "FWD"];
 interface Props {
   players: FantasyPlayer[];
   nationalTeams: FantasyNationalTeam[];
+  tournamentTeams: TournamentTeam[];
+  tournamentId: string;
   competitionId: string;
+  leagueId?: string | null;
+  leagueName?: string;
 }
 
-export function FantasyBuilderClient({ players, nationalTeams, competitionId }: Props) {
+export function FantasyBuilderClient({
+  players,
+  nationalTeams,
+  tournamentTeams,
+  tournamentId,
+  competitionId,
+  leagueId = null,
+  leagueName,
+}: Props) {
+  const isLeagueTeam = Boolean(leagueId);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -123,6 +147,12 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
   const [bench, setBench] = useState<Partial<FantasyBench>>({});
   const [captainId, setCaptainId] = useState<string | null>(null);
 
+  // ── Predicciones ──
+  const [championTeamId, setChampionTeamId] = useState<string | null>(null);
+  const [disappointmentTeamId, setDisappointmentTeamId] = useState<string | null>(null);
+  const [revelationTeamId, setRevelationTeamId] = useState<string | null>(null);
+  const [tournamentMvpId, setTournamentMvpId] = useState<string | null>(null);
+
   // ── Filter state ──
   const [filterTeam, setFilterTeam] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -130,10 +160,6 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
   const formationRequirements = useMemo(() => getFormationRequirements(formation), [formation]);
   const stepConfig = useMemo(() => buildStepConfig(formation), [formation]);
   const config = stepConfig[step - 1];
-  const ntm = useMemo(
-    () => new Map(nationalTeams.map((team) => [team.id, team])),
-    [nationalTeams],
-  );
 
   function handleFormationSelect(nextFormation: Formation) {
     setError(null);
@@ -182,7 +208,7 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
     if (!player) return false;
     const alreadySelected =
       allStarterIds.includes(playerId) || allBenchIds.includes(playerId);
-    if (alreadySelected) return false; // puede deseleccionarse siempre
+    if (alreadySelected) return false;
     return (teamCountMap.get(player.nationalTeamId) ?? 0) >= 3;
   }
 
@@ -203,17 +229,10 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
     }
 
     if (step === 7) {
-      // Bench step — show all positions but only non-starters
       pool = pool.filter((p) => !allStarterIds.includes(p.id));
     }
 
-    if (step === 8) {
-      // Captain step — only starters
-      pool = players.filter((p) => allStarterIds.includes(p.id));
-    }
-
-    if (step === 9) {
-      // Predictions step — handled separately
+    if (step === 8 || step === 9) {
       return [];
     }
 
@@ -239,7 +258,10 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
     if (step === 6) return forwardIds.length === formationRequirements.forwards;
     if (step === 7)
       return !!(bench.goalkeeperId && bench.defenderId && bench.midfielderId && bench.forwardId);
-    if (step === 8) return !!captainId;
+    if (step === 8) {
+      const base = !!(championTeamId && disappointmentTeamId && tournamentMvpId);
+      return isLeagueTeam ? base : base && !!revelationTeamId;
+    }
     return true;
   }, [
     step,
@@ -253,8 +275,17 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
     midfielderIds,
     forwardIds,
     bench,
-    captainId,
+    championTeamId,
+    disappointmentTeamId,
+    revelationTeamId,
+    tournamentMvpId,
+    isLeagueTeam,
   ]);
+
+  const squadPlayers = useMemo(() => {
+    const ids = new Set([...allStarterIds, ...allBenchIds]);
+    return players.filter((p) => ids.has(p.id));
+  }, [players, allStarterIds, allBenchIds]);
 
   // ─── Bench step — current position being selected ────────────────────────
   const [benchPositionIndex, setBenchPositionIndex] = useState(0);
@@ -264,7 +295,6 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
 
   function handlePlayerSelect(playerId: string) {
     setError(null);
-    // Bloquear si el jugador superaría el cupo de 3 por selección
     if (isPlayerDisabled(playerId)) {
       const player = players.find((p) => p.id === playerId);
       setError(
@@ -273,7 +303,7 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
       return;
     }
     if (step === 9) {
-      // Confirmation step — handled separately
+      // Handled in confirmation
     } else if (step === 3) {
       setGoalkeeperId(goalkeeperId === playerId ? null : playerId);
     } else if (step === 4) {
@@ -284,7 +314,7 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
       }
     } else if (step === 5) {
       if (midfielderIds.includes(playerId)) {
-        setMidfielderIds(midfielderIds.filter((id) => id !== playerId));
+        setMiddlefielderIds(midfielderIds.filter((id) => id !== playerId));
       } else if (midfielderIds.length < formationRequirements.midfielders) {
         setMidfielderIds([...midfielderIds, playerId]);
       }
@@ -309,13 +339,10 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
         ...prev,
         [key]: prev[key] === playerId ? undefined : playerId,
       }));
-      // Auto-advance bench position
       const nextIdx = BENCH_POSITIONS.findIndex(
         (p, i) => i > benchPositionIndex && !bench[keyMap[p]],
       );
       if (nextIdx !== -1) setBenchPositionIndex(nextIdx);
-    } else if (step === 8) {
-      setCaptainId(captainId === playerId ? null : playerId);
     }
   }
 
@@ -325,7 +352,6 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
     if (step === 5) return midfielderIds.includes(playerId);
     if (step === 6) return forwardIds.includes(playerId);
     if (step === 7) return allBenchIds.includes(playerId);
-    if (step === 8) return captainId === playerId;
     return false;
   }
 
@@ -337,14 +363,24 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
     if (!bench.goalkeeperId || !bench.defenderId || !bench.midfielderId || !bench.forwardId) {
       setError("Banquillo incompleto."); return;
     }
-    if (!captainId) { setError("Falta el capitán."); return; }
+    if (!championTeamId || !disappointmentTeamId || !tournamentMvpId) {
+      setError("Completa campeón, MVP y decepción.");
+      return;
+    }
+    if (!isLeagueTeam && !revelationTeamId) {
+      setError("Elige tu selección revelación (solo en el Fantasy global).");
+      return;
+    }
+
+    // Auto-asignación de capitán por defecto al primer delantero o jugador disponible si no se asignó explícitamente
+    const finalCaptainId = captainId ?? forwardIds[0] ?? midfielderIds[0] ?? goalkeeperId;
 
     const startingEleven: FantasyStartingEleven = {
       formation,
       goalkeeperId,
-      defenderIds: defenderIds as [string, string, string, string],
-      midfielderIds: midfielderIds as [string, string, string],
-      forwardIds: forwardIds as [string, string, string],
+      defenderIds: defenderIds as any,
+      midfielderIds: midfielderIds as any,
+      forwardIds: forwardIds as any,
     };
     const fullBench: FantasyBench = {
       goalkeeperId: bench.goalkeeperId!,
@@ -356,22 +392,37 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
     startTransition(async () => {
       const result = await createFantasyTeamAction({
         competitionId,
+        leagueId,
         teamName,
         startingEleven,
         bench: fullBench,
-        captainId,
+        captainId: finalCaptainId,
       });
       if (result.error) {
         setError(result.error);
+        return;
+      }
+
+      const predResult = await saveAllPredictionsAction({
+        competitionId,
+        tournamentId,
+        leagueId,
+        championTeamId,
+        tournamentMvpPlayerId: tournamentMvpId,
+        disappointmentTeamId,
+        revelationTeamId: revelationTeamId ?? "",
+      });
+      if (predResult.error) {
+        setError(predResult.error);
       } else {
-        router.push("/fantasy/my-team");
+        router.push(
+          leagueId ? `/fantasy/my-team?league=${leagueId}` : "/fantasy/my-team",
+        );
       }
     });
   }
 
   const pm = new Map(players.map((p) => [p.id, p]));
-
-  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-4">
@@ -466,7 +517,7 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
           nationalTeams={nationalTeams}
           onSelect={handlePlayerSelect}
           isSelected={isPlayerSelected}
-          isCaptain={(id) => captainId === id}
+          isCaptain={() => false}
           isDisabled={isPlayerDisabled}
           getDisabledReason={disabledReason}
           teamCountMap={teamCountMap}
@@ -488,7 +539,6 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
       {/* ── STEP 7: Bench ── */}
       {step === 7 && (
         <div className="flex flex-col gap-3">
-          {/* Current bench */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
             <p className="text-sm font-medium mb-3">Banquillo actual</p>
             <div className="grid grid-cols-4 gap-2">
@@ -538,6 +588,7 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
           </div>
 
           <PlayerPickerPanel
+            boxPlayers={filteredPlayers.filter((p) => p.position === currentBenchPosition)}
             players={filteredPlayers.filter(
               (p) => p.position === currentBenchPosition,
             )}
@@ -560,34 +611,23 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
         </div>
       )}
 
-      {/* ── STEP 8: Captain ── */}
+      {/* ── STEP 8: Predictions ── */}
       {step === 8 && (
-        <div className="flex flex-col gap-3">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="text-sm text-[var(--muted)]">
-              El capitán recibe el <strong>doble de puntos</strong> (si son positivos).
-              Elige sabiamente — o no.
-            </p>
-          </div>
-          <PlayerPickerPanel
-            players={filteredPlayers}
-            allPlayers={players}
-            nationalTeams={nationalTeams}
-            onSelect={handlePlayerSelect}
-            isSelected={isPlayerSelected}
-            isCaptain={(id) => captainId === id}
-            isDisabled={() => false}
-            getDisabledReason={() => undefined}
-            teamCountMap={teamCountMap}
-            filterTeam={filterTeam}
-            setFilterTeam={setFilterTeam}
-            search={search}
-            setSearch={setSearch}
-            selectedCount={captainId ? 1 : 0}
-            maxCount={1}
-            label="Capitán"
-          />
-        </div>
+        <PredictionsPanel
+          nationalTeams={nationalTeams}
+          tournamentTeams={tournamentTeams}
+          squadPlayers={squadPlayers}
+          championTeamId={championTeamId}
+          disappointmentTeamId={disappointmentTeamId}
+          revelationTeamId={revelationTeamId}
+          tournamentMvpId={tournamentMvpId}
+          setChampionTeamId={setChampionTeamId}
+          setDisappointmentTeamId={setDisappointmentTeamId}
+          setRevelationTeamId={setRevelationTeamId}
+          setTournamentMvpId={setTournamentMvpId}
+          showRevelation={!isLeagueTeam}
+          leagueName={leagueName}
+        />
       )}
 
       {/* ── STEP 9: Confirmation ── */}
@@ -599,9 +639,14 @@ export function FantasyBuilderClient({ players, nationalTeams, competitionId }: 
           midfielderIds={midfielderIds}
           forwardIds={forwardIds}
           bench={bench}
-          captainId={captainId}
+          captainId={captainId ?? forwardIds[0]}
           players={players}
           nationalTeams={nationalTeams}
+          tournamentTeams={tournamentTeams}
+          championTeamId={championTeamId}
+          revelationTeamId={revelationTeamId}
+          disappointmentTeamId={disappointmentTeamId}
+          tournamentMvpId={tournamentMvpId}
         />
       )}
 
@@ -667,6 +712,7 @@ interface PlayerPickerPanelProps {
   selectedCount: number;
   maxCount: number;
   label: string;
+  boxPlayers?: FantasyPlayer[];
 }
 
 function PlayerPickerPanel({
@@ -783,112 +829,138 @@ function PlayerPickerPanel({
 
 interface PredictionsPanelProps {
   nationalTeams: FantasyNationalTeam[];
-  players: FantasyPlayer[];
+  tournamentTeams: TournamentTeam[];
+  squadPlayers: FantasyPlayer[];
   championTeamId: string | null;
-  surpriseTeamId: string | null;
   disappointmentTeamId: string | null;
+  revelationTeamId: string | null;
   tournamentMvpId: string | null;
-  setChampionTeamId: (id: string) => void;
-  setSurpriseTeamId: (id: string) => void;
-  setDisappointmentTeamId: (id: string) => void;
-  setTournamentMvpId: (id: string) => void;
+  setChampionTeamId: (id: string | null) => void;
+  setDisappointmentTeamId: (id: string | null) => void;
+  setRevelationTeamId: (id: string | null) => void;
+  setTournamentMvpId: (id: string | null) => void;
+  showRevelation?: boolean;
+  leagueName?: string;
 }
 
 function PredictionsPanel({
   nationalTeams,
-  players,
+  tournamentTeams,
+  squadPlayers,
   championTeamId,
-  surpriseTeamId,
   disappointmentTeamId,
+  revelationTeamId,
   tournamentMvpId,
   setChampionTeamId,
-  setSurpriseTeamId,
   setDisappointmentTeamId,
+  setRevelationTeamId,
   setTournamentMvpId,
+  showRevelation = true,
+  leagueName,
 }: PredictionsPanelProps) {
+  const revelationTeams = getEligibleRevelationTeams(tournamentTeams);
+  const disappointmentTeams = getEligibleDisappointmentTeams(tournamentTeams);
+
+  const availableChampion = nationalTeams.filter(
+    (t) =>
+      t.id === championTeamId ||
+      (t.id !== disappointmentTeamId && t.id !== revelationTeamId),
+  );
+  const availableDisappointment = disappointmentTeams.filter(
+    (t) =>
+      t.id === disappointmentTeamId ||
+      (t.id !== championTeamId && t.id !== revelationTeamId),
+  );
+  const availableRevelation = revelationTeams.filter(
+    (t) =>
+      t.id === revelationTeamId ||
+      (t.id !== championTeamId && t.id !== disappointmentTeamId),
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      <TeamPicker
-        label="🏆 Equipo campeón"
-        hint="El que levantará el trofeo. Apuesta con el corazón o con la cabeza."
-        teams={nationalTeams}
-        selected={championTeamId}
-        onSelect={setChampionTeamId}
-      />
-      <TeamPicker
-        label="🚀 Equipo sorpresa"
-        hint="El que llegará más lejos de lo esperado. Hay que creer."
-        teams={nationalTeams}
-        selected={surpriseTeamId}
-        onSelect={setSurpriseTeamId}
-      />
-      <TeamPicker
-        label="😬 Equipo decepción"
-        hint="El que decepcionará a sus fans. Con cariño."
-        teams={nationalTeams}
-        selected={disappointmentTeamId}
-        onSelect={setDisappointmentTeamId}
-      />
-
-      {/* MVP */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-        <p className="mb-1 text-sm font-medium">⭐ MVP del torneo</p>
-        <p className="mb-3 text-xs text-[var(--muted)]">
-          El mejor jugador del Mundial. De tu equipo o del mundo.
+      {leagueName && (
+        <p className="rounded-xl border border-[var(--brand)]/20 bg-[var(--brand-soft)]/30 px-3 py-2 text-xs text-[var(--muted)]">
+          Predicciones para <strong>{leagueName}</strong>. La revelación solo se configura en tu equipo global.
         </p>
+      )}
+      <p className="text-xs text-[var(--muted)]">
+        Campeón y MVP son predicciones clásicas. Decepción (cuota ≤ {DISAPPOINTMENT_MAX_ODDS})
+        {showRevelation
+          ? ` y revelación (tapada, cuota ≥ ${REVELATION_MIN_ODDS}) usan las cuotas del torneo.`
+          : " usa las cuotas del torneo."}
+      </p>
+
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+        <p className="mb-1 text-sm font-medium">🏆 Campeón del torneo</p>
+        <select
+          value={championTeamId ?? ""}
+          onChange={(e) => setChampionTeamId(e.target.value || null)}
+          className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+        >
+          <option value="">Elige campeón…</option>
+          {availableChampion.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.flagUrl} {t.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+        <p className="mb-1 text-sm font-medium">🌟 MVP del torneo</p>
+        <p className="mb-2 text-xs text-[var(--muted)]">Solo jugadores de tu plantilla.</p>
         <select
           value={tournamentMvpId ?? ""}
-          onChange={(e) => setTournamentMvpId(e.target.value)}
+          onChange={(e) => setTournamentMvpId(e.target.value || null)}
           className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
         >
-          <option value="">Elige un jugador...</option>
-          {players.map((p) => (
+          <option value="">Elige MVP…</option>
+          {squadPlayers.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name} ({p.nationalTeamName})
             </option>
           ))}
         </select>
       </div>
-    </div>
-  );
-}
 
-function TeamPicker({
-  label,
-  hint,
-  teams,
-  selected,
-  onSelect,
-}: {
-  label: string;
-  hint: string;
-  teams: FantasyNationalTeam[];
-  selected: string | null;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-      <p className="mb-1 text-sm font-medium">{label}</p>
-      <p className="mb-3 text-xs text-[var(--muted)]">{hint}</p>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-        {teams.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => onSelect(t.id)}
-            className={clsx(
-              "flex flex-col items-center gap-0.5 rounded-xl border p-2 text-xs transition-all",
-              selected === t.id
-                ? "border-[var(--brand)] bg-[var(--brand-soft)] font-medium text-[var(--brand-strong)]"
-                : "border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]",
-            )}
-          >
-            <NationalTeamSymbol team={t} />
-            <span className="truncate w-full text-center text-[10px]">
-              {t.name.split(" ")[0]}
-            </span>
-          </button>
-        ))}
+      <div className="rounded-2xl border border-rose-200 bg-[var(--surface)] p-4 dark:border-rose-800">
+        <p className="mb-1 text-sm font-medium">💣 Selección decepción</p>
+        <p className="mb-2 text-xs text-[var(--muted)]">Favorita que crees que no cumplirá (cuota ≤ {DISAPPOINTMENT_MAX_ODDS}).</p>
+        <select
+          value={disappointmentTeamId ?? ""}
+          onChange={(e) => setDisappointmentTeamId(e.target.value || null)}
+          className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+        >
+          <option value="">Elige decepción…</option>
+          {availableDisappointment.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.flag} {t.name} — cuota {formatOdds(t.marketOdds)}
+            </option>
+          ))}
+        </select>
       </div>
+
+      {showRevelation && (
+        <div className="rounded-2xl border-2 border-amber-300 bg-[var(--surface)] p-4 dark:border-amber-700">
+          <p className="mb-1 text-sm font-semibold">⭐ Selección revelación / tapada</p>
+          <p className="mb-2 text-xs text-[var(--muted)]">
+            Underdog que puede sorprender. Solo equipos con cuota ≥ {REVELATION_MIN_ODDS}.
+          </p>
+          <select
+            value={revelationTeamId ?? ""}
+            onChange={(e) => setRevelationTeamId(e.target.value || null)}
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+          >
+            <option value="">Elige tu tapada…</option>
+            {availableRevelation.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.flag} {t.name} — cuota {formatOdds(t.marketOdds)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }
@@ -905,6 +977,11 @@ interface ConfirmationPanelProps {
   captainId: string | null;
   players: FantasyPlayer[];
   nationalTeams: FantasyNationalTeam[];
+  tournamentTeams: TournamentTeam[];
+  championTeamId?: string | null;
+  revelationTeamId?: string | null;
+  disappointmentTeamId?: string | null;
+  tournamentMvpId?: string | null;
 }
 
 function ConfirmationPanel({
@@ -917,9 +994,15 @@ function ConfirmationPanel({
   captainId,
   players,
   nationalTeams,
+  tournamentTeams,
+  championTeamId,
+  revelationTeamId,
+  disappointmentTeamId,
+  tournamentMvpId,
 }: ConfirmationPanelProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
-  const ntm = new Map(nationalTeams.map((team) => [team.id, team]));
+  const ntm = new Map(nationalTeams.map((t) => [t.id, t]));
+  const ttm = new Map(tournamentTeams.map((t) => [t.id, t]));
 
   const starterGroups = [
     {
@@ -986,6 +1069,48 @@ function ConfirmationPanel({
               </span>
             );
           })}
+        </div>
+      </div>
+
+      {/* Predictions Summary */}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+        <p className="mb-2 text-sm font-medium">Predicciones del torneo</p>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-[var(--muted)]">Campeon: </span>
+            {ntm.get(championTeamId ?? "") ? (
+              <span className="inline-flex items-center gap-1">
+                <NationalTeamSymbol team={ntm.get(championTeamId!)} />
+                <span>{ntm.get(championTeamId!)?.name}</span>
+              </span>
+            ) : (
+              "—"
+            )}
+          </div>
+          <div>
+            <span className="text-[var(--muted)]">Revelación: </span>
+            {ttm.get(revelationTeamId ?? "") ? (
+              <span>
+                {ttm.get(revelationTeamId!)?.flag} {ttm.get(revelationTeamId!)?.name}
+              </span>
+            ) : (
+              "—"
+            )}
+          </div>
+          <div>
+            <span className="text-[var(--muted)]">Decepción: </span>
+            {ttm.get(disappointmentTeamId ?? "") ? (
+              <span>
+                {ttm.get(disappointmentTeamId!)?.flag} {ttm.get(disappointmentTeamId!)?.name}
+              </span>
+            ) : (
+              "—"
+            )}
+          </div>
+          <div>
+            <span className="text-[var(--muted)]">MVP: </span>
+            {tournamentMvpId ? pm.get(tournamentMvpId)?.name ?? "—" : "—"}
+          </div>
         </div>
       </div>
     </div>

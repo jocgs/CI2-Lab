@@ -48,9 +48,15 @@ export default async function MatchesPage({
     }))
   );
 
-  // Ordenar equipos alfabéticamente para el selector
-  const sortedTeams = [...teams].sort((a, b) => a.name.localeCompare(b.name));
-  const sortedCompetitions = [...competitions].sort((a, b) => a.name.localeCompare(b.name));
+  // Solo equipos y competiciones que aparecen en los partidos del tab activo
+  const activeTeamIds = new Set(allMatches.flatMap((m) => [m.homeTeamId, m.awayTeamId]));
+  const activeCompIds = new Set(allMatches.map((m) => m.competitionId));
+  const sortedTeams = teams
+    .filter((t) => activeTeamIds.has(t.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const sortedCompetitions = competitions
+    .filter((c) => activeCompIds.has(c.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="flex flex-col gap-6">
