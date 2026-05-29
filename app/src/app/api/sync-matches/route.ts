@@ -43,17 +43,6 @@ export async function GET(req: NextRequest) {
     const { adminDb }          = await import("@/lib/firebase-admin");
     const { resolveFinishedBets } = await import("@/lib/db");
 
-    // Borramos y reescribimos matches, teams y competitions para mantenerlos limpios
-    async function clearCollection(collection: string) {
-      const snap = await adminDb.collection(collection).get();
-      for (let i = 0; i < snap.docs.length; i += 400) {
-        const batch = adminDb.batch();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        snap.docs.slice(i, i + 400).forEach((d: any) => batch.delete(d.ref));
-        await batch.commit();
-      }
-    }
-
     async function batchUpsert<T extends { id: string }>(collection: string, items: T[]) {
       for (let i = 0; i < items.length; i += 400) {
         const batch = adminDb.batch();
@@ -64,12 +53,28 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    await clearCollection("matches");
-    await clearCollection("teams");
-    await clearCollection("competitions");
+    // Borra solo los partidos que vienen de la API (prefijo fd_match_) para
+    // evitar datos obsoletos, pero preserva los partidos creados manualmente.
+    async function clearApiMatches() {
+      const snap = await adminDb
+        .collection("matches")
+        .where("__name__", ">=", "fd_match_")
+        .where("__name__", "<", "fd_match_~")
+        .get();
+      for (let i = 0; i < snap.docs.length; i += 400) {
+        const batch = adminDb.batch();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        snap.docs.slice(i, i + 400).forEach((d: any) => batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
 
+    // Teams y competitions: upsert sin borrar — preserva datos manuales.
     await batchUpsert("competitions", competitions);
     await batchUpsert("teams", teams);
+
+    // Matches: limpia solo los de la API, luego reescribe.
+    await clearApiMatches();
     await batchUpsert("matches", matches);
 
     const { resolved } = await resolveFinishedBets(matches);
