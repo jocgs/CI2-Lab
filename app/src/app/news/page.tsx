@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Badge, Card, SectionTitle } from "@/components/ui";
 import { MOCK_NEWS, type NewsArticle, type NewsCategory } from "@/lib/mocks/news";
 import { NewsTicker } from "@/components/NewsTicker";
@@ -88,30 +89,43 @@ export default function NewsPage() {
 function ArticleCard({ article }: { article: NewsArticle }) {
   return (
     <Link href={`/news/${article.id}`} className="group">
-      <Card className="flex h-full flex-col gap-3 p-4 transition-shadow group-hover:shadow-md">
-        {/* Emoji banner */}
-        <div className="flex h-14 items-center justify-center rounded-xl bg-[var(--brand-soft)] text-4xl">
-          {article.emoji}
+      <Card className="flex h-full flex-col overflow-hidden p-0 transition-shadow group-hover:shadow-md">
+        {/* Foto */}
+        <div className="relative aspect-video w-full overflow-hidden">
+          <Image
+            src={article.imageUrl}
+            alt={article.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+          {/* Badge del periódico sobre la imagen */}
+          <span
+            className="absolute bottom-2 left-2 rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white shadow"
+            style={{ backgroundColor: article.sourceColor }}
+          >
+            {article.source}
+          </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Contenido */}
+        <div className="flex flex-1 flex-col gap-2 p-4">
           <Badge tone={CATEGORY_TONE[article.category]}>
             {CATEGORY_LABELS[article.category]}
           </Badge>
-          <span className="text-xs text-[var(--muted)]">{article.source}</span>
+
+          <h3 className="flex-1 text-sm font-semibold leading-snug transition-colors group-hover:text-[var(--brand-strong)]">
+            {article.title}
+          </h3>
+
+          <p className="line-clamp-2 text-xs leading-relaxed text-[var(--muted)]">
+            {article.summary}
+          </p>
+
+          <p className="text-xs text-[var(--muted)]">
+            {formatDate(article.publishedAt)}
+          </p>
         </div>
-
-        <h3 className="flex-1 text-sm font-semibold leading-snug group-hover:text-[var(--brand-strong)] transition-colors">
-          {article.title}
-        </h3>
-
-        <p className="text-xs text-[var(--muted)] leading-relaxed line-clamp-2">
-          {article.summary}
-        </p>
-
-        <p className="text-xs text-[var(--muted)]">
-          {formatDate(article.publishedAt)}
-        </p>
       </Card>
     </Link>
   );
