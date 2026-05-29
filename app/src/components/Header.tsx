@@ -17,9 +17,9 @@ export async function Header({ initialTheme }: { initialTheme: "light" | "dark" 
             aria-hidden
             className="grid h-8 w-8 place-items-center rounded-full bg-[var(--brand)] text-white text-sm font-bold shadow-sm"
           >
-            P
+            T
           </span>
-          <span className="text-lg font-semibold tracking-tight">Porrify</span>
+          <span className="text-lg font-semibold tracking-tight">TikiTaka</span>
         </Link>
 
         {/* Nav escritorio — componente cliente con pathname activo */}

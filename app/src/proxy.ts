@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { USE_MOCKS } from "./lib/runtime";
 
-const SESSION_COOKIE = "porrify-session";
+const SESSION_COOKIE = "tikitaka-session";
 const PUBLIC_PATHS = ["/login", "/api/auth/session", "/api/sync-matches", "/api/resolve-bets", "/api/sync-status"];
 
 export function proxy(req: NextRequest) {

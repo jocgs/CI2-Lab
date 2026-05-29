@@ -5,9 +5,9 @@ export default function LoginPage() {
     <div className="flex w-full max-w-md flex-col items-center justify-center gap-8 px-4">
       <div className="flex flex-col items-center gap-2 text-center">
         <div className="grid h-16 w-16 place-items-center rounded-full bg-[var(--brand)] text-3xl font-bold text-white shadow-md">
-          P
+          T
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">Porrify</h1>
+        <h1 className="text-3xl font-bold tracking-tight">TikiTaka</h1>
         <p className="max-w-xs text-sm text-[var(--muted)]">
           Haz porras de fútbol con amigos y compite por el ranking.
         </p>

@@ -1,4 +1,4 @@
-# Porrify
+# TikiTaka
 
 App para hacer porras de fútbol con amigos. Proyecto de la asignatura **CI2 Lab** del Máster.
 
@@ -29,7 +29,7 @@ App para hacer porras de fútbol con amigos. Proyecto de la asignatura **CI2 Lab
 ## Arquitectura
 
 ```
-CI2Lab_Porrify/
+CI2Lab_TikiTaka/
 ├── app/                       # Aplicación Next.js
 │   └── src/
 │       ├── app/               # Rutas (App Router)
