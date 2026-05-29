@@ -94,7 +94,8 @@ export async function GET(req: NextRequest) {
       for (let i = 0; i < snap.docs.length; i += 400) {
         const batch = adminDb.batch();
 
-        snap.docs.slice(i, i + 400).forEach((doc) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        snap.docs.slice(i, i + 400).forEach((doc: any) => {
           batch.delete(doc.ref);
         });
 
