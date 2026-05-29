@@ -118,13 +118,13 @@ export function SignInButton() {
 
       {mode === "login" && (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--background)] px-4 py-3 text-xs text-[var(--muted)]">
-          <p className="mb-1 font-medium">Cuentas de prueba (contraseña: <span className="font-mono">porrify</span>)</p>
+          <p className="mb-1 font-medium">Cuentas de prueba (contraseña: <span className="font-mono">tikitaka</span>)</p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-            <span>clara@porrify.app</span>
-            <span>marina@porrify.app</span>
-            <span>pablo@porrify.app</span>
-            <span>lucia@porrify.app</span>
-            <span>diego@porrify.app</span>
+            <span>clara@tikitaka.app</span>
+            <span>marina@tikitaka.app</span>
+            <span>pablo@tikitaka.app</span>
+            <span>lucia@tikitaka.app</span>
+            <span>diego@tikitaka.app</span>
           </div>
         </div>
       )}

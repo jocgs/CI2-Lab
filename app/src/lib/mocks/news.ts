@@ -169,7 +169,7 @@ export const MOCK_NEWS: NewsArticle[] = [
     category: "jugadores",
     publishedAt: "2026-05-18T07:45:00Z",
     emoji: "🌟",
-    imageUrl: "https://images.unsplash.com/photo-1580748141549-71748dbe0bdc?w=900&h=500&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1624280157150-4d1ed8632989?w=900&h=500&auto=format&fit=crop&q=80",
     source: "Marca",
     sourceColor: "#d0021b",
     sourceUrl: "https://www.marca.com",
