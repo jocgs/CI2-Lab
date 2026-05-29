@@ -2,233 +2,116 @@ import type {
   FantasyTeam,
   FantasyPlayer,
   FantasyNationalTeam,
-  Position,
 } from "@/types/fantasy";
-import { clsx } from "@/lib/utils";
-import { PlayerAvatar } from "@/components/fantasy/PlayerAvatar";
-
-function NationalTeamSymbol({ team }: { team: FantasyNationalTeam | undefined }) {
-  if (!team) return null;
-
-  if (team.logoUrl) {
-    return <img src={team.logoUrl} alt={team.name} className="h-4 w-4 object-contain" />;
-  }
-
-  return <span className="text-[10px]">{team.flagUrl}</span>;
-}
-
-interface PitchPlayerProps {
-  player: FantasyPlayer | undefined;
-  isCaptain?: boolean;
-  label?: string;
-  nationalTeams: FantasyNationalTeam[];
-}
-
-function PitchPlayer({ player, isCaptain, label, nationalTeams }: PitchPlayerProps) {
-  if (!player) {
-    return (
-      <div className="flex flex-col items-center gap-1">
-        <div className="h-10 w-10 rounded-full border-2 border-dashed border-[var(--border)] bg-[var(--surface)] flex items-center justify-center text-[var(--muted)] text-xs">
-          ?
-        </div>
-        <span className="text-xs text-[var(--muted)]">{label ?? "—"}</span>
-      </div>
-    );
-  }
-
-  const nt = nationalTeams.find((t) => t.id === player.nationalTeamId);
-
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative">
-        <PlayerAvatar player={player} size={40} />
-        {isCaptain && (
-          <span className="absolute -top-1.5 -right-1.5 text-sm leading-none">⭐</span>
-        )}
-      </div>
-      <span className="max-w-[72px] truncate text-center text-[10px] font-medium leading-tight">
-        {player.name.split(" ").slice(-1)[0]}
-      </span>
-      {nt && <NationalTeamSymbol team={nt} />}
-    </div>
-  );
-}
-
-function PitchLine({
-  players,
-  nationalTeams,
-  captainId,
-  role,
-}: {
-  players: Array<FantasyPlayer | undefined>;
-  nationalTeams: FantasyNationalTeam[];
-  captainId: string | null;
-  role: "attack" | "midfield" | "defense";
-}) {
-  const count = players.filter(Boolean).length;
-  const widthByCount: Record<number, string> = {
-    1: "26%",
-    2: role === "attack" ? "58%" : role === "midfield" ? "64%" : "72%",
-    3: role === "attack" ? "74%" : role === "midfield" ? "82%" : "88%",
-    4: role === "midfield" ? "92%" : "96%",
-    5: "100%",
-  };
-
-  return (
-    <div
-      className="mx-auto grid gap-4"
-      style={{
-        width: widthByCount[count] ?? "100%",
-        gridTemplateColumns: `repeat(${Math.max(players.length, 1)}, minmax(0, 1fr))`,
-      }}
-    >
-      {players.map((player, index) => (
-        <div key={player?.id ?? `empty-${index}`} className="flex justify-center">
-          <PitchPlayer
-            player={player}
-            isCaptain={player?.id === captainId}
-            nationalTeams={nationalTeams}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
+import { getFormationLabel, resolveFormationFromEleven } from "@/lib/fantasy-formations";
+import { FantasySquadPitchPreview } from "@/components/fantasy/FantasySquadPitchPreview";
+import {
+  PredictionSummaryMvpTile,
+  PredictionSummaryNationalTile,
+} from "@/components/fantasy/PredictionSummaryTile";
 
 interface FantasyTeamDisplayProps {
   fantasyTeam: FantasyTeam;
   players: FantasyPlayer[];
   nationalTeams: FantasyNationalTeam[];
-  isEditable?: boolean;
-  /** Nombre resuelto de la selección revelación (viene de tournament_picks) */
-  revelationTeamName?: string;
+  /** Si se omite, no se muestra la casilla de revelación (vista de liga). */
+  revelationTeamId?: string | null;
 }
 
 export function FantasyTeamDisplay({
   fantasyTeam,
   players,
   nationalTeams,
-  revelationTeamName,
+  revelationTeamId,
 }: FantasyTeamDisplayProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
+  const ntMap = new Map(nationalTeams.map((t) => [t.id, t]));
   const { startingEleven: se, bench, captainId } = fantasyTeam;
-  const formationLabel =
-    fantasyTeam.startingEleven.formation ??
-    `${se.defenderIds.length}-${se.midfielderIds.length}-${se.forwardIds.length}`;
+  const formation = resolveFormationFromEleven(se);
 
-  const gk = pm.get(se.goalkeeperId);
-  const defs = se.defenderIds.map((id) => pm.get(id));
-  const mids = se.midfielderIds.map((id) => pm.get(id));
-  const fwds = se.forwardIds.map((id) => pm.get(id));
+  const mvpPlayer = fantasyTeam.tournamentMvpPlayerId
+    ? pm.get(fantasyTeam.tournamentMvpPlayerId)
+    : undefined;
 
-  const benchPlayers = [
-    pm.get(bench.goalkeeperId),
-    pm.get(bench.defenderId),
-    pm.get(bench.midfielderId),
-    pm.get(bench.forwardId),
-  ];
+  const showRevelation = revelationTeamId !== undefined;
+
+  const missingIds = [
+    se.goalkeeperId,
+    ...se.defenderIds,
+    ...se.midfielderIds,
+    ...se.forwardIds,
+    bench.goalkeeperId,
+    bench.defenderId,
+    bench.midfielderId,
+    bench.forwardId,
+  ].filter((id) => id && !pm.has(id));
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-[var(--border)] bg-[var(--brand-soft)] px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-semibold text-[var(--brand-strong)]">{fantasyTeam.teamName}</p>
-            <p className="text-xs text-[var(--muted)]">
-              {fantasyTeam.totalPoints} puntos totales
-            </p>
-            <p className="text-xs text-[var(--muted)]">Formación {formationLabel}</p>
-          </div>
+    <div className="flex flex-col gap-3">
+      {missingIds.length > 0 && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+          Algunos jugadores de esta plantilla ya no están en el catálogo ({missingIds.length}).
+          Edita el equipo para actualizarlos.
+        </p>
+      )}
+
+      <div className="relative">
+        <FantasySquadPitchPreview
+          formation={formation}
+          teamName={fantasyTeam.teamName}
+          goalkeeperId={se.goalkeeperId}
+          defenderIds={[...se.defenderIds]}
+          midfielderIds={[...se.midfielderIds]}
+          forwardIds={[...se.forwardIds]}
+          bench={bench}
+          captainId={captainId}
+          players={players}
+          nationalTeams={nationalTeams}
+        />
+        <div className="absolute right-3 top-3 flex flex-col items-end gap-1">
+          <span className="rounded-lg bg-black/40 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            {fantasyTeam.totalPoints} pts
+          </span>
           {fantasyTeam.locked && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+            <span className="rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-medium text-white">
               🔒 Bloqueado
             </span>
           )}
         </div>
       </div>
 
-      {/* Pitch */}
-      <div className="relative bg-gradient-to-b from-emerald-800 to-emerald-700 p-4">
-        <div className="relative flex flex-col gap-6 py-2">
-          <PitchLine players={fwds} nationalTeams={nationalTeams} captainId={captainId} role="attack" />
-          <PitchLine players={mids} nationalTeams={nationalTeams} captainId={captainId} role="midfield" />
-          <PitchLine players={defs} nationalTeams={nationalTeams} captainId={captainId} role="defense" />
-          <div className="flex justify-center">
-            <PitchPlayer player={gk} isCaptain={gk?.id === captainId} nationalTeams={nationalTeams} />
-          </div>
-        </div>
-      </div>
-
-      {/* Bench */}
-      <div className="border-t border-[var(--border)] px-4 py-3">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-          — Banquillo —
-        </p>
-        <div className="flex justify-around">
-          {benchPlayers.map((p, i) => (
-            <PitchPlayer
-              key={i}
-              player={p}
-              isCaptain={false}
-              nationalTeams={nationalTeams}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Predictions summary */}
-      <div className="border-t border-[var(--border)] px-4 py-3">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
           Predicciones del torneo
         </p>
         <div
-          className={`grid grid-cols-2 gap-2 text-xs ${revelationTeamName !== undefined ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}
+          className={`grid grid-cols-2 gap-3 ${
+            showRevelation ? "sm:grid-cols-4" : "sm:grid-cols-3"
+          }`}
         >
-          <PredictionBadge label="Campeona" value={fantasyTeam.championTeamId ?? ""} nationalTeams={nationalTeams} />
-          {revelationTeamName !== undefined && (
-            <PredictionBadge label="Revelación" value={revelationTeamName} nationalTeams={[]} />
+          <PredictionSummaryNationalTile
+            label="Campeona"
+            team={ntMap.get(fantasyTeam.championTeamId ?? "") ?? null}
+            teamId={fantasyTeam.championTeamId}
+          />
+          {showRevelation && (
+            <PredictionSummaryNationalTile
+              label="Revelación"
+              team={ntMap.get(revelationTeamId ?? "") ?? null}
+              teamId={revelationTeamId ?? undefined}
+            />
           )}
-          <PredictionBadge label="Decepción" value={fantasyTeam.disappointmentTeamId ?? ""} nationalTeams={nationalTeams} />
-          <div className="rounded-lg border border-[var(--border)] p-2">
-            <p className="text-[var(--muted)]">MVP</p>
-            <p className="font-medium truncate">
-              {fantasyTeam.tournamentMvpPlayerId
-                ? (pm.get(fantasyTeam.tournamentMvpPlayerId)?.name ?? fantasyTeam.tournamentMvpPlayerId)
-                : <span className="text-[var(--muted)]">—</span>}
-            </p>
-          </div>
+          <PredictionSummaryNationalTile
+            label="Decepción"
+            team={ntMap.get(fantasyTeam.disappointmentTeamId ?? "") ?? null}
+            teamId={fantasyTeam.disappointmentTeamId}
+          />
+          <PredictionSummaryMvpTile player={mvpPlayer} />
         </div>
+        <p className="mt-3 text-[10px] text-[var(--muted)]">
+          Formación registrada: {getFormationLabel(formation)}
+        </p>
       </div>
-    </div>
-  );
-}
-
-function PredictionBadge({
-  label,
-  value,
-  nationalTeams,
-}: {
-  label: string;
-  value: string;
-  nationalTeams: FantasyNationalTeam[];
-}) {
-  const nt = nationalTeams.find((t) => t.id === value);
-  return (
-    <div className="rounded-lg border border-[var(--border)] p-2">
-      <p className="text-[var(--muted)]">{label}</p>
-      <p className="font-medium truncate">
-        {nt ? (
-          <span className="inline-flex items-center gap-1">
-            <NationalTeamSymbol team={nt} />
-            <span>{nt.name}</span>
-          </span>
-        ) : value ? (
-          value
-        ) : (
-          <span className="text-[var(--muted)]">—</span>
-        )}
-      </p>
     </div>
   );
 }

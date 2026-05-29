@@ -52,6 +52,10 @@ export function TeamPickerSelect({
 
   const selectedTeam = teams.find((t) => t.id === selected);
 
+  useEffect(() => {
+    setSelected(defaultValue);
+  }, [defaultValue]);
+
   // Cerrar al hacer clic fuera
   useEffect(() => {
     function handleClick(e: MouseEvent) {

@@ -3,7 +3,14 @@ import type { NextRequest } from "next/server";
 import { USE_MOCKS } from "./lib/runtime";
 
 const SESSION_COOKIE = "tikitaka-session";
-const PUBLIC_PATHS = ["/login", "/api/auth/session", "/api/sync-matches", "/api/resolve-bets", "/api/sync-status"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/auth/session",
+  "/api/sync-matches",
+  "/api/resolve-bets",
+  "/api/sync-status",
+  "/api/player-photo",
+];
 
 export function proxy(req: NextRequest) {
   // Modo mock: sin autenticación, acceso libre a toda la app

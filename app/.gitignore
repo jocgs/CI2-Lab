@@ -41,3 +41,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Fotos de jugadores (caché local vía TheSportsDB)
+/public/imagenes/players/*
+!/public/imagenes/players/.gitkeep
+
+# Escudos de selecciones (caché local vía football-data)
+/public/imagenes/national-crests/*
+!/public/imagenes/national-crests/.gitkeep
+!/public/imagenes/national-crests/manifest.json

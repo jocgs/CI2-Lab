@@ -3,6 +3,7 @@
  * si no, JSON local en /data (desarrollo sin Firebase).
  */
 
+import "./firebase-admin";
 import { getApps } from "firebase-admin/app";
 import * as local from "./local-store";
 import * as firestore from "./firestore-store";

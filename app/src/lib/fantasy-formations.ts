@@ -1,4 +1,4 @@
-import type { Formation } from "@/types/fantasy";
+import type { Formation, FantasyStartingEleven } from "@/types/fantasy";
 
 export interface FormationRequirements {
   defenders: number;
@@ -37,4 +37,16 @@ export function getFormationRequirements(formation: Formation): FormationRequire
 
 export function getFormationLabel(formation: Formation): string {
   return formation;
+}
+
+const VALID_FORMATIONS = new Set<Formation>(FORMATION_OPTIONS.map((o) => o.value));
+
+/** Resuelve la formación guardada o la infiere por el número de jugadores en cada línea. */
+export function resolveFormationFromEleven(se: FantasyStartingEleven): Formation {
+  if (se.formation && VALID_FORMATIONS.has(se.formation)) {
+    return se.formation;
+  }
+  const inferred =
+    `${se.defenderIds.length}-${se.midfielderIds.length}-${se.forwardIds.length}` as Formation;
+  return VALID_FORMATIONS.has(inferred) ? inferred : "4-3-3";
 }

@@ -11,6 +11,11 @@ import {
 import { getUserTournamentPicks } from "@/lib/picks-db";
 import { MOCK_TOURNAMENT, MOCK_TOURNAMENT_TEAMS } from "@/lib/mocks/tournament-teams";
 import { isTournamentLocked } from "@/lib/tournament-picks";
+import {
+  isFantasyTeamEditable,
+  isFantasyCompetitionLocked,
+  getFantasyLockAt,
+} from "@/lib/fantasy-lock";
 import { FantasyTeamDisplay } from "@/components/fantasy/FantasyTeamDisplay";
 import { PredictionsForm } from "./PredictionsForm";
 import { EmptyState } from "@/components/ui";
@@ -41,11 +46,16 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
     getUserTournamentPicks(user.id, MOCK_TOURNAMENT.id),
   ]);
 
-  const picksLocked = isTournamentLocked(MOCK_TOURNAMENT);
+  const picksLocked =
+    isTournamentLocked(MOCK_TOURNAMENT) || isFantasyCompetitionLocked();
+  const canEditSquad = fantasyTeam ? isFantasyTeamEditable(fantasyTeam) : false;
   const pageTitle = isLeagueView ? `Mi equipo · ${league!.name}` : "Mi equipo · Fantasy global";
   const builderHref = isLeagueView
     ? `/fantasy/builder?league=${leagueId}`
     : "/fantasy/builder";
+  const editSquadHref = isLeagueView
+    ? `/fantasy/builder?league=${leagueId}&edit=1`
+    : "/fantasy/builder?edit=1";
   const rankingHref = isLeagueView
     ? `/fantasy/leagues/${leagueId}`
     : "/fantasy/ranking";
@@ -85,6 +95,14 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
           <p className="text-sm text-[var(--muted)]">Mundial 2026</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {canEditSquad && (
+            <Link
+              href={editSquadHref}
+              className="rounded-xl bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            >
+              Editar plantilla
+            </Link>
+          )}
           <Link
             href={rankingHref}
             className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface)]"
@@ -109,11 +127,24 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
         </p>
       )}
 
+      {canEditSquad && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+          Puedes editar plantilla y predicciones hasta el{" "}
+          <strong>
+            {getFantasyLockAt().toLocaleString("es-ES", {
+              dateStyle: "long",
+              timeStyle: "short",
+            })}
+          </strong>{" "}
+          (inicio del torneo).
+        </p>
+      )}
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Puntos totales" value={fantasyTeam.totalPoints} />
         <StatCard
           label="Estado"
-          value={fantasyTeam.locked ? "🔒 Bloqueado" : "✏️ Editable"}
+          value={canEditSquad ? "✏️ Editable" : "🔒 Bloqueado"}
           isText
         />
         <StatCard
@@ -132,11 +163,7 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
         fantasyTeam={fantasyTeam}
         players={players}
         nationalTeams={nationalTeams}
-        revelationTeamName={
-          !isLeagueView
-            ? MOCK_TOURNAMENT_TEAMS.find((t) => t.id === (myPicks?.revelationTeamId ?? ""))?.name
-            : undefined
-        }
+        revelationTeamId={!isLeagueView ? (myPicks?.revelationTeamId ?? null) : undefined}
       />
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
@@ -162,6 +189,7 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
           return (
             <PredictionsForm
               fantasyTeam={fantasyTeam}
+              allPlayers={players}
               nationalTeams={nationalTeams}
               squadPlayers={squadPlayers}
               tournamentTeams={MOCK_TOURNAMENT_TEAMS}

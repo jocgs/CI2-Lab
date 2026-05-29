@@ -11,6 +11,8 @@ import {
   REVELATION_MIN_ODDS,
 } from "@/lib/tournament-picks";
 import { savePicksAction } from "@/app/picks/picks-actions";
+import { NationalTeamCrest } from "@/components/fantasy/NationalTeamCrest";
+import { TournamentTeamPickerSelect } from "@/components/fantasy/TournamentTeamPickerSelect";
 import { clsx } from "@/lib/utils";
 
 interface Props {
@@ -173,21 +175,15 @@ function TeamSelector({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <select
+      <TournamentTeamPickerSelect
+        name="special-pick-team"
+        teams={options}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
+        placeholder={placeholder}
         disabled={disabled}
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <option value="">{placeholder}</option>
-        {options.map((team) => (
-          <option key={team.id} value={team.id}>
-            {team.flag} {team.name} — cuota {formatOdds(team.marketOdds)}
-          </option>
-        ))}
-      </select>
+      />
 
-      {/* Grid visual */}
       <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
         {options.map((team) => {
           const isSelected = team.id === value;
@@ -206,7 +202,10 @@ function TeamSelector({
                 disabled && "cursor-not-allowed opacity-50",
               )}
             >
-              <span className="text-lg leading-none">{team.flag}</span>
+              <NationalTeamCrest
+                team={{ id: team.id, name: team.name, logoUrl: team.crestUrl }}
+                size={28}
+              />
               <span className="w-full truncate text-center text-[10px] leading-tight">
                 {team.name.split(" ")[0]}
               </span>
@@ -224,7 +223,10 @@ function TeamSelector({
 function SelectedBadge({ team }: { team: TournamentTeam }) {
   return (
     <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-      <span className="text-xl">{team.flag}</span>
+      <NationalTeamCrest
+        team={{ id: team.id, name: team.name, logoUrl: team.crestUrl }}
+        size={28}
+      />
       <div>
         <p className="font-semibold">{team.name}</p>
         <p className="text-xs opacity-75">Cuota: {formatOdds(team.marketOdds)}</p>
