@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Chat de grupo ─────────────────────────────────────────────────────────
+    // Lectura pública para que onSnapshot (GroupChat) funcione sin Firebase Auth.
+    // Escritura solo desde servidor (server action usa Admin SDK, bypass rules).
+    match /groups/{groupId}/messages/{messageId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Resto de colecciones ──────────────────────────────────────────────────
+    // Todo el acceso va por el Admin SDK (server-side): bypassa estas reglas.
+    // Bloqueamos el acceso directo desde cliente para proteger datos sensibles
+    // (passwordHash en users, bets privados, fantasy teams, etc.)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

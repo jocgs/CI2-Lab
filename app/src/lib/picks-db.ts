@@ -1,13 +1,11 @@
 import type { UserTournamentPicks } from "@/types/picks";
+import * as store from "./data-store";
 
-// ─── In-memory store anchored to global (survives HMR in dev) ────────────────
+const COLLECTION = "tournament_picks";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __tournamentPicks: UserTournamentPicks[] | undefined;
+function docId(userId: string, tournamentId: string): string {
+  return `${userId}_${tournamentId}`;
 }
-
-const PICKS_STORE: UserTournamentPicks[] = (global.__tournamentPicks ??= []);
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
@@ -15,9 +13,11 @@ export async function getUserTournamentPicks(
   userId: string,
   tournamentId: string,
 ): Promise<UserTournamentPicks | null> {
-  return (
-    PICKS_STORE.find((p) => p.userId === userId && p.tournamentId === tournamentId) ?? null
-  );
+  const result = await store.queryWhereCompoundOne<UserTournamentPicks>(COLLECTION, [
+    ["userId", userId],
+    ["tournamentId", tournamentId],
+  ]);
+  return result ?? null;
 }
 
 export async function saveUserTournamentPicks(data: {
@@ -26,27 +26,22 @@ export async function saveUserTournamentPicks(data: {
   revelationTeamId: string;
 }): Promise<UserTournamentPicks> {
   const now = new Date().toISOString();
-  const existing = PICKS_STORE.find(
-    (p) => p.userId === data.userId && p.tournamentId === data.tournamentId,
-  );
+  const existing = await getUserTournamentPicks(data.userId, data.tournamentId);
 
-  if (existing) {
-    existing.revelationTeamId = data.revelationTeamId;
-    existing.updatedAt = now;
-    return existing;
-  }
-
-  const newPick: UserTournamentPicks = {
-    ...data,
-    createdAt: now,
+  const pick: UserTournamentPicks = {
+    userId: data.userId,
+    tournamentId: data.tournamentId,
+    revelationTeamId: data.revelationTeamId,
+    createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
-  PICKS_STORE.push(newPick);
-  return newPick;
+
+  await store.upsert(COLLECTION, { id: docId(data.userId, data.tournamentId), ...pick });
+  return pick;
 }
 
 export async function getAllPicksByTournament(
   tournamentId: string,
 ): Promise<UserTournamentPicks[]> {
-  return PICKS_STORE.filter((p) => p.tournamentId === tournamentId);
+  return store.queryWhere<UserTournamentPicks>(COLLECTION, "tournamentId", tournamentId);
 }
