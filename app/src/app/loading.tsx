@@ -9,7 +9,7 @@ export default function Loading() {
         alt="Cargando"
         width={64}
         height={64}
-        className="animate-spin"
+        className="loading-ball animate-spin"
         priority
         unoptimized
       />
