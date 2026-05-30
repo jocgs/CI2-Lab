@@ -1,12 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AchievementEmoji } from "@/components/achievements/AchievementEmoji";
 import { groupAchievementsByCategory, type UserAchievementWithMeta } from "@/lib/achievements";
 import { clsx } from "@/lib/utils";
-
-function isMobileViewport() {
-  return typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
-}
 
 function AchievementDetailModal({
   achievement,
@@ -36,7 +33,7 @@ function AchievementDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:hidden"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="achievement-modal-title"
@@ -60,11 +57,16 @@ function AchievementDetailModal({
         <div className="flex flex-col items-center gap-4 pt-1 text-center">
           <span
             className={clsx(
-              "grid h-20 w-20 place-items-center rounded-2xl text-5xl",
-              unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--background)] grayscale",
+              "grid h-20 w-20 place-items-center rounded-2xl",
+              unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--background)]",
+              !unlocked && definition.id !== "streak_10" && "grayscale",
             )}
           >
-            {definition.emoji}
+            <AchievementEmoji
+              achievementId={definition.id}
+              emoji={definition.emoji}
+              size="lg"
+            />
           </span>
 
           <div>
@@ -101,8 +103,16 @@ function AchievementDetailModal({
             </div>
           )}
 
-          {unlocked && (
+          {unlocked ? (
             <span className="text-sm font-semibold text-[var(--brand-strong)]">Desbloqueado ✓</span>
+          ) : (
+            <span className="text-xs font-medium text-[var(--muted)]">Aún no desbloqueado</span>
+          )}
+
+          {!unlocked && !showProgressBar && !isRanking && target > 0 && (
+            <p className="text-xs text-[var(--muted)]">
+              Progreso: {current}/{target}
+            </p>
           )}
         </div>
       </div>
@@ -110,70 +120,115 @@ function AchievementDetailModal({
   );
 }
 
-// Componente visual simplificado para mostrar logros en perfil público
-export function PublicAchievementsDisplay({
+function AchievementTile({
+  achievement,
+  onOpen,
+}: {
+  achievement: UserAchievementWithMeta;
+  onOpen: (achievement: UserAchievementWithMeta) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(achievement)}
+      className={clsx(
+        "flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-colors hover:border-[var(--brand)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+        achievement.unlocked
+          ? "border-[var(--brand)]/30 bg-[var(--brand)]/10"
+          : "border-[var(--border)] bg-[var(--background)] opacity-75 hover:opacity-100",
+      )}
+    >
+      <AchievementEmoji
+        achievementId={achievement.definition.id}
+        emoji={achievement.definition.emoji}
+        className={!achievement.unlocked && achievement.definition.id !== "streak_10" ? "grayscale" : undefined}
+      />
+      <span className="line-clamp-2 text-[10px] font-semibold leading-tight sm:text-xs">
+        {achievement.definition.title}
+      </span>
+      {!achievement.unlocked && (
+        <span className="text-[9px] font-medium uppercase tracking-wide text-[var(--muted)]">
+          Bloqueado
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** Vista compacta por categorías: icono + nombre; al pulsar, modal con progreso y cómo conseguirlo. */
+export function AchievementsOverview({
   achievements,
+  showOnlyUnlocked = false,
 }: {
   achievements: UserAchievementWithMeta[];
+  /** En perfil público solo se muestran los desbloqueados. */
+  showOnlyUnlocked?: boolean;
 }) {
   const [selected, setSelected] = useState<UserAchievementWithMeta | null>(null);
-  const unlockedAchievements = achievements.filter((a) => a.unlocked);
+  const groups = groupAchievementsByCategory(achievements);
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   const openDetail = useCallback((achievement: UserAchievementWithMeta) => {
-    if (isMobileViewport()) setSelected(achievement);
+    setSelected(achievement);
   }, []);
 
-  if (unlockedAchievements.length === 0) {
+  const sections = groups
+    .map((group) => ({
+      ...group,
+      items: showOnlyUnlocked ? group.items.filter((a) => a.unlocked) : group.items,
+    }))
+    .filter((group) => group.items.length > 0);
+
+  if (sections.length === 0) {
     return (
-      <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-        <p>Aún sin logros desbloqueados</p>
-      </div>
+      <p className="text-sm text-[var(--muted)]">
+        {showOnlyUnlocked ? "Aún sin logros desbloqueados" : "No hay logros disponibles"}
+      </p>
     );
   }
 
   return (
     <>
-      {/* Móvil: rejilla con icono grande + título */}
-      <div className="grid grid-cols-3 gap-3 sm:hidden">
-        {unlockedAchievements.map((achievement) => (
-          <button
-            key={achievement.definition.id}
-            type="button"
-            onClick={() => openDetail(achievement)}
-            className="flex flex-col items-center gap-1.5 rounded-2xl border border-[var(--brand)]/30 bg-[var(--brand)]/10 p-3 text-center transition-colors hover:border-[var(--brand)]"
-          >
-            <span className="text-3xl leading-none">{achievement.definition.emoji}</span>
-            <span className="line-clamp-2 text-[10px] font-semibold leading-tight">
-              {achievement.definition.title}
-            </span>
-          </button>
-        ))}
-      </div>
+      {!showOnlyUnlocked && (
+        <p className="mb-5 text-sm text-[var(--muted)]">
+          Desbloqueados:{" "}
+          <span className="font-semibold text-[var(--brand-strong)]">
+            {unlockedCount}/{achievements.length}
+          </span>
+        </p>
+      )}
 
-      {/* Escritorio: iconos compactos con tooltip al pasar el ratón */}
-      <div className="hidden flex-wrap items-center gap-2 sm:flex">
-        {unlockedAchievements.map((achievement) => (
-          <div
-            key={achievement.definition.id}
-            className="group relative"
-            title={achievement.definition.title}
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--brand)]/30 bg-[var(--brand)]/20 text-xl transition-colors hover:border-[var(--brand)]">
-              {achievement.definition.emoji}
+      <div className="flex flex-col gap-6">
+        {sections.map((group) => (
+          <section key={group.category}>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+              {group.label}
+            </p>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              {group.items.map((achievement) => (
+                <AchievementTile
+                  key={achievement.definition.id}
+                  achievement={achievement}
+                  onOpen={openDetail}
+                />
+              ))}
             </div>
-            <div className="absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs shadow-lg group-hover:block">
-              <p className="font-semibold">{achievement.definition.title}</p>
-              <p className="mt-0.5 text-[10px] text-[var(--muted)]">
-                {achievement.definition.description}
-              </p>
-            </div>
-          </div>
+          </section>
         ))}
       </div>
 
       <AchievementDetailModal achievement={selected} onClose={() => setSelected(null)} />
     </>
   );
+}
+
+/** @deprecated Usa AchievementsOverview con showOnlyUnlocked */
+export function PublicAchievementsDisplay({
+  achievements,
+}: {
+  achievements: UserAchievementWithMeta[];
+}) {
+  return <AchievementsOverview achievements={achievements} showOnlyUnlocked />;
 }
 
 interface AchievementsGridProps {
@@ -186,7 +241,7 @@ export function AchievementsGrid({ achievements }: AchievementsGridProps) {
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   const openDetail = useCallback((achievement: UserAchievementWithMeta) => {
-    if (isMobileViewport()) setSelected(achievement);
+    setSelected(achievement);
   }, []);
 
   return (
@@ -249,11 +304,12 @@ function AchievementCard({
       <div className="flex flex-col items-center gap-2 text-center sm:hidden">
         <span
           className={clsx(
-            "grid h-16 w-16 place-items-center rounded-2xl text-4xl",
-            unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--surface)] grayscale",
+            "grid h-16 w-16 place-items-center rounded-2xl",
+            unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--surface)]",
+            !unlocked && definition.id !== "streak_10" && "grayscale",
           )}
         >
-          {definition.emoji}
+          <AchievementEmoji achievementId={definition.id} emoji={definition.emoji} size="md" />
         </span>
         <p className="font-semibold text-sm leading-tight">{definition.title}</p>
 
@@ -286,11 +342,12 @@ function AchievementCard({
         <div className="flex items-start gap-3">
           <span
             className={clsx(
-              "grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xl",
-              unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--surface)] grayscale",
+              "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+              unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--surface)]",
+              !unlocked && definition.id !== "streak_10" && "grayscale",
             )}
           >
-            {definition.emoji}
+            <AchievementEmoji achievementId={definition.id} emoji={definition.emoji} size="sm" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold leading-tight">{definition.title}</p>

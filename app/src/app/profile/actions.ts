@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   acceptFriendRequestByUsername,
@@ -12,8 +13,16 @@ import {
   updateUserProfile,
 } from "@/lib/db";
 import { getNationalTeamsByCompetition } from "@/lib/fantasy-db";
+import { isValidProfileThemeId } from "@/lib/profile-themes";
 
 const NATIONAL_TEAM_COMPETITION_ID = "world_cup_2026";
+
+function revalidateProfilePaths() {
+  revalidatePath("/profile");
+  revalidatePath("/profile/edit");
+  revalidatePath("/profile/friends");
+  revalidatePath("/profile/friend-requests");
+}
 
 export type SaveProfileResult = { ok: true } | { error: string };
 
@@ -29,6 +38,7 @@ export async function saveProfileAction(formData: FormData): Promise<SaveProfile
   const supportedNationalTeamId = String(formData.get("supportedNationalTeamId") ?? "").trim();
   const primaryTeamId = String(formData.get("supportedTeamId1") ?? "").trim();
   const secondaryTeamId = String(formData.get("supportedTeamId2") ?? "").trim();
+  const profileThemeRaw = String(formData.get("profileThemeId") ?? "default").trim();
 
   const teams = await getTeams();
   const nationalTeams = await getNationalTeamsByCompetition(NATIONAL_TEAM_COMPETITION_ID);
@@ -51,6 +61,10 @@ export async function saveProfileAction(formData: FormData): Promise<SaveProfile
 
   if (supportedNationalTeamId && !nationalSet.has(supportedNationalTeamId)) {
     return { error: "La selección elegida no existe" };
+  }
+
+  if (!isValidProfileThemeId(profileThemeRaw)) {
+    return { error: "El color de perfil elegido no es válido" };
   }
 
   let avatarUrl = currentUser.avatarUrl ?? null;
@@ -78,9 +92,18 @@ export async function saveProfileAction(formData: FormData): Promise<SaveProfile
     avatarUrl,
     supportedNationalTeamId: supportedNationalTeamId || null,
     supportedTeamIds,
+    profileThemeId: profileThemeRaw,
   });
 
-  revalidatePath("/profile");
+  const cookieStore = await cookies();
+  cookieStore.set("tikitaka-profile-theme", profileThemeRaw, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+
+  revalidateProfilePaths();
+  revalidatePath(`/users/${currentUser.username}`);
   return { ok: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "No se pudo guardar el perfil" };
@@ -114,7 +137,7 @@ export async function sendFriendRequestAction(
     return { error: (err as Error).message };
   }
 
-  revalidatePath("/profile");
+  revalidateProfilePaths();
   revalidatePath(safeRedirectTo);
   redirect(safeRedirectTo);
 }
@@ -130,7 +153,7 @@ export async function acceptFriendRequestAction(formData: FormData) {
 
   await acceptFriendRequestByUsername(userId, username);
 
-  revalidatePath("/profile");
+  revalidateProfilePaths();
   revalidatePath(safeRedirectTo);
   redirect(safeRedirectTo);
 }
@@ -160,7 +183,7 @@ export async function removeFriendAction(
     return { error: (err as Error).message };
   }
 
-  revalidatePath("/profile");
+  revalidateProfilePaths();
   revalidatePath(safeRedirectTo);
   redirect(safeRedirectTo);
 }

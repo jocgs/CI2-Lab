@@ -37,6 +37,7 @@ export async function savePicksAction(
     });
 
     revalidatePath("/picks");
+    revalidatePath("/fantasy/bola-de-cristal");
     return {};
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Error desconocido." };

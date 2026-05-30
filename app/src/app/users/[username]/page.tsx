@@ -20,8 +20,19 @@ import {
 import { buildRanking } from "@/lib/scoring";
 import { getStreakForUser, getTeams } from "@/lib/db";
 import { getNationalTeamsByCompetition, getFantasyTeamByUserAndCompetition } from "@/lib/fantasy-db";
-import { computeUserAchievements } from "@/lib/achievements";
-import { PublicAchievementsDisplay } from "@/components/AchievementsGrid";
+import { computeUserAchievements, FANTASY_COMPETITION_ID } from "@/lib/achievements";
+import { getBolaDeCristalOfficialAnswers } from "@/lib/bola-de-cristal-official-answers";
+import { evaluateBolaDeCristalPicks } from "@/lib/bola-de-cristal-evaluation";
+import { MOCK_TOURNAMENT } from "@/lib/mocks/tournament-teams";
+import { getUserTournamentPicks } from "@/lib/picks-db";
+import { getTotalShopAvatarsCount } from "@/lib/shop-avatars";
+import { AchievementsOverview } from "@/components/AchievementsGrid";
+import { ProfileBanner, profileStatAccentClass } from "@/components/profile/ProfileBanner";
+import {
+  profileBannerMutedTextClass,
+  profileBannerPillClass,
+  profileBannerSubtextClass,
+} from "@/lib/profile-themes";
 import { acceptFriendRequestAction } from "../../profile/actions";
 import AddFriendForm from "@/components/AddFriendForm";
 import RemoveFriendForm from "@/components/RemoveFriendForm";
@@ -41,7 +52,20 @@ export default async function PublicProfilePage({
   if (!user) notFound();
 
   const currentUser = await getCurrentUser();
-  const [friends, groups, bets, finishedMatches, teams, nationalTeams, streak, receivedRequests, sentRequests, globalRanking, fantasyTeam] = await Promise.all([
+  const [
+    friends,
+    groups,
+    bets,
+    finishedMatches,
+    teams,
+    nationalTeams,
+    streak,
+    receivedRequests,
+    sentRequests,
+    globalRanking,
+    fantasyTeam,
+    tournamentPicks,
+  ] = await Promise.all([
     getFriendsForUser(user.id),
     getGroupsForUser(user.id),
     getBetsForUser(user.id),
@@ -52,8 +76,16 @@ export default async function PublicProfilePage({
     getFriendRequestsReceived(currentUser.id),
     getFriendRequestsSent(currentUser.id),
     getGlobalRanking(),
-    getFantasyTeamByUserAndCompetition(user.id, NATIONAL_TEAM_COMPETITION_ID),
+    getFantasyTeamByUserAndCompetition(user.id, FANTASY_COMPETITION_ID),
+    getUserTournamentPicks(user.id, MOCK_TOURNAMENT.id),
   ]);
+
+  const bolaDeCristal = evaluateBolaDeCristalPicks(
+    fantasyTeam,
+    tournamentPicks,
+    getBolaDeCristalOfficialAnswers(MOCK_TOURNAMENT.id),
+  );
+  const clubTeamIds = teams.map((t) => t.id);
 
   const profileRanking = buildRanking([user], bets, finishedMatches)[0];
   const totalPoints = profileRanking?.totalPoints ?? 0;
@@ -70,8 +102,14 @@ export default async function PublicProfilePage({
     matches: finishedMatches,
     friendsCount: friends.length,
     groupsCount: groups.length,
+    groupLeaderWinCount: user.groupLeaderWinCount ?? 0,
     globalRanking,
     fantasyTeam: fantasyTeam ?? null,
+    unlockedAvatarsCount: user.unlockedAvatarIds?.length ?? 0,
+    totalShopAvatars: getTotalShopAvatarsCount(),
+    tournamentPicks,
+    bolaDeCristal,
+    clubTeamIds,
   });
 
   const recentBets = bets
@@ -91,26 +129,31 @@ export default async function PublicProfilePage({
   return (
     <div className="flex flex-col gap-8">
       <Card className="overflow-hidden border-[var(--border)] bg-[var(--surface)]">
-        <div className="relative overflow-hidden bg-gradient-to-r from-[var(--brand)] via-cyan-500 to-emerald-400 px-6 py-8 text-white sm:px-8">
+        <ProfileBanner themeId={user.profileThemeId}>
           {activeShopAvatar && <ProfileActiveShopAvatar avatar={activeShopAvatar} />}
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <ProfileAvatar avatarUrl={user.avatarUrl} displayName={user.displayName} />
             <div className={profileHeaderContentClass(!!activeShopAvatar)}>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/75">Perfil público</p>
+              <p className={`text-xs uppercase tracking-[0.24em] ${profileBannerMutedTextClass(user.profileThemeId)}`}>
+                Perfil público
+              </p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight">{user.displayName}</h1>
-              <p className="text-sm text-white/85">@{user.username}</p>
-              <p className="mt-1 text-sm text-white/80">
+              <p className={`text-sm ${profileBannerSubtextClass(user.profileThemeId)}`}>@{user.username}</p>
+              <p className={`mt-1 text-sm ${profileBannerMutedTextClass(user.profileThemeId)}`}>
                 {isMe ? "Este eres tú" : isFriend ? "Ya sois amigos" : "Todavía no sois amigos"}
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 {isMe ? (
-                  <Link href="/profile" className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur hover:bg-white/20">
+                  <Link
+                    href="/profile"
+                    className={`${profileBannerPillClass(user.profileThemeId)} hover:opacity-90`}
+                  >
                     Ir a mi perfil privado
                   </Link>
                 ) : isFriend ? (
                   <>
-                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                    <span className={profileBannerPillClass(user.profileThemeId)}>
                       Sois amigos
                     </span>
                     <RemoveFriendForm
@@ -130,7 +173,7 @@ export default async function PublicProfilePage({
                     </button>
                   </form>
                 ) : hasOutgoingRequestToThisUser ? (
-                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                  <span className={profileBannerPillClass(user.profileThemeId)}>
                     Solicitud enviada
                   </span>
                 ) : (
@@ -142,29 +185,34 @@ export default async function PublicProfilePage({
                 )}
 
                 {activeShopAvatar ? (
-                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                  <span className={profileBannerPillClass(user.profileThemeId)}>
                     Mascota: {activeShopAvatar.name}
                   </span>
                 ) : null}
 
                 {supportedNationalTeam ? (
-                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                  <span className={profileBannerPillClass(user.profileThemeId)}>
                     Selección: {supportedNationalTeam.name}
                   </span>
                 ) : null}
 
                 {supportedTeams.length > 0 ? (
-                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                  <span className={profileBannerPillClass(user.profileThemeId)}>
                     {supportedTeams.length} {supportedTeams.length === 1 ? "equipo favorito" : "equipos favoritos"}
                   </span>
                 ) : null}
               </div>
             </div>
           </div>
-        </div>
+        </ProfileBanner>
 
         <div className="grid gap-3 border-t border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Puntos totales" value={totalPoints} accent />
+          <Stat
+            label="Puntos totales"
+            value={totalPoints}
+            accent
+            accentClass={profileStatAccentClass(user.profileThemeId)}
+          />
           <Stat label="Aciertos" value={`${correctBets}/${totalBets}`} />
           <Stat label="Exactos" value={exactBets} />
           <Stat label="Precisión" value={`${accuracy}%`} subtitle={`Racha actual: ${streak.current} · Mejor: ${streak.best}`} />
@@ -174,7 +222,7 @@ export default async function PublicProfilePage({
       <section>
         <SectionTitle title="Logros" subtitle="Recompensas desbloqueadas" />
         <Card className="p-6">
-          <PublicAchievementsDisplay achievements={achievements} />
+          <AchievementsOverview achievements={achievements} showOnlyUnlocked />
         </Card>
       </section>
 
@@ -274,19 +322,16 @@ function Stat({
   value,
   subtitle,
   accent,
+  accentClass,
 }: {
   label: string;
   value: number | string;
   subtitle?: string;
   accent?: boolean;
+  accentClass?: string;
 }) {
   return (
-    <Card
-      className={
-        "px-4 py-3 " +
-        (accent ? "bg-gradient-to-br from-[var(--brand)] to-emerald-400 text-white" : "")
-      }
-    >
+    <Card className={"px-4 py-3 " + (accent ? `${accentClass ?? "bg-[var(--brand)]"} text-white` : "")}>
       <p className={"text-xs uppercase tracking-wide " + (accent ? "text-white/80" : "text-[var(--muted)]")}>
         {label}
       </p>

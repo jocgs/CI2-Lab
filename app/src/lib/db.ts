@@ -97,12 +97,16 @@ export async function updateUserProfile(
     avatarUrl?: string | null;
     supportedNationalTeamId?: string | null;
     supportedTeamIds?: string[];
+    profileThemeId?: string | null;
   },
 ): Promise<User> {
   await fs.patch("users", userId, {
     avatarUrl: input.avatarUrl?.trim() || null,
     supportedNationalTeamId: input.supportedNationalTeamId?.trim() || null,
     supportedTeamIds: (input.supportedTeamIds ?? []).filter(Boolean),
+    ...(input.profileThemeId !== undefined
+      ? { profileThemeId: input.profileThemeId?.trim() || "default" }
+      : {}),
   });
   const updated = await fs.getById<UserWithPassword>("users", userId);
   if (!updated) throw new Error("Usuario no encontrado");
@@ -450,6 +454,29 @@ export async function awardCoins(userId: string, points: number): Promise<void> 
 // Resolución de porras
 // ---------------------------------------------------------------------------
 
+/** Tras actualizar puntos, registra victorias de grupo cuando cambia el líder del ranking. */
+export async function recordGroupLeaderWins(): Promise<void> {
+  const groups = await fs.getAll<Group>("groups");
+  if (groups.length === 0) return;
+
+  for (const group of groups) {
+    const ranking = await getGroupRanking(group.id);
+    const leader = ranking[0];
+    if (!leader || leader.totalPoints <= 0) continue;
+
+    const newLeaderId = leader.userId;
+    if (group.lastLeaderId === newLeaderId) continue;
+
+    await fs.patch("groups", group.id, { lastLeaderId: newLeaderId });
+
+    const leaderUser = await fs.getById<UserWithPassword>("users", newLeaderId);
+    if (!leaderUser) continue;
+
+    const prevWins = leaderUser.groupLeaderWinCount ?? 0;
+    await fs.patch("users", newLeaderId, { groupLeaderWinCount: prevWins + 1 });
+  }
+}
+
 export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved: number }> {
   const finishedById = new Map(
     matches
@@ -473,6 +500,7 @@ export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved:
       if (points > 0) await awardCoins(bet.userId, points);
       resolved++;
     }
+    if (resolved > 0) await recordGroupLeaderWins();
     return { resolved };
   }
 
@@ -492,6 +520,8 @@ export async function resolveFinishedBets(matches: Match[]): Promise<{ resolved:
     }
     await batch.commit();
   }
+
+  if (resolved > 0) await recordGroupLeaderWins();
 
   return { resolved };
 }

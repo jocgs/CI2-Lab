@@ -57,11 +57,39 @@ export default async function FantasyPage() {
         </div>
       </section>
 
+      {/* Bola de cristal */}
+      <section>
+        <SectionTitle
+          title="Bola de cristal"
+          subtitle="Predicciones del torneo, independientes de tu plantilla Fantasy"
+        />
+        <Card className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="text-3xl" aria-hidden>
+              🔮
+            </span>
+            <div>
+              <h2 className="font-semibold">Balón de oro, Bota de oro, Guante de oro y más</h2>
+              <p className="mt-0.5 text-sm text-[var(--muted)]">
+                Premios del torneo, fase de grupos y predicciones con escudos — independientes de tu
+                plantilla Fantasy.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/fantasy/bola-de-cristal"
+            className="shrink-0 rounded-xl bg-violet-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:opacity-90"
+          >
+            Ir a Bola de cristal →
+          </Link>
+        </Card>
+      </section>
+
       {/* Competitions */}
       <section>
         <SectionTitle
-          title="Competiciones disponibles"
-          subtitle="Crea tu equipo antes del primer partido"
+          title="Fantasy · Competiciones"
+          subtitle="Crea tu equipo de jugadores antes del primer partido"
         />
         <div className="grid gap-4 sm:grid-cols-2">
           {competitionData.map(({ comp, myTeam, rankingCount }) => (
@@ -93,6 +121,12 @@ export default async function FantasyPage() {
                             className="rounded-xl bg-[var(--brand)] px-3 py-1.5 text-center text-xs font-medium text-white hover:opacity-90"
                           >
                             Ver mi equipo
+                          </Link>
+                          <Link
+                            href="/fantasy/bola-de-cristal"
+                            className="rounded-xl border border-violet-300 px-3 py-1.5 text-center text-xs font-medium text-violet-800 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-200 dark:hover:bg-violet-950/40"
+                          >
+                            Bola de cristal
                           </Link>
                           <Link
                             href="/fantasy/ranking"
@@ -246,14 +280,14 @@ const HOW_IT_WORKS = [
   {
     step: 2,
     emoji: "🔮",
-    title: "Predice el torneo",
-    desc: "Campeón, revelación (tapada), decepción y MVP. Los bonos pueden disparar tu ranking.",
+    title: "Bola de cristal",
+    desc: "Campeón, revelación, decepción y MVP del torneo, en una sección aparte.",
   },
   {
     step: 3,
     emoji: "📊",
     title: "Acumula puntos",
-    desc: "Goles, asistencias, portería a cero... y goles del portero (raro pero pasa).",
+    desc: "Goles, asistencias, portería a cero... y bonos por acertar predicciones.",
   },
   {
     step: 4,

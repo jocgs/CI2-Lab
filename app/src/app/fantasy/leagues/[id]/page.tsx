@@ -9,6 +9,7 @@ import {
 import { MOCK_USERS } from "@/lib/mocks/users";
 import { FantasyRankingTable } from "@/components/fantasy/FantasyRankingTable";
 import { LeagueInviteCopy } from "./LeagueInviteCopy";
+import { bolaDeCristalHref } from "@/lib/fantasy-routes";
 
 const COMPETITION_ID = "world_cup_2026";
 
@@ -77,6 +78,12 @@ export default async function FantasyLeagueDetailPage({ params }: Props) {
                   className="rounded-xl bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
                 >
                   Ver mi equipo ({myLeagueTeam.teamName})
+                </Link>
+                <Link
+                  href={bolaDeCristalHref(id)}
+                  className="rounded-xl border border-violet-300 px-4 py-2 text-sm font-medium text-violet-800 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-200 dark:hover:bg-violet-950/40"
+                >
+                  Bola de cristal
                 </Link>
                 <span className="self-center text-sm text-[var(--muted)]">
                   {myLeagueTeam.totalPoints} pts

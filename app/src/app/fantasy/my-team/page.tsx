@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/db";
 import {
   getGlobalFantasyTeam,
@@ -9,16 +9,17 @@ import {
   getNationalTeamsByCompetition,
 } from "@/lib/fantasy-db";
 import { getUserTournamentPicks } from "@/lib/picks-db";
-import { MOCK_TOURNAMENT, MOCK_TOURNAMENT_TEAMS } from "@/lib/mocks/tournament-teams";
-import { isTournamentLocked } from "@/lib/tournament-picks";
+import { MOCK_TOURNAMENT } from "@/lib/mocks/tournament-teams";
 import {
   isFantasyTeamEditable,
-  isFantasyCompetitionLocked,
   getFantasyLockAt,
 } from "@/lib/fantasy-lock";
 import { FantasyTeamDisplay } from "@/components/fantasy/FantasyTeamDisplay";
-import { getFormationLabel, resolveFormationFromEleven } from "@/lib/fantasy-formations";
-import { PredictionsForm } from "./PredictionsForm";
+import { BolaDeCristalCta } from "@/components/fantasy/BolaDeCristalCta";
+import {
+  isBolaDeCristalGlobalComplete,
+  isBolaDeCristalLeagueComplete,
+} from "@/lib/bola-de-cristal";
 import { EmptyState } from "@/components/ui";
 
 const COMPETITION_ID = "world_cup_2026";
@@ -28,12 +29,16 @@ interface Props {
 }
 
 export default async function MyFantasyTeamPage({ searchParams }: Props) {
-  const { league: leagueId } = await searchParams;
+  const params = await searchParams;
+  const leagueId =
+    typeof params.league === "string" && params.league.length > 0
+      ? params.league
+      : undefined;
   const user = await getCurrentUser();
 
   const league = leagueId ? await getFantasyLeagueById(leagueId) : null;
   if (leagueId && (!league || !league.memberIds.includes(user.id))) {
-    notFound();
+    redirect("/fantasy/leagues");
   }
 
   const isLeagueView = Boolean(leagueId && league);
@@ -47,8 +52,6 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
     getUserTournamentPicks(user.id, MOCK_TOURNAMENT.id),
   ]);
 
-  const picksLocked =
-    isTournamentLocked(MOCK_TOURNAMENT) || isFantasyCompetitionLocked();
   const canEditSquad = fantasyTeam ? isFantasyTeamEditable(fantasyTeam) : false;
   const pageTitle = isLeagueView ? `Mi equipo · ${league!.name}` : "Mi equipo · Fantasy global";
   const builderHref = isLeagueView
@@ -73,7 +76,7 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
           description={
             isLeagueView
               ? "Crea un once solo para esta liga. Puedes tener plantillas distintas en cada liga y en el ranking global."
-              : "Crea tu once titular, elige al capitán y haz tus predicciones (incluida la revelación)."
+              : "Crea tu once titular y elige al capitán. Las predicciones del torneo están en Bola de cristal."
           }
           action={
             <Link
@@ -130,7 +133,7 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
 
       {canEditSquad && (
         <p className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-          Puedes editar plantilla y predicciones hasta el{" "}
+          Puedes editar la plantilla hasta el{" "}
           <strong>
             {getFantasyLockAt().toLocaleString("es-ES", {
               dateStyle: "long",
@@ -164,39 +167,20 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
         fantasyTeam={fantasyTeam}
         players={players}
         nationalTeams={nationalTeams}
+        tournamentPicks={myPicks}
+        leagueView={isLeagueView}
       />
 
-      {(() => {
-        const { startingEleven: se, bench: b } = fantasyTeam;
-        const formation = resolveFormationFromEleven(se);
-        const squadIds = new Set([
-          se.goalkeeperId,
-          ...se.defenderIds,
-          ...se.midfielderIds,
-          ...se.forwardIds,
-          b.goalkeeperId,
-          b.defenderId,
-          b.midfielderId,
-          b.forwardId,
-        ]);
-        const squadPlayers = players.filter((p) => squadIds.has(p.id));
-        return (
-          <PredictionsForm
-            fantasyTeam={fantasyTeam}
-            allPlayers={players}
-            nationalTeams={nationalTeams}
-            squadPlayers={squadPlayers}
-            tournamentTeams={MOCK_TOURNAMENT_TEAMS}
-            existingPicks={myPicks}
-            competitionId={COMPETITION_ID}
-            tournamentId={MOCK_TOURNAMENT.id}
-            leagueId={leagueId ?? null}
-            picksLocked={picksLocked}
-            showRevelation={!isLeagueView}
-            footerNote={`Formación registrada: ${getFormationLabel(formation)}`}
-          />
-        );
-      })()}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-4">
+        <BolaDeCristalCta
+          leagueId={leagueId ?? null}
+          hasAnyPrediction={
+            isLeagueView
+              ? isBolaDeCristalLeagueComplete(fantasyTeam)
+              : isBolaDeCristalGlobalComplete(fantasyTeam, myPicks)
+          }
+        />
+      </div>
     </div>
   );
 }

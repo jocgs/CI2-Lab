@@ -10,31 +10,14 @@ import type {
   FantasyStartingEleven,
   FantasyBench,
 } from "@/types/fantasy";
-import type { TournamentTeam } from "@/types/picks";
 import { FantasyPlayerCard } from "@/components/fantasy/FantasyPlayerCard";
 import { PlayerAvatar } from "@/components/fantasy/PlayerAvatar";
 import { createFantasyTeamAction, updateFantasyTeamAction } from "./actions";
-import { FantasyPlayerSearchPicker } from "@/components/fantasy/FantasyPlayerSearchPicker";
 import { FantasySquadPitchPreview } from "@/components/fantasy/FantasySquadPitchPreview";
 import { NationalTeamCrest } from "@/components/fantasy/NationalTeamCrest";
-import { NationalTeamPickerSelect } from "@/components/fantasy/NationalTeamPickerSelect";
-import { NationalTeamHeroBanner } from "@/components/fantasy/NationalTeamHeroBanner";
-import { FantasyMvpHeroBanner } from "@/components/fantasy/FantasyMvpHeroBanner";
-import { PredictionTournamentTeamPicker } from "@/components/fantasy/PredictionTournamentTeamPicker";
-import {
-  PredictionSummaryMvpTile,
-  PredictionSummaryNationalTile,
-} from "@/components/fantasy/PredictionSummaryTile";
 import type { FantasyTeam } from "@/types/fantasy";
 import { FORMATION_OPTIONS, getFormationRequirements } from "@/lib/fantasy-formations";
-import { saveAllPredictionsAction } from "@/app/fantasy/my-team/prediction-actions";
-import {
-  getEligibleRevelationTeams,
-  getEligibleDisappointmentTeams,
-  formatOdds,
-  REVELATION_MIN_ODDS,
-  DISAPPOINTMENT_MAX_ODDS,
-} from "@/lib/tournament-picks";
+import { bolaDeCristalHref } from "@/lib/fantasy-routes";
 import { clsx } from "@/lib/utils";
 
 // ─── Step hints ─────────────────────────────────────────────────────────────
@@ -94,15 +77,8 @@ function buildStepConfig(formation: Formation) {
     },
     {
       step: 8,
-      title: "Predicciones del torneo",
-      hint: "Campeón, MVP, decepción y tu selección revelación (tapada).",
-      position: null,
-      count: null,
-    },
-    {
-      step: 9,
       title: "Confirmación",
-      hint: "Última oportunidad para arrepentirte.",
+      hint: "Última oportunidad para arrepentirte. Las predicciones van en Bola de cristal.",
       position: null,
       count: null,
     },
@@ -125,14 +101,11 @@ const BENCH_POSITIONS: Position[] = ["GK", "DEF", "MID", "FWD"];
 interface Props {
   players: FantasyPlayer[];
   nationalTeams: FantasyNationalTeam[];
-  tournamentTeams: TournamentTeam[];
-  tournamentId: string;
   competitionId: string;
   leagueId?: string | null;
   leagueName?: string;
   existingTeam?: FantasyTeam | null;
   editMode?: boolean;
-  initialRevelationTeamId?: string | null;
 }
 
 function initialFromTeam(team: FantasyTeam) {
@@ -146,25 +119,18 @@ function initialFromTeam(team: FantasyTeam) {
     forwardIds: [...se.forwardIds],
     bench: { ...team.bench },
     captainId: team.captainId,
-    championTeamId: team.championTeamId ?? null,
-    disappointmentTeamId: team.disappointmentTeamId ?? null,
-    tournamentMvpId: team.tournamentMvpPlayerId ?? null,
   };
 }
 
 export function FantasyBuilderClient({
   players,
   nationalTeams,
-  tournamentTeams,
-  tournamentId,
   competitionId,
   leagueId = null,
   leagueName,
   existingTeam = null,
   editMode = false,
-  initialRevelationTeamId = null,
 }: Props) {
-  const isLeagueTeam = Boolean(leagueId);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const initial = existingTeam && editMode ? initialFromTeam(existingTeam) : null;
@@ -182,16 +148,6 @@ export function FantasyBuilderClient({
   const [forwardIds, setForwardIds] = useState<string[]>(initial?.forwardIds ?? []);
   const [bench, setBench] = useState<Partial<FantasyBench>>(initial?.bench ?? {});
   const [captainId, setCaptainId] = useState<string | null>(initial?.captainId ?? null);
-
-  // ── Predicciones ──
-  const [championTeamId, setChampionTeamId] = useState<string | null>(initial?.championTeamId ?? null);
-  const [disappointmentTeamId, setDisappointmentTeamId] = useState<string | null>(
-    initial?.disappointmentTeamId ?? null,
-  );
-  const [revelationTeamId, setRevelationTeamId] = useState<string | null>(
-    initialRevelationTeamId ?? null,
-  );
-  const [tournamentMvpId, setTournamentMvpId] = useState<string | null>(initial?.tournamentMvpId ?? null);
 
   // ── Filter state ──
   const [filterTeam, setFilterTeam] = useState<string>("all");
@@ -273,7 +229,7 @@ export function FantasyBuilderClient({
       pool = pool.filter((p) => !allStarterIds.includes(p.id));
     }
 
-    if (step === 8 || step === 9) {
+    if (step === 8) {
       return [];
     }
 
@@ -307,10 +263,6 @@ export function FantasyBuilderClient({
     if (step === 6) return forwardIds.length === formationRequirements.forwards;
     if (step === 7)
       return !!(bench.goalkeeperId && bench.defenderId && bench.midfielderId && bench.forwardId);
-    if (step === 8) {
-      const base = !!(championTeamId && disappointmentTeamId && tournamentMvpId);
-      return isLeagueTeam ? base : base && !!revelationTeamId;
-    }
     return true;
   }, [
     step,
@@ -324,18 +276,7 @@ export function FantasyBuilderClient({
     midfielderIds,
     forwardIds,
     bench,
-    championTeamId,
-    disappointmentTeamId,
-    revelationTeamId,
-    tournamentMvpId,
-    isLeagueTeam,
-    editMode,
   ]);
-
-  const squadPlayers = useMemo(() => {
-    const ids = new Set([...allStarterIds, ...allBenchIds]);
-    return players.filter((p) => ids.has(p.id));
-  }, [players, allStarterIds, allBenchIds]);
 
   // ─── Bench step — current position being selected ────────────────────────
   const [benchPositionIndex, setBenchPositionIndex] = useState(0);
@@ -352,9 +293,7 @@ export function FantasyBuilderClient({
       );
       return;
     }
-    if (step === 9) {
-      // Handled in confirmation
-    } else if (step === 3) {
+    if (step === 3) {
       setGoalkeeperId(goalkeeperId === playerId ? null : playerId);
     } else if (step === 4) {
       if (defenderIds.includes(playerId)) {
@@ -413,14 +352,6 @@ export function FantasyBuilderClient({
     if (!bench.goalkeeperId || !bench.defenderId || !bench.midfielderId || !bench.forwardId) {
       setError("Banquillo incompleto."); return;
     }
-    if (!championTeamId || !disappointmentTeamId || !tournamentMvpId) {
-      setError("Completa campeón, MVP y decepción.");
-      return;
-    }
-    if (!isLeagueTeam && !revelationTeamId) {
-      setError("Elige tu selección revelación (solo en el Fantasy global).");
-      return;
-    }
 
     // Auto-asignación de capitán por defecto al primer delantero o jugador disponible si no se asignó explícitamente
     const finalCaptainId = captainId ?? forwardIds[0] ?? midfielderIds[0] ?? goalkeeperId;
@@ -458,21 +389,11 @@ export function FantasyBuilderClient({
         return;
       }
 
-      const predResult = await saveAllPredictionsAction({
-        competitionId,
-        tournamentId,
-        leagueId,
-        championTeamId: championTeamId!,
-        tournamentMvpPlayerId: tournamentMvpId!,
-        disappointmentTeamId: disappointmentTeamId!,
-        revelationTeamId: revelationTeamId ?? "",
-      });
-      if (predResult.error) {
-        setError(predResult.error);
-        return;
+      if (editMode) {
+        router.push(leagueId ? `/fantasy/my-team?league=${leagueId}` : "/fantasy/my-team");
+      } else {
+        router.push(bolaDeCristalHref(leagueId));
       }
-
-      router.push(leagueId ? `/fantasy/my-team?league=${leagueId}` : "/fantasy/my-team");
     });
   }
 
@@ -484,12 +405,12 @@ export function FantasyBuilderClient({
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="font-medium">{config.title}</span>
-          <span className="text-[var(--muted)]">Paso {step} de 9</span>
+          <span className="text-[var(--muted)]">Paso {step} de 8</span>
         </div>
         <div className="h-2 rounded-full bg-[var(--border)]">
           <div
             className="h-2 rounded-full bg-[var(--brand)] transition-all"
-            style={{ width: `${(step / 9) * 100}%` }}
+            style={{ width: `${(step / 8) * 100}%` }}
           />
         </div>
         <p className="mt-2 text-xs text-[var(--muted)] italic">{config.hint}</p>
@@ -687,43 +608,8 @@ export function FantasyBuilderClient({
         </div>
       )}
 
+      {/* ── STEP 8: Confirmation ── */}
       {step === 8 && (
-        <FantasySquadPitchPreview
-          formation={formation}
-          teamName={teamName.trim() || undefined}
-          goalkeeperId={goalkeeperId}
-          defenderIds={defenderIds}
-          midfielderIds={midfielderIds}
-          forwardIds={forwardIds}
-          bench={bench}
-          captainId={captainId}
-          players={players}
-          nationalTeams={nationalTeams}
-        />
-      )}
-
-      {/* ── STEP 8: Predictions ── */}
-      {step === 8 && (
-        <PredictionsPanel
-          players={players}
-          nationalTeams={nationalTeams}
-          tournamentTeams={tournamentTeams}
-          squadPlayerIds={new Set(squadPlayers.map((p) => p.id))}
-          championTeamId={championTeamId}
-          disappointmentTeamId={disappointmentTeamId}
-          revelationTeamId={revelationTeamId}
-          tournamentMvpId={tournamentMvpId}
-          setChampionTeamId={setChampionTeamId}
-          setDisappointmentTeamId={setDisappointmentTeamId}
-          setRevelationTeamId={setRevelationTeamId}
-          setTournamentMvpId={setTournamentMvpId}
-          showRevelation={!isLeagueTeam}
-          leagueName={leagueName}
-        />
-      )}
-
-      {/* ── STEP 9: Confirmation ── */}
-      {step === 9 && (
         <>
           <FantasySquadPitchPreview
             formation={formation}
@@ -746,12 +632,7 @@ export function FantasyBuilderClient({
             bench={bench}
             captainId={captainId ?? forwardIds[0]}
             players={players}
-            nationalTeams={nationalTeams}
-            tournamentTeams={tournamentTeams}
-            championTeamId={championTeamId}
-            revelationTeamId={revelationTeamId}
-            disappointmentTeamId={disappointmentTeamId}
-            tournamentMvpId={tournamentMvpId}
+            leagueName={leagueName}
           />
         </>
       )}
@@ -767,7 +648,7 @@ export function FantasyBuilderClient({
           </button>
         )}
         <div className="flex-1" />
-        {step < 9 ? (
+        {step < 8 ? (
           <button
             onClick={() => {
               if (!canAdvance) {
@@ -958,154 +839,6 @@ function PlayerPickerPanel({
   );
 }
 
-// ─── PredictionsPanel ─────────────────────────────────────────────────────────
-
-interface PredictionsPanelProps {
-  players: FantasyPlayer[];
-  nationalTeams: FantasyNationalTeam[];
-  tournamentTeams: TournamentTeam[];
-  squadPlayerIds: Set<string>;
-  championTeamId: string | null;
-  disappointmentTeamId: string | null;
-  revelationTeamId: string | null;
-  tournamentMvpId: string | null;
-  setChampionTeamId: (id: string | null) => void;
-  setDisappointmentTeamId: (id: string | null) => void;
-  setRevelationTeamId: (id: string | null) => void;
-  setTournamentMvpId: (id: string | null) => void;
-  showRevelation?: boolean;
-  leagueName?: string;
-}
-
-function PredictionsPanel({
-  players,
-  nationalTeams,
-  tournamentTeams,
-  squadPlayerIds,
-  championTeamId,
-  disappointmentTeamId,
-  revelationTeamId,
-  tournamentMvpId,
-  setChampionTeamId,
-  setDisappointmentTeamId,
-  setRevelationTeamId,
-  setTournamentMvpId,
-  showRevelation = true,
-  leagueName,
-}: PredictionsPanelProps) {
-  const revelationTeams = getEligibleRevelationTeams(tournamentTeams);
-  const disappointmentTeams = getEligibleDisappointmentTeams(tournamentTeams);
-
-  const availableChampion = nationalTeams.filter(
-    (t) =>
-      t.id === championTeamId ||
-      (t.id !== disappointmentTeamId && t.id !== revelationTeamId),
-  );
-  const availableDisappointment = disappointmentTeams.filter(
-    (t) =>
-      t.id === disappointmentTeamId ||
-      (t.id !== championTeamId && t.id !== revelationTeamId),
-  );
-  const availableRevelation = revelationTeams.filter(
-    (t) =>
-      t.id === revelationTeamId ||
-      (t.id !== championTeamId && t.id !== disappointmentTeamId),
-  );
-
-  const championTeam = championTeamId
-    ? nationalTeams.find((t) => t.id === championTeamId)
-    : undefined;
-  const mvpPlayer = tournamentMvpId
-    ? players.find((p) => p.id === tournamentMvpId)
-    : undefined;
-
-  return (
-    <div className="flex flex-col gap-4">
-      {leagueName && (
-        <p className="rounded-xl border border-[var(--brand)]/20 bg-[var(--brand-soft)]/30 px-3 py-2 text-xs text-[var(--muted)]">
-          Predicciones para <strong>{leagueName}</strong>. La revelación solo se configura en tu equipo global.
-        </p>
-      )}
-      <p className="text-xs text-[var(--muted)]">
-        Campeón y MVP son predicciones clásicas. Decepción (cuota ≤ {DISAPPOINTMENT_MAX_ODDS})
-        {showRevelation
-          ? ` y revelación (tapada, cuota ≥ ${REVELATION_MIN_ODDS}) usan las cuotas del torneo.`
-          : " usa las cuotas del torneo."}
-      </p>
-
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-        <p className="mb-2 text-sm font-medium">🏆 Campeón del torneo</p>
-        {championTeam ? (
-          <NationalTeamHeroBanner
-            team={championTeam}
-            subtitle={
-              championTeam.odds !== undefined
-                ? `Cuota x${championTeam.odds.toFixed(1)}`
-                : undefined
-            }
-            onClear={() => setChampionTeamId(null)}
-          />
-        ) : (
-          <NationalTeamPickerSelect
-            name="builder-champion"
-            teams={availableChampion}
-            value={championTeamId ?? ""}
-            onChange={(id) => setChampionTeamId(id || null)}
-            placeholder="Elige campeón…"
-          />
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-        <p className="mb-2 text-sm font-medium">🌟 MVP del torneo</p>
-        {mvpPlayer ? (
-          <FantasyMvpHeroBanner player={mvpPlayer} onClear={() => setTournamentMvpId(null)} />
-        ) : (
-          <FantasyPlayerSearchPicker
-            players={players}
-            nationalTeams={nationalTeams}
-            value={tournamentMvpId}
-            onChange={setTournamentMvpId}
-            restrictToPlayerIds={squadPlayerIds}
-            hint="Elige un jugador de tu plantilla (15 jugadores)."
-            placeholder="Buscar en tu plantilla…"
-          />
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-rose-200 bg-[var(--surface)] p-4 dark:border-rose-800">
-        <p className="mb-1 text-sm font-medium">💣 Selección decepción</p>
-        <p className="mb-2 text-xs text-[var(--muted)]">Favorita que crees que no cumplirá (cuota ≤ {DISAPPOINTMENT_MAX_ODDS}).</p>
-        <PredictionTournamentTeamPicker
-          selectName="builder-disappointment"
-          options={availableDisappointment}
-          value={disappointmentTeamId ?? ""}
-          onChange={(id) => setDisappointmentTeamId(id || null)}
-          placeholder="Elige decepción…"
-          formatOdds={formatOdds}
-        />
-      </div>
-
-      {showRevelation && (
-        <div className="rounded-2xl border-2 border-amber-300 bg-[var(--surface)] p-4 dark:border-amber-700">
-          <p className="mb-1 text-sm font-semibold">⭐ Selección revelación / tapada</p>
-          <p className="mb-2 text-xs text-[var(--muted)]">
-            Underdog que puede sorprender. Solo equipos con cuota ≥ {REVELATION_MIN_ODDS}.
-          </p>
-          <PredictionTournamentTeamPicker
-            selectName="builder-revelation"
-            options={availableRevelation}
-            value={revelationTeamId ?? ""}
-            onChange={(id) => setRevelationTeamId(id || null)}
-            placeholder="Elige tu tapada…"
-            formatOdds={formatOdds}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── ConfirmationPanel ────────────────────────────────────────────────────────
 
 interface ConfirmationPanelProps {
@@ -1117,12 +850,7 @@ interface ConfirmationPanelProps {
   bench: Partial<FantasyBench>;
   captainId: string | null;
   players: FantasyPlayer[];
-  nationalTeams: FantasyNationalTeam[];
-  tournamentTeams: TournamentTeam[];
-  championTeamId?: string | null;
-  revelationTeamId?: string | null;
-  disappointmentTeamId?: string | null;
-  tournamentMvpId?: string | null;
+  leagueName?: string;
 }
 
 function ConfirmationPanel({
@@ -1134,16 +862,9 @@ function ConfirmationPanel({
   bench,
   captainId,
   players,
-  nationalTeams,
-  tournamentTeams,
-  championTeamId,
-  revelationTeamId,
-  disappointmentTeamId,
-  tournamentMvpId,
+  leagueName,
 }: ConfirmationPanelProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
-  const ntm = new Map(nationalTeams.map((t) => [t.id, t]));
-  const ttm = new Map(tournamentTeams.map((t) => [t.id, t]));
 
   const starterGroups = [
     {
@@ -1213,54 +934,11 @@ function ConfirmationPanel({
         </div>
       </div>
 
-      {/* Predictions Summary */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-          Predicciones del torneo
-        </p>
-        <div
-          className={`grid grid-cols-2 gap-3 ${
-            revelationTeamId != null ? "sm:grid-cols-4" : "sm:grid-cols-3"
-          }`}
-        >
-          <PredictionSummaryNationalTile
-            label="Campeona"
-            team={championTeamId ? ntm.get(championTeamId) : null}
-            teamId={championTeamId ?? undefined}
-          />
-          {revelationTeamId != null && (
-            <PredictionSummaryNationalTile
-              label="Revelación"
-              team={
-                revelationTeamId
-                  ? {
-                      id: revelationTeamId,
-                      name: ttm.get(revelationTeamId)?.name ?? revelationTeamId,
-                      logoUrl: ttm.get(revelationTeamId)?.crestUrl,
-                    }
-                  : null
-              }
-              teamId={revelationTeamId ?? undefined}
-            />
-          )}
-          <PredictionSummaryNationalTile
-            label="Decepción"
-            team={
-              disappointmentTeamId
-                ? {
-                    id: disappointmentTeamId,
-                    name: ttm.get(disappointmentTeamId)?.name ?? disappointmentTeamId,
-                    logoUrl: ttm.get(disappointmentTeamId)?.crestUrl,
-                  }
-                : null
-            }
-            teamId={disappointmentTeamId ?? undefined}
-          />
-          <PredictionSummaryMvpTile
-            player={tournamentMvpId ? pm.get(tournamentMvpId) : null}
-          />
-        </div>
-      </div>
+      <p className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-xs text-violet-900 dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-100">
+        Tras crear el equipo, configura campeón, MVP, decepción
+        {leagueName ? ` para ${leagueName}` : " y revelación"} en{" "}
+        <strong>Bola de cristal</strong>.
+      </p>
     </div>
   );
 }

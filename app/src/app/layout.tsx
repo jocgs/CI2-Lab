@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppBackground, type AppBackgroundId } from "@/components/AppBackground";
 import { Header } from "@/components/Header";
+import { ProfileThemeRoot, resolveProfileThemeId } from "@/components/ProfileThemeRoot";
+import { getSessionUser } from "@/lib/session";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,14 +51,23 @@ export default async function RootLayout({
   const themeCookie = cookieStore.get("tikitaka-theme")?.value;
   const themeClass = themeCookie === "dark" ? "dark" : themeCookie === "light" ? "light" : "";
 
+  const sessionUser = await getSessionUser();
+  const profileThemeCookie = cookieStore.get("tikitaka-profile-theme")?.value;
+  const profileThemeId = resolveProfileThemeId(
+    sessionUser?.profileThemeId,
+    profileThemeCookie,
+  );
+
   return (
     <html
       lang="es"
       data-app-bg={APP_BACKGROUND}
+      data-profile-theme={profileThemeId}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased${themeClass ? ` ${themeClass}` : ""}`}
       suppressHydrationWarning
     >
       <body className="relative min-h-full flex flex-col">
+        <ProfileThemeRoot themeId={profileThemeId} />
         <AppBackground variant={APP_BACKGROUND} />
         {!isLoginPage && (
           <div className="relative z-10">

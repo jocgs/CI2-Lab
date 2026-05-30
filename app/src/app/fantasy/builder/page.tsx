@@ -8,8 +8,6 @@ import {
   getFantasyTeamForLeague,
   getGlobalFantasyTeam,
 } from "@/lib/fantasy-db";
-import { MOCK_TOURNAMENT, MOCK_TOURNAMENT_TEAMS } from "@/lib/mocks/tournament-teams";
-import { getUserTournamentPicks } from "@/lib/picks-db";
 import { isFantasyTeamEditable } from "@/lib/fantasy-lock";
 import { FantasyBuilderClient } from "./FantasyBuilderClient";
 
@@ -31,7 +29,6 @@ export default async function FantasyBuilderPage({ searchParams }: Props) {
 
   let leagueName: string | undefined;
   let existingTeam = null;
-  let initialRevelationTeamId: string | null = null;
 
   if (leagueId) {
     const league = await getFantasyLeagueById(leagueId);
@@ -42,8 +39,6 @@ export default async function FantasyBuilderPage({ searchParams }: Props) {
     leagueName = league.name;
   } else {
     existingTeam = await getGlobalFantasyTeam(user.id, COMPETITION_ID);
-    const myPicks = await getUserTournamentPicks(user.id, MOCK_TOURNAMENT.id);
-    initialRevelationTeamId = myPicks?.revelationTeamId ?? null;
   }
 
   const myTeamHref = leagueId ? `/fantasy/my-team?league=${leagueId}` : "/fantasy/my-team";
@@ -72,7 +67,7 @@ export default async function FantasyBuilderPage({ searchParams }: Props) {
               : "Crear equipo · Fantasy global"}
         </h1>
         <p className="text-sm text-[var(--muted)]">
-          Mundial 2026 · 9 pasos
+          Mundial 2026 · 8 pasos
           {isEditMode && (
             <>
               {" "}
@@ -83,20 +78,17 @@ export default async function FantasyBuilderPage({ searchParams }: Props) {
             </>
           )}
           {!isEditMode && leagueId && " — Este once compite solo en tu liga."}
-          {!isEditMode && !leagueId && " — Ranking general y predicciones con revelación."}
+          {!isEditMode && !leagueId && " — Ranking global. Las predicciones están en Bola de cristal."}
         </p>
       </div>
       <FantasyBuilderClient
         players={players}
         nationalTeams={nationalTeams}
-        tournamentTeams={MOCK_TOURNAMENT_TEAMS}
-        tournamentId={MOCK_TOURNAMENT.id}
         competitionId={COMPETITION_ID}
         leagueId={leagueId ?? null}
         leagueName={leagueName}
         existingTeam={existingTeam}
         editMode={isEditMode}
-        initialRevelationTeamId={initialRevelationTeamId}
       />
     </div>
   );

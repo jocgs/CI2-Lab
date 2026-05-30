@@ -103,3 +103,8 @@ export const SHOP_AVATARS: ShopAvatar[] = [
 export function getShopAvatarById(id: string): ShopAvatar | undefined {
   return SHOP_AVATARS.find((a) => a.id === id);
 }
+
+/** Total de mascotas en catálogo (para logros de colección). */
+export function getTotalShopAvatarsCount(): number {
+  return SHOP_AVATARS.length;
+}

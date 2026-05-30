@@ -4,7 +4,8 @@ export type AchievementCategory =
   | "friends"
   | "groups"
   | "ranking"
-  | "fantasy";
+  | "fantasy"
+  | "collectibles";
 
 export interface AchievementDefinition {
   id: string;

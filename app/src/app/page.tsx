@@ -71,7 +71,7 @@ export default async function HomePage() {
           src="https://videos.pexels.com/video-files/2657257/2657257-uhd_2560_1440_24fps.mp4"
         />
         {/* Overlay con gradiente de marca */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-strong)]/90 via-[var(--brand)]/80 to-emerald-500/85" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-strong)]/90 via-[var(--brand)]/80 to-[var(--brand-soft)]/90" />
 
         {/* Balón decorativo — humor según historial de porras */}
         <div

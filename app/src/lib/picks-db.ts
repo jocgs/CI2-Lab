@@ -27,6 +27,52 @@ export async function getUserTournamentPicks(
   return pick ? toPublic(pick) : null;
 }
 
+export type BolaDeCristalPicksPayload = Pick<
+  UserTournamentPicks,
+  | "revelationTeamId"
+  | "ballonDOrPlayerId"
+  | "goldenBootPlayerId"
+  | "goldenGlovePlayerId"
+  | "bestYoungPlayerId"
+  | "topAssistPlayerId"
+  | "bestGoalTeamId"
+  | "bestGroupStageTeamId"
+  | "worstGroupStageTeamId"
+  | "bestNonUefaConmebolTeamId"
+>;
+
+/** Guarda o actualiza todos los premios globales de Bola de cristal. */
+export async function saveBolaDeCristalPicks(data: {
+  userId: string;
+  tournamentId: string;
+  picks: BolaDeCristalPicksPayload;
+}): Promise<UserTournamentPicks> {
+  const now = new Date().toISOString();
+  const id = pickId(data.userId, data.tournamentId);
+  const existing = await store.getById<StoredPick>(COLLECTION, id);
+
+  if (existing) {
+    await store.patch(COLLECTION, id, {
+      ...data.picks,
+      updatedAt: now,
+    });
+    return toPublic({ ...existing, ...data.picks, updatedAt: now });
+  }
+
+  const newPick: StoredPick = {
+    id,
+    userId: data.userId,
+    tournamentId: data.tournamentId,
+    disappointmentTeamId: null,
+    createdAt: now,
+    updatedAt: now,
+    ...data.picks,
+  };
+  await store.insert(COLLECTION, newPick);
+  return toPublic(newPick);
+}
+
+/** Solo actualiza la revelación (p. ej. formulario legacy en /picks). */
 export async function saveUserTournamentPicks(data: {
   userId: string;
   tournamentId: string;
@@ -44,17 +90,22 @@ export async function saveUserTournamentPicks(data: {
     return toPublic({ ...existing, revelationTeamId: data.revelationTeamId, updatedAt: now });
   }
 
-  const newPick: StoredPick = {
-    id,
+  return saveBolaDeCristalPicks({
     userId: data.userId,
     tournamentId: data.tournamentId,
-    revelationTeamId: data.revelationTeamId,
-    disappointmentTeamId: null,
-    createdAt: now,
-    updatedAt: now,
-  };
-  await store.insert(COLLECTION, newPick);
-  return toPublic(newPick);
+    picks: {
+      revelationTeamId: data.revelationTeamId,
+      ballonDOrPlayerId: null,
+      goldenBootPlayerId: null,
+      goldenGlovePlayerId: null,
+      bestYoungPlayerId: null,
+      topAssistPlayerId: null,
+      bestGoalTeamId: null,
+      bestGroupStageTeamId: null,
+      worstGroupStageTeamId: null,
+      bestNonUefaConmebolTeamId: null,
+    },
+  });
 }
 
 export async function getAllPicksByTournament(
