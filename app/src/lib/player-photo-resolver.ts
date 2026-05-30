@@ -9,6 +9,15 @@ export function isPlaceholderPhotoUrl(url: string | undefined): boolean {
   return u.includes("images.fifa.com") || u.includes("example.com");
 }
 
+function safePlayerId(playerId: string): string {
+  return playerId.replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+/** Ruta estática si la foto ya está en public/imagenes/players/. */
+export function getPlayerPhotoStaticPath(playerId: string): string {
+  return `/imagenes/players/${safePlayerId(playerId)}.jpg`;
+}
+
 /** Ruta del proxy interno que resuelve y cachea la foto. */
 export function getPlayerPhotoProxyPath(playerId: string): string {
   return `/api/player-photo/${encodeURIComponent(playerId)}`;
