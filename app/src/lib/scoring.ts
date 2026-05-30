@@ -127,3 +127,42 @@ export function computeStreak(userId: string, bets: Bet[], matches: Match[]): Us
 
   return { userId, current, best };
 }
+
+/**
+ * Mayor racha de aciertos de resultado (1X2) en partidos consecutivos del mismo club.
+ * Cuenta porras ganadas (acierto de signo o marcador exacto) en partidos FINISHED ordenados por fecha.
+ */
+export function maxConsecutiveTeamOutcomeStreak(
+  userId: string,
+  bets: Bet[],
+  matches: Match[],
+  teamIds: string[],
+): number {
+  const matchById = new Map(matches.map((m) => [m.id, m]));
+  let bestOverall = 0;
+
+  for (const teamId of teamIds) {
+    const teamMatches = matches
+      .filter(
+        (m) =>
+          m.status === "FINISHED" &&
+          (m.homeTeamId === teamId || m.awayTeamId === teamId),
+      )
+      .sort(
+        (a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime(),
+      );
+
+    let streak = 0;
+    for (const match of teamMatches) {
+      const bet = bets.find((b) => b.userId === userId && b.matchId === match.id);
+      if (bet && bet.status === "WON") {
+        streak += 1;
+        bestOverall = Math.max(bestOverall, streak);
+      } else {
+        streak = 0;
+      }
+    }
+  }
+
+  return bestOverall;
+}

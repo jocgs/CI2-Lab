@@ -14,6 +14,8 @@ interface FantasyMvpHeroBannerProps {
   className?: string;
   onClear?: () => void;
   clearLabel?: string;
+  /** Etiqueta superior (p. ej. Balón de oro, Bota de oro). */
+  title?: string;
 }
 
 export function FantasyMvpHeroBanner({
@@ -21,6 +23,7 @@ export function FantasyMvpHeroBanner({
   className,
   onClear,
   clearLabel = "Cambiar",
+  title = "MVP del torneo",
 }: FantasyMvpHeroBannerProps) {
   return (
     <div
@@ -31,7 +34,7 @@ export function FantasyMvpHeroBanner({
     >
       <div className="flex min-w-0 flex-1 flex-col justify-end gap-1 p-4 pr-2">
         <p className="text-xs font-medium uppercase tracking-wide text-[var(--brand-strong)]">
-          MVP del torneo
+          {title}
         </p>
         <p className="truncate text-xl font-semibold leading-tight">{player.name}</p>
         <p className="text-sm text-[var(--muted)]">

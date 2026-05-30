@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Revelación y predicciones especiales viven en Fantasy → Mi equipo. */
+/** Revelación y predicciones del torneo viven en Bola de cristal. */
 export default function PicksPage() {
-  redirect("/fantasy/my-team");
+  redirect("/fantasy/bola-de-cristal");
 }

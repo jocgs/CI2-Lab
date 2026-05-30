@@ -178,6 +178,7 @@ export function updateUserProfile(
     avatarUrl?: string | null;
     supportedNationalTeamId?: string | null;
     supportedTeamIds?: string[];
+    profileThemeId?: string | null;
   },
 ): User {
   const user = getUserById(userId);
@@ -186,6 +187,9 @@ export function updateUserProfile(
   user.avatarUrl = input.avatarUrl?.trim() || undefined;
   user.supportedNationalTeamId = input.supportedNationalTeamId?.trim() || undefined;
   user.supportedTeamIds = (input.supportedTeamIds ?? []).filter(Boolean);
+  if (input.profileThemeId !== undefined) {
+    user.profileThemeId = input.profileThemeId?.trim() || "default";
+  }
 
   return user;
 }

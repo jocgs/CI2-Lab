@@ -79,6 +79,10 @@ export interface User {
   unlockedAvatarIds?: ID[];
   /** ID del avatar de tienda activo (si null, se usa avatarUrl). */
   activeAvatarId?: ID | null;
+  /** Veces que ha quedado 1º en el ranking de un grupo (al tomar el liderato). */
+  groupLeaderWinCount?: number;
+  /** Degradado del banner de perfil (`default`, `red`, `navy`, …). */
+  profileThemeId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +114,8 @@ export interface Group {
    */
   memberJoinedAt?: Record<ID, string>;
   createdAt: string;
+  /** Último usuario que lideraba el ranking (para detectar cambios de liderato). */
+  lastLeaderId?: ID;
 }
 
 // ---------------------------------------------------------------------------

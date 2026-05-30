@@ -3,19 +3,26 @@ import type {
   FantasyPlayer,
   FantasyNationalTeam,
 } from "@/types/fantasy";
-import { resolveFormationFromEleven } from "@/lib/fantasy-formations";
+import { getFormationLabel, resolveFormationFromEleven } from "@/lib/fantasy-formations";
 import { FantasySquadPitchPreview } from "@/components/fantasy/FantasySquadPitchPreview";
+import type { UserTournamentPicks } from "@/types/picks";
+import { BolaDeCristalAwardsSummary } from "@/components/fantasy/BolaDeCristalAwardsSummary";
 
 interface FantasyTeamDisplayProps {
   fantasyTeam: FantasyTeam;
   players: FantasyPlayer[];
   nationalTeams: FantasyNationalTeam[];
+  tournamentPicks?: UserTournamentPicks | null;
+  /** Vista de liga: resumen reducido de Bola de cristal. */
+  leagueView?: boolean;
 }
 
 export function FantasyTeamDisplay({
   fantasyTeam,
   players,
   nationalTeams,
+  tournamentPicks = null,
+  leagueView = false,
 }: FantasyTeamDisplayProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
   const { startingEleven: se, bench, captainId } = fantasyTeam;
@@ -64,6 +71,22 @@ export function FantasyTeamDisplay({
             </span>
           )}
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Bola de cristal
+        </p>
+        <BolaDeCristalAwardsSummary
+          fantasyTeam={fantasyTeam}
+          picks={tournamentPicks}
+          players={players}
+          nationalTeams={nationalTeams}
+          leagueView={leagueView}
+        />
+        <p className="mt-3 text-[10px] text-[var(--muted)]">
+          Formación registrada: {getFormationLabel(formation)}
+        </p>
       </div>
     </div>
   );

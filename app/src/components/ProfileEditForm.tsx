@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { NationalTeamPickerSelect } from "@/components/fantasy/NationalTeamPickerSelect";
 import { useState, useTransition } from "react";
 import { saveProfileAction } from "@/app/profile/actions";
+import { ProfileThemePicker } from "@/components/profile/ProfileThemePicker";
 import { TeamPickerSelect } from "@/components/TeamPickerSelect";
 
 interface Team {
@@ -21,6 +22,7 @@ interface NationalTeam {
 }
 
 interface ProfileEditFormProps {
+  profileThemeId?: string | null;
   supportedNationalTeamId: string | null;
   supportedTeamIds: string[];
   teams: Team[];
@@ -142,6 +144,7 @@ function buildProfileFormData(
 }
 
 export function ProfileEditForm({
+  profileThemeId = "default",
   supportedNationalTeamId,
   supportedTeamIds,
   teams,
@@ -179,8 +182,8 @@ export function ProfileEditForm({
           setError(result.error);
           return;
         }
-        setSuccess("Perfil guardado correctamente");
         if (avatarInput) avatarInput.value = "";
+        router.push("/profile");
         router.refresh();
       });
     });
@@ -201,6 +204,8 @@ export function ProfileEditForm({
           «Más compatible» en Ajustes → Cámara.
         </span>
       </label>
+
+      <ProfileThemePicker defaultThemeId={profileThemeId} />
 
       <label className="flex flex-col gap-2 text-sm">
         <span className="font-medium">Selección favorita</span>
