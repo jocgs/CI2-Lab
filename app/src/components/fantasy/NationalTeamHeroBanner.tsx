@@ -1,5 +1,6 @@
 import type { NationalTeamCrestTeam } from "@/components/fantasy/NationalTeamCrest";
-import { getNationalTeamCrestUrl, getNationalTeamInitials } from "@/lib/national-team-crests";
+import { NationalTeamCrestImage } from "@/components/fantasy/NationalTeamCrestImage";
+import { getNationalTeamCrestUrl } from "@/lib/national-team-crests";
 import { clsx } from "@/lib/utils";
 
 interface NationalTeamHeroBannerProps {
@@ -29,18 +30,14 @@ export function NationalTeamHeroBanner({
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--surface)] via-[var(--background)] to-[var(--brand-soft)]/20" />
 
       <div className="absolute inset-0 flex items-center justify-center p-8">
-        {src ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={src}
-            alt={team.name}
-            className="max-h-full max-w-full object-contain drop-shadow-lg"
-          />
-        ) : (
-          <span className="text-4xl font-bold text-[var(--muted)]">
-            {getNationalTeamInitials(team.name)}
-          </span>
-        )}
+        <NationalTeamCrestImage
+          teamId={team.id}
+          teamName={team.name}
+          src={src}
+          priority
+          imgClassName="max-h-full max-w-full drop-shadow-lg"
+          fallbackClassName="text-4xl"
+        />
       </div>
 
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/40 to-transparent px-4 pb-3 pt-10">

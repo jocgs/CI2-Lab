@@ -1,7 +1,7 @@
 "use client";
 
-import type { NationalTeamCrestTeam } from "@/components/fantasy/NationalTeamCrest";
-import { getNationalTeamCrestUrl, getNationalTeamInitials } from "@/lib/national-team-crests";
+import { NationalTeamCrestImage } from "@/components/fantasy/NationalTeamCrestImage";
+import { getNationalTeamCrestUrl } from "@/lib/national-team-crests";
 import { clsx } from "@/lib/utils";
 
 interface PickOption {
@@ -24,10 +24,6 @@ function teamCrestSrc(team: PickOption): string | undefined {
   return team.logoUrl ?? team.crestUrl ?? getNationalTeamCrestUrl(team.id);
 }
 
-function toCrestTeam(team: PickOption): NationalTeamCrestTeam {
-  return { id: team.id, name: team.name, logoUrl: teamCrestSrc(team) };
-}
-
 export function NationalTeamPickGrid({
   options,
   value,
@@ -40,7 +36,6 @@ export function NationalTeamPickGrid({
       {options.map((t) => {
         const isSelected = t.id === value;
         const src = teamCrestSrc(t);
-        const crestTeam = toCrestTeam(t);
 
         return (
           <button
@@ -58,23 +53,18 @@ export function NationalTeamPickGrid({
             )}
           >
             <div className="absolute inset-0 bg-gradient-to-b from-[var(--surface)] to-[var(--background)]" />
-            <div className="absolute inset-2 bottom-8 flex items-center justify-center">
-              {src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={src}
-                  alt={crestTeam.name}
-                  className="max-h-full max-w-full object-contain"
-                />
-              ) : (
-                <span className="text-lg font-bold text-[var(--muted)]">
-                  {getNationalTeamInitials(t.name)}
-                </span>
-              )}
+            <div className="absolute inset-2 bottom-10 flex items-center justify-center">
+              <NationalTeamCrestImage
+                teamId={t.id}
+                teamName={t.name}
+                src={src}
+                imgClassName="max-h-full max-w-full"
+                fallbackClassName="text-lg"
+              />
             </div>
             <div className="absolute inset-x-0 bottom-0 bg-black/55 px-1 py-1.5 text-center">
-              <p className="truncate text-[10px] font-medium leading-tight text-white">
-                {t.name.split(" ")[0]}
+              <p className="line-clamp-2 text-[9px] font-medium leading-tight text-white">
+                {t.name}
               </p>
               {t.marketOdds !== undefined && (
                 <p className="text-[9px] tabular-nums text-white/75">

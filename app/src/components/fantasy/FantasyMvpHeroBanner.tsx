@@ -40,7 +40,7 @@ export function FantasyMvpHeroBanner({
       </div>
 
       <div className="relative flex w-[42%] max-w-[9.5rem] shrink-0 items-end justify-center bg-gradient-to-l from-[var(--brand)]/10 to-transparent p-3">
-        <PlayerAvatar player={player} size={112} className="ring-4 ring-white/80 shadow-lg" />
+        <PlayerAvatar player={player} size={112} priority className="ring-4 ring-white/80 shadow-lg" />
       </div>
 
       {onClear && (

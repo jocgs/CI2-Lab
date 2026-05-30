@@ -17,6 +17,7 @@ import {
   getFantasyLockAt,
 } from "@/lib/fantasy-lock";
 import { FantasyTeamDisplay } from "@/components/fantasy/FantasyTeamDisplay";
+import { getFormationLabel, resolveFormationFromEleven } from "@/lib/fantasy-formations";
 import { PredictionsForm } from "./PredictionsForm";
 import { EmptyState } from "@/components/ui";
 
@@ -163,46 +164,39 @@ export default async function MyFantasyTeamPage({ searchParams }: Props) {
         fantasyTeam={fantasyTeam}
         players={players}
         nationalTeams={nationalTeams}
-        revelationTeamId={!isLeagueView ? (myPicks?.revelationTeamId ?? null) : undefined}
       />
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-        <h2 className="mb-1 text-base font-semibold">🔮 Predicciones del torneo</h2>
-        <p className="mb-5 text-xs text-[var(--muted)]">
-          {isLeagueView
-            ? "Campeón, MVP y decepción para esta liga. La revelación se gestiona en tu equipo global."
-            : "Campeón, MVP, decepción y selección revelación (tapada)."}
-        </p>
-        {(() => {
-          const { startingEleven: se, bench: b } = fantasyTeam;
-          const squadIds = new Set([
-            se.goalkeeperId,
-            ...se.defenderIds,
-            ...se.midfielderIds,
-            ...se.forwardIds,
-            b.goalkeeperId,
-            b.defenderId,
-            b.midfielderId,
-            b.forwardId,
-          ]);
-          const squadPlayers = players.filter((p) => squadIds.has(p.id));
-          return (
-            <PredictionsForm
-              fantasyTeam={fantasyTeam}
-              allPlayers={players}
-              nationalTeams={nationalTeams}
-              squadPlayers={squadPlayers}
-              tournamentTeams={MOCK_TOURNAMENT_TEAMS}
-              existingPicks={myPicks}
-              competitionId={COMPETITION_ID}
-              tournamentId={MOCK_TOURNAMENT.id}
-              leagueId={leagueId ?? null}
-              picksLocked={picksLocked}
-              showRevelation={!isLeagueView}
-            />
-          );
-        })()}
-      </div>
+      {(() => {
+        const { startingEleven: se, bench: b } = fantasyTeam;
+        const formation = resolveFormationFromEleven(se);
+        const squadIds = new Set([
+          se.goalkeeperId,
+          ...se.defenderIds,
+          ...se.midfielderIds,
+          ...se.forwardIds,
+          b.goalkeeperId,
+          b.defenderId,
+          b.midfielderId,
+          b.forwardId,
+        ]);
+        const squadPlayers = players.filter((p) => squadIds.has(p.id));
+        return (
+          <PredictionsForm
+            fantasyTeam={fantasyTeam}
+            allPlayers={players}
+            nationalTeams={nationalTeams}
+            squadPlayers={squadPlayers}
+            tournamentTeams={MOCK_TOURNAMENT_TEAMS}
+            existingPicks={myPicks}
+            competitionId={COMPETITION_ID}
+            tournamentId={MOCK_TOURNAMENT.id}
+            leagueId={leagueId ?? null}
+            picksLocked={picksLocked}
+            showRevelation={!isLeagueView}
+            footerNote={`Formación registrada: ${getFormationLabel(formation)}`}
+          />
+        );
+      })()}
     </div>
   );
 }

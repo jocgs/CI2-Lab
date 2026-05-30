@@ -43,7 +43,7 @@ function PitchSlot({
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="relative">
-        <PlayerAvatar player={player} size={compact ? 36 : 44} className="ring-2 ring-white/30" />
+        <PlayerAvatar player={player} size={compact ? 36 : 44} priority className="ring-2 ring-white/30" />
         {isCaptain && (
           <span className="absolute -top-1 -right-1 text-sm leading-none drop-shadow">⭐</span>
         )}
@@ -56,7 +56,7 @@ function PitchSlot({
       >
         {player.name}
       </span>
-      {nt && <NationalTeamCrest team={nt} size={14} />}
+      {nt && <NationalTeamCrest team={nt} size={14} priority />}
     </div>
   );
 }
@@ -190,7 +190,7 @@ export function FantasySquadPitchPreview({
               <div key={i} className="flex flex-col items-center gap-1">
                 {p ? (
                   <>
-                    <PlayerAvatar player={p} size={32} />
+                    <PlayerAvatar player={p} size={32} priority />
                     <span className="max-w-[64px] truncate text-[10px] font-medium">{p.name}</span>
                   </>
                 ) : (

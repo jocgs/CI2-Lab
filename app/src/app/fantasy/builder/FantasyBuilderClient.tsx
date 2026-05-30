@@ -642,7 +642,7 @@ export function FantasyBuilderClient({
                   >
                     <div className="flex flex-col items-center gap-1">
                       {player ? (
-                        <PlayerAvatar player={player} size={40} />
+                        <PlayerAvatar player={player} size={40} priority />
                       ) : (
                         <span className="grid h-10 w-10 place-items-center rounded-full border border-dashed border-[var(--border)] text-[10px] text-[var(--muted)]">
                           —
@@ -923,7 +923,10 @@ function PlayerPickerPanel({
                   )}
                 >
                   <NationalTeamCrest team={team} size={14} className="inline-flex" />
-                  {team.name.split(" ")[0]} {count}/3{full ? " 🔴" : ""}
+                  <span className="max-w-[5.5rem] truncate" title={team.name}>
+                    {team.name}
+                  </span>{" "}
+                  {count}/3{full ? " 🔴" : ""}
                 </span>
               );
             })}
@@ -1180,7 +1183,7 @@ function ConfirmationPanel({
                 if (!p) return null;
                 return (
                   <div key={id} className="flex items-center gap-2 py-1 text-sm">
-                    <PlayerAvatar player={p} size={28} />
+                    <PlayerAvatar player={p} size={28} priority />
                     <span className="truncate">{p.name}</span>
                     {id === captainId && <span className="text-xs">⭐ Capitán</span>}
                   </div>

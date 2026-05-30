@@ -3,37 +3,23 @@ import type {
   FantasyPlayer,
   FantasyNationalTeam,
 } from "@/types/fantasy";
-import { getFormationLabel, resolveFormationFromEleven } from "@/lib/fantasy-formations";
+import { resolveFormationFromEleven } from "@/lib/fantasy-formations";
 import { FantasySquadPitchPreview } from "@/components/fantasy/FantasySquadPitchPreview";
-import {
-  PredictionSummaryMvpTile,
-  PredictionSummaryNationalTile,
-} from "@/components/fantasy/PredictionSummaryTile";
 
 interface FantasyTeamDisplayProps {
   fantasyTeam: FantasyTeam;
   players: FantasyPlayer[];
   nationalTeams: FantasyNationalTeam[];
-  /** Si se omite, no se muestra la casilla de revelación (vista de liga). */
-  revelationTeamId?: string | null;
 }
 
 export function FantasyTeamDisplay({
   fantasyTeam,
   players,
   nationalTeams,
-  revelationTeamId,
 }: FantasyTeamDisplayProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
-  const ntMap = new Map(nationalTeams.map((t) => [t.id, t]));
   const { startingEleven: se, bench, captainId } = fantasyTeam;
   const formation = resolveFormationFromEleven(se);
-
-  const mvpPlayer = fantasyTeam.tournamentMvpPlayerId
-    ? pm.get(fantasyTeam.tournamentMvpPlayerId)
-    : undefined;
-
-  const showRevelation = revelationTeamId !== undefined;
 
   const missingIds = [
     se.goalkeeperId,
@@ -78,39 +64,6 @@ export function FantasyTeamDisplay({
             </span>
           )}
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-          Predicciones del torneo
-        </p>
-        <div
-          className={`grid grid-cols-2 gap-3 ${
-            showRevelation ? "sm:grid-cols-4" : "sm:grid-cols-3"
-          }`}
-        >
-          <PredictionSummaryNationalTile
-            label="Campeona"
-            team={ntMap.get(fantasyTeam.championTeamId ?? "") ?? null}
-            teamId={fantasyTeam.championTeamId}
-          />
-          {showRevelation && (
-            <PredictionSummaryNationalTile
-              label="Revelación"
-              team={ntMap.get(revelationTeamId ?? "") ?? null}
-              teamId={revelationTeamId ?? undefined}
-            />
-          )}
-          <PredictionSummaryNationalTile
-            label="Decepción"
-            team={ntMap.get(fantasyTeam.disappointmentTeamId ?? "") ?? null}
-            teamId={fantasyTeam.disappointmentTeamId}
-          />
-          <PredictionSummaryMvpTile player={mvpPlayer} />
-        </div>
-        <p className="mt-3 text-[10px] text-[var(--muted)]">
-          Formación registrada: {getFormationLabel(formation)}
-        </p>
       </div>
     </div>
   );
