@@ -115,6 +115,8 @@ export interface FantasySquadPitchPreviewProps {
   nationalTeams: FantasyNationalTeam[];
   compact?: boolean;
   showBench?: boolean;
+  totalPoints?: number;
+  locked?: boolean;
 }
 
 export function FantasySquadPitchPreview({
@@ -130,6 +132,8 @@ export function FantasySquadPitchPreview({
   nationalTeams,
   compact = false,
   showBench = true,
+  totalPoints,
+  locked = false,
 }: FantasySquadPitchPreviewProps) {
   const pm = new Map(players.map((p) => [p.id, p]));
   const req = getFormationRequirements(formation);
@@ -153,18 +157,35 @@ export function FantasySquadPitchPreview({
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
       <div className="border-b border-[var(--border)] bg-[var(--brand-soft)] px-4 py-2.5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
             {teamName && (
               <p className="truncate font-semibold text-[var(--brand-strong)]">{teamName}</p>
             )}
             <p className="text-xs text-[var(--muted)]">
-              Formación <span className="font-semibold text-[var(--foreground)]">{getFormationLabel(formation)}</span>
+              Formación{" "}
+              <span className="font-semibold text-[var(--foreground)]">
+                {getFormationLabel(formation)}
+              </span>
             </p>
           </div>
-          <span className="rounded-full bg-[var(--brand)] px-2.5 py-0.5 text-xs font-bold text-white">
-            {getFormationLabel(formation)}
-          </span>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            {totalPoints !== undefined && (
+              <span className="rounded-lg bg-[var(--brand)] px-2.5 py-1 text-sm font-bold tabular-nums text-white">
+                {totalPoints} pts
+              </span>
+            )}
+            {locked && (
+              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-900 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-100">
+                🔒 Bloqueado
+              </span>
+            )}
+            {totalPoints === undefined && (
+              <span className="rounded-full bg-[var(--brand)] px-2.5 py-0.5 text-xs font-bold text-white">
+                {getFormationLabel(formation)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
