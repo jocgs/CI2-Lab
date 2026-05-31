@@ -59,7 +59,7 @@ function AchievementDetailModal({
             className={clsx(
               "grid h-20 w-20 place-items-center rounded-2xl",
               unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--background)]",
-              !unlocked && definition.id !== "streak_10" && "grayscale",
+              !unlocked && "grayscale",
             )}
           >
             <AchievementEmoji
@@ -141,7 +141,7 @@ function AchievementTile({
       <AchievementEmoji
         achievementId={achievement.definition.id}
         emoji={achievement.definition.emoji}
-        className={!achievement.unlocked && achievement.definition.id !== "streak_10" ? "grayscale" : undefined}
+        className={!achievement.unlocked ? "grayscale" : undefined}
       />
       <span className="line-clamp-2 text-[10px] font-semibold leading-tight sm:text-xs">
         {achievement.definition.title}
@@ -306,7 +306,7 @@ function AchievementCard({
           className={clsx(
             "grid h-16 w-16 place-items-center rounded-2xl",
             unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--surface)]",
-            !unlocked && definition.id !== "streak_10" && "grayscale",
+            !unlocked && "grayscale",
           )}
         >
           <AchievementEmoji achievementId={definition.id} emoji={definition.emoji} size="md" />
@@ -344,7 +344,7 @@ function AchievementCard({
             className={clsx(
               "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
               unlocked ? "bg-[var(--brand)]/20" : "bg-[var(--surface)]",
-              !unlocked && definition.id !== "streak_10" && "grayscale",
+              !unlocked && "grayscale",
             )}
           >
             <AchievementEmoji achievementId={definition.id} emoji={definition.emoji} size="sm" />

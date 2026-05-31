@@ -16,16 +16,23 @@ import { MatchCard } from "@/components/MatchCard";
 import { Badge, Card, SectionTitle } from "@/components/ui";
 import { formatBetPrediction } from "@/lib/scoring";
 import { formatKickoff } from "@/lib/utils";
+import { getMatchSyncStatus, WORLD_CUP_COMPETITION_ID } from "@/lib/match-sync";
+import { filterDisplayMatches } from "@/lib/match-display";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
-  const [streak, userBets, upcoming, finished, groups] = await Promise.all([
+  const [streak, userBets, upcoming, finished, groups, syncStatus] = await Promise.all([
     getStreakForUser(user.id),
     getBetsForUser(user.id),
     getUpcomingMatches(),
     getFinishedMatches(),
     getGroupsForUser(user.id),
+    getMatchSyncStatus(),
   ]);
+
+  const upcomingForHome = filterDisplayMatches(upcoming, {
+    competitionId: syncStatus.enabled ? WORLD_CUP_COMPETITION_ID : undefined,
+  });
 
   const recentBets = userBets
     .slice()
@@ -35,7 +42,7 @@ export default async function HomePage() {
   const recent = finished.slice(-3).reverse();
 
   const pendingBetsCount = await Promise.all(
-    upcoming.map((m) => getBetForUserAndMatch(user.id, m.id))
+    upcomingForHome.map((m) => getBetForUserAndMatch(user.id, m.id))
   ).then((bets) => bets.filter((b) => !b).length);
 
   const totalPoints = userBets
@@ -43,7 +50,7 @@ export default async function HomePage() {
     .reduce((acc, b) => acc + b.points, 0);
 
   const upcomingWithBets = await Promise.all(
-    upcoming.slice(0, 3).map(async (match) => ({
+    upcomingForHome.slice(0, 3).map(async (match) => ({
       match,
       userBet: await getBetForUserAndMatch(user.id, match.id),
     }))

@@ -10,25 +10,38 @@ interface Props {
   selectedCompetition: string;
   selectedTeam: string;
   tab: string;
+  /** true si la URL incluye ?competition= (aunque esté vacío = todas). */
+  competitionInUrl: boolean;
 }
 
-export function MatchFilters({ competitions, teams, selectedCompetition, selectedTeam, tab }: Props) {
+export function MatchFilters({
+  competitions,
+  teams,
+  selectedCompetition,
+  selectedTeam,
+  tab,
+  competitionInUrl,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   function update(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
+    if (key === "competition") {
+      params.set("competition", value);
+      params.delete("team");
+    } else if (key === "team") {
+      if (value) {
+        params.set("team", value);
+      } else {
+        params.delete("team");
+      }
+      params.delete("competition");
     }
-    if (key === "team") params.delete("competition");
-    if (key === "competition") params.delete("team");
     router.push(`/matches?${params.toString()}`);
   }
 
-  const hasFilter = selectedCompetition || selectedTeam;
+  const hasFilter = Boolean(selectedTeam) || (competitionInUrl && selectedCompetition !== "");
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -60,7 +73,7 @@ export function MatchFilters({ competitions, teams, selectedCompetition, selecte
 
       {hasFilter && (
         <Link
-          href={`/matches?tab=${tab}`}
+          href={`/matches?tab=${tab}&competition=`}
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--brand)] hover:text-[var(--brand-strong)] transition-colors"
         >
           ✕ Quitar filtros

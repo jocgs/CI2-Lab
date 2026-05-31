@@ -1,22 +1,19 @@
 /**
  * Cliente para football-data.org v4 (free tier).
- * Competiciones gratuitas usadas: LaLiga (PD) y Champions League (CL).
+ * Sincronización centrada en el Mundial 2026 (1 llamada = toda la temporada).
  */
 
-import type { Competition, Match, MatchResult, Team } from "@/types/domain";
+import type { Competition, Match, MatchResult, Outcome, Team } from "@/types/domain";
 
 const BASE_URL = "https://api.football-data.org/v4";
 
-// Competiciones por ventana de fechas (máx 10 días en free tier)
-const DATE_RANGE_CODES = ["PD", "CL"] as const;
-
-// Competiciones que se obtienen por estado (sin límite de fechas)
-const STATUS_CODES = ["WC"] as const;
+const WORLD_CUP_CODE = "WC";
+const WORLD_CUP_SEASON = 2026;
+const CHAMPIONS_LEAGUE_CODE = "CL";
 
 const COMPETITION_META: Record<string, { name: string; shortName: string }> = {
-  PD: { name: "LaLiga EA Sports", shortName: "LaLiga" },
-  CL: { name: "UEFA Champions League", shortName: "UCL" },
   WC: { name: "FIFA World Cup 2026", shortName: "Mundial" },
+  CL: { name: "UEFA Champions League", shortName: "UCL" },
 };
 
 // ---------------------------------------------------------------------------
@@ -42,7 +39,9 @@ interface FdMatch {
   status: string;
   score: {
     winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null;
+    duration?: string;
     fullTime: { home: number | null; away: number | null };
+    regularTime?: { home: number | null; away: number | null };
   };
 }
 
@@ -72,11 +71,34 @@ function mapStatus(fdStatus: string): "SCHEDULED" | "LIVE" | "FINISHED" | null {
     case "FINISHED":
       return "FINISHED";
     default:
-      return null; // POSTPONED, CANCELLED, SUSPENDED → ignorar
+      return null;
   }
 }
 
-function mapOutcome(winner: string | null): "1" | "X" | "2" | null {
+function outcomeFromGoals(home: number, away: number): Outcome {
+  if (home > away) return "1";
+  if (home < away) return "2";
+  return "X";
+}
+
+function resolveFinishedResult(m: FdMatch): MatchResult | undefined {
+  const useRegularTime =
+    m.score.duration === "PENALTY_SHOOTOUT" &&
+    m.score.regularTime?.home != null &&
+    m.score.regularTime?.away != null;
+
+  const home = useRegularTime
+    ? (m.score.regularTime!.home ?? 0)
+    : (m.score.fullTime.home ?? 0);
+  const away = useRegularTime
+    ? (m.score.regularTime!.away ?? 0)
+    : (m.score.fullTime.away ?? 0);
+
+  const outcome = mapOutcome(m.score.winner) ?? outcomeFromGoals(home, away);
+  return { homeGoals: home, awayGoals: away, outcome };
+}
+
+function mapOutcome(winner: string | null): Outcome | null {
   if (winner === "HOME_TEAM") return "1";
   if (winner === "AWAY_TEAM") return "2";
   if (winner === "DRAW") return "X";
@@ -102,11 +124,25 @@ export interface SyncData {
 // Fetch principal
 // ---------------------------------------------------------------------------
 
+/** Todos los partidos del Mundial 2026 en una sola petición. */
+export async function fetchWorldCupMatches(): Promise<SyncData> {
+  const url = `${BASE_URL}/competitions/${WORLD_CUP_CODE}/matches?season=${WORLD_CUP_SEASON}`;
+  const res = await fetch(url, { headers: getHeaders(), next: { revalidate: 0 } });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`football-data.org error ${res.status}: ${text}`);
+  }
+
+  const data: FdMatchesResponse = await res.json();
+  return mapSyncData(data.matches ?? []);
+}
+
 /**
- * Obtiene partidos de LaLiga + CL (ventana 9 días)
- * y todos los partidos del Mundial 2026 programados.
+ * Champions en ventana reciente (finalizados + próximos).
+ * Temporal: activar con SYNC_CHAMPIONS=true para probar porras.
  */
-export async function fetchRecentAndUpcomingMatches(): Promise<SyncData> {
+export async function fetchChampionsLeagueRecentMatches(): Promise<SyncData> {
   const today = new Date();
   const dateFrom = new Date(today);
   dateFrom.setDate(today.getDate() - 3);
@@ -114,32 +150,53 @@ export async function fetchRecentAndUpcomingMatches(): Promise<SyncData> {
   dateTo.setDate(today.getDate() + 6);
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
-  // Llamada 1: LaLiga + CL en ventana de fechas (max 10 días)
-  const url1 =
+  const url =
     `${BASE_URL}/matches` +
-    `?competitions=${DATE_RANGE_CODES.join(",")}` +
+    `?competitions=${CHAMPIONS_LEAGUE_CODE}` +
     `&dateFrom=${fmt(dateFrom)}` +
     `&dateTo=${fmt(dateTo)}`;
 
-  const res1 = await fetch(url1, { headers: getHeaders(), next: { revalidate: 0 } });
-  if (!res1.ok) {
-    const text = await res1.text();
-    throw new Error(`football-data.org error ${res1.status}: ${text}`);
-  }
-  const data1: FdMatchesResponse = await res1.json();
-  const allFdMatches: FdMatch[] = [...data1.matches];
-
-  // Llamada 2: Mundial — todos los partidos de la temporada 2026
-  for (const code of STATUS_CODES) {
-    const url2 = `${BASE_URL}/competitions/${code}/matches?season=2026`;
-    const res2 = await fetch(url2, { headers: getHeaders(), next: { revalidate: 0 } });
-    if (res2.ok) {
-      const data2: FdMatchesResponse = await res2.json();
-      allFdMatches.push(...data2.matches);
-    }
+  const res = await fetch(url, { headers: getHeaders(), next: { revalidate: 0 } });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`football-data.org CL error ${res.status}: ${text}`);
   }
 
-  return mapSyncData(allFdMatches);
+  const data: FdMatchesResponse = await res.json();
+  return mapSyncData(data.matches ?? []);
+}
+
+export function mergeSyncData(...parts: SyncData[]): SyncData {
+  const competitionsMap = new Map<string, Competition>();
+  const teamsMap = new Map<string, Team>();
+  const matchesMap = new Map<string, Match>();
+
+  for (const part of parts) {
+    for (const c of part.competitions) competitionsMap.set(c.id, c);
+    for (const t of part.teams) teamsMap.set(t.id, t);
+    for (const m of part.matches) matchesMap.set(m.id, m);
+  }
+
+  return {
+    competitions: Array.from(competitionsMap.values()),
+    teams: Array.from(teamsMap.values()),
+    matches: Array.from(matchesMap.values()),
+  };
+}
+
+/** Mundial + opcionalmente Champions si SYNC_CHAMPIONS=true. */
+export async function fetchSyncMatches(): Promise<SyncData> {
+  const wc = await fetchWorldCupMatches();
+  if (process.env.SYNC_CHAMPIONS === "true") {
+    const cl = await fetchChampionsLeagueRecentMatches();
+    return mergeSyncData(wc, cl);
+  }
+  return wc;
+}
+
+/** @deprecated Usa fetchSyncMatches */
+export async function fetchRecentAndUpcomingMatches(): Promise<SyncData> {
+  return fetchSyncMatches();
 }
 
 // ---------------------------------------------------------------------------
@@ -153,13 +210,12 @@ function mapSyncData(fdMatches: FdMatch[]): SyncData {
 
   for (const m of fdMatches) {
     const status = mapStatus(m.status);
-    if (!status) continue; // ignorar partidos cancelados/postpuestos
+    if (!status) continue;
 
     const compCode = m.competition.code;
     const compMeta = COMPETITION_META[compCode];
-    if (!compMeta) continue; // solo las competiciones configuradas
+    if (!compMeta) continue;
 
-    // Competición
     if (!competitionsMap.has(compCode)) {
       competitionsMap.set(compCode, {
         id: `fd_comp_${compCode}`,
@@ -170,10 +226,8 @@ function mapSyncData(fdMatches: FdMatch[]): SyncData {
       });
     }
 
-    // Saltar partidos con equipos placeholder (fase eliminatoria sin definir)
     if (!m.homeTeam?.id || !m.awayTeam?.id) continue;
 
-    // Equipos
     for (const t of [m.homeTeam, m.awayTeam]) {
       const teamId = `fd_team_${t.id}`;
       if (!teamsMap.has(teamId)) {
@@ -187,15 +241,9 @@ function mapSyncData(fdMatches: FdMatch[]): SyncData {
       }
     }
 
-    // Resultado
     let result: MatchResult | undefined;
     if (status === "FINISHED") {
-      const home = m.score.fullTime.home ?? 0;
-      const away = m.score.fullTime.away ?? 0;
-      const outcome = mapOutcome(m.score.winner);
-      if (outcome) {
-        result = { homeGoals: home, awayGoals: away, outcome };
-      }
+      result = resolveFinishedResult(m);
     }
 
     matches.push({

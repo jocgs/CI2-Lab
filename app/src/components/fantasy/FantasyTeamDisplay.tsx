@@ -48,30 +48,20 @@ export function FantasyTeamDisplay({
         </p>
       )}
 
-      <div className="relative">
-        <FantasySquadPitchPreview
-          formation={formation}
-          teamName={fantasyTeam.teamName}
-          goalkeeperId={se.goalkeeperId}
-          defenderIds={[...se.defenderIds]}
-          midfielderIds={[...se.midfielderIds]}
-          forwardIds={[...se.forwardIds]}
-          bench={bench}
-          captainId={captainId}
-          players={players}
-          nationalTeams={nationalTeams}
-        />
-        <div className="absolute right-3 top-3 flex flex-col items-end gap-1">
-          <span className="rounded-lg bg-black/40 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
-            {fantasyTeam.totalPoints} pts
-          </span>
-          {fantasyTeam.locked && (
-            <span className="rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-medium text-white">
-              🔒 Bloqueado
-            </span>
-          )}
-        </div>
-      </div>
+      <FantasySquadPitchPreview
+        formation={formation}
+        teamName={fantasyTeam.teamName}
+        goalkeeperId={se.goalkeeperId}
+        defenderIds={[...se.defenderIds]}
+        midfielderIds={[...se.midfielderIds]}
+        forwardIds={[...se.forwardIds]}
+        bench={bench}
+        captainId={captainId}
+        players={players}
+        nationalTeams={nationalTeams}
+        totalPoints={fantasyTeam.totalPoints}
+        locked={fantasyTeam.locked}
+      />
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
