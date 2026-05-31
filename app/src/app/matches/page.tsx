@@ -11,10 +11,25 @@ import {
 } from "@/lib/db";
 import { MatchCard } from "@/components/MatchCard";
 import { MatchFilters } from "@/components/MatchFilters";
+import { SyncBanner } from "@/components/SyncBanner";
 import { EmptyState } from "@/components/ui";
+import { getMatchSyncStatus, WORLD_CUP_COMPETITION_ID } from "@/lib/match-sync";
+import { filterDisplayMatches } from "@/lib/match-display";
 import { clsx, computeTeamForms } from "@/lib/utils";
 
 type Tab = "upcoming" | "finished";
+
+function buildMatchesQuery(params: {
+  tab: Tab;
+  competition?: string;
+  team?: string;
+}): string {
+  const q = new URLSearchParams();
+  q.set("tab", params.tab);
+  if (params.competition !== undefined) q.set("competition", params.competition);
+  if (params.team) q.set("team", params.team);
+  return q.toString();
+}
 
 export default async function MatchesPage({
   searchParams,
@@ -23,16 +38,30 @@ export default async function MatchesPage({
 }) {
   const params = await searchParams;
   const tab: Tab = params.tab === "finished" ? "finished" : "upcoming";
-  const selectedCompetition = params.competition ?? "";
-  const selectedTeam = params.team ?? "";
 
-  const [user, allMatches, finishedMatches, competitions, teams] = await Promise.all([
+  const [user, finishedMatches, competitions, teams, syncStatus] = await Promise.all([
     getCurrentUser(),
-    tab === "upcoming" ? getUpcomingMatches() : getFinishedMatches().then((m) => m.slice().reverse()),
     getFinishedMatches(),
     getCompetitions(),
     getTeams(),
+    getMatchSyncStatus(),
   ]);
+
+  const competitionInUrl = params.competition !== undefined;
+  const selectedCompetition = competitionInUrl
+    ? params.competition
+    : syncStatus.enabled
+      ? WORLD_CUP_COMPETITION_ID
+      : "";
+  const selectedTeam = params.team ?? "";
+
+  const rawMatches =
+    tab === "upcoming"
+      ? await getUpcomingMatches()
+      : finishedMatches.slice().reverse();
+
+  const allMatches =
+    tab === "upcoming" ? filterDisplayMatches(rawMatches) : rawMatches;
 
   const teamForms = computeTeamForms(finishedMatches);
 
@@ -68,12 +97,20 @@ export default async function MatchesPage({
         imageSrc={HERO_ASSETS.partidos}
       />
 
+      {syncStatus.enabled && (
+        <SyncBanner
+          syncedAt={syncStatus.syncedAt}
+          matchCount={syncStatus.matchCount}
+          finishedCount={syncStatus.finishedCount}
+        />
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 text-sm w-fit">
-          <TabLink href={`/matches?tab=upcoming${selectedCompetition ? `&competition=${selectedCompetition}` : ""}${selectedTeam ? `&team=${selectedTeam}` : ""}`} active={tab === "upcoming"}>
+          <TabLink href={`/matches?${buildMatchesQuery({ tab: "upcoming", competition: competitionInUrl ? selectedCompetition : undefined, team: selectedTeam || undefined })}`} active={tab === "upcoming"}>
             Próximos
           </TabLink>
-          <TabLink href={`/matches?tab=finished${selectedCompetition ? `&competition=${selectedCompetition}` : ""}${selectedTeam ? `&team=${selectedTeam}` : ""}`} active={tab === "finished"}>
+          <TabLink href={`/matches?${buildMatchesQuery({ tab: "finished", competition: competitionInUrl ? selectedCompetition : undefined, team: selectedTeam || undefined })}`} active={tab === "finished"}>
             Finalizados
           </TabLink>
         </div>
@@ -84,6 +121,7 @@ export default async function MatchesPage({
           selectedCompetition={selectedCompetition}
           selectedTeam={selectedTeam}
           tab={tab}
+          competitionInUrl={competitionInUrl}
         />
       </div>
 

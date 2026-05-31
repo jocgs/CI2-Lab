@@ -33,14 +33,12 @@ async function main() {
     );
   }
 
-  console.log("Descargando partidos reales de football-data.org...\n");
+  console.log("Descargando partidos del Mundial 2026 desde football-data.org...\n");
 
   const { competitions, teams, matches } = await fetchRecentAndUpcomingMatches();
 
   if (matches.length === 0) {
-    console.warn(
-      "⚠ No se han recibido partidos. Puede que no haya partidos en la ventana de fechas actual.",
-    );
+    console.warn("⚠ No se han recibido partidos del Mundial.");
   }
 
   writeCollection("competitions", competitions);

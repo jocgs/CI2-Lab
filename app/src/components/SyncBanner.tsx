@@ -3,12 +3,12 @@
 import { useState, useTransition } from "react";
 
 interface Props {
-  hasLiveData: boolean;
   syncedAt: string | null;
-  matchCount: number | null;
+  matchCount: number;
+  finishedCount: number;
 }
 
-export function SyncBanner({ hasLiveData, syncedAt, matchCount }: Props) {
+export function SyncBanner({ syncedAt, matchCount, finishedCount }: Props) {
   const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
   const [result, setResult] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -16,15 +16,15 @@ export function SyncBanner({ hasLiveData, syncedAt, matchCount }: Props) {
   function sync() {
     startTransition(async () => {
       setStatus("idle");
+      setResult(null);
       try {
         const res = await fetch("/api/sync-matches");
         const json = await res.json();
         if (json.ok) {
           setStatus("ok");
           setResult(
-            `${json.synced.matches} partidos · ${json.synced.teams} equipos · ${json.synced.competitions} competiciones`
+            `${json.synced.worldCupMatches ?? json.synced.matches} partidos · ${json.synced.worldCupFinished ?? 0} finalizados · ${json.synced.betsResolved ?? 0} porras resueltas`,
           );
-          // Forzar recarga para que las páginas sirvan el nuevo live-store
           setTimeout(() => window.location.reload(), 800);
         } else {
           setStatus("error");
@@ -38,44 +38,44 @@ export function SyncBanner({ hasLiveData, syncedAt, matchCount }: Props) {
   }
 
   const syncedTime = syncedAt
-    ? new Date(syncedAt).toLocaleTimeString("es-ES", {
+    ? new Date(syncedAt).toLocaleString("es-ES", {
+        day: "numeric",
+        month: "short",
         hour: "2-digit",
         minute: "2-digit",
       })
     : null;
 
-  if (hasLiveData) {
-    return (
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-        <span>
-          ✅ Datos reales · {matchCount} partidos · Sincronizado a las {syncedTime}
-        </span>
-        <button
-          onClick={sync}
-          disabled={isPending}
-          className="rounded-lg border border-emerald-300 px-2.5 py-1 font-medium hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-700 dark:hover:bg-emerald-900"
-        >
-          {isPending ? "Actualizando…" : "Actualizar"}
-        </button>
-      </div>
-    );
-  }
+  const hasSynced = Boolean(syncedAt);
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+    <div
+      className={
+        hasSynced
+          ? "flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-800 sm:flex-row sm:items-center sm:justify-between dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+          : "flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+      }
+    >
       <span>
         {status === "ok"
           ? `✅ Sincronizado — ${result}`
           : status === "error"
-            ? `❌ Error: ${result}`
-            : "⚽ Viendo datos de ejemplo — pulsa para cargar partidos reales de football-data.org"}
+            ? `❌ ${result}`
+            : hasSynced
+              ? `⚽ Mundial 2026 · ${matchCount} partidos · ${finishedCount} finalizados · Última sync: ${syncedTime}`
+              : "⚽ Pulsa para cargar los partidos del Mundial 2026 desde football-data.org"}
       </span>
       <button
+        type="button"
         onClick={sync}
-        disabled={isPending || status === "ok"}
-        className="rounded-lg border border-amber-300 px-2.5 py-1 font-medium hover:bg-amber-100 disabled:opacity-50 dark:border-amber-700 dark:hover:bg-amber-900"
+        disabled={isPending}
+        className={
+          hasSynced
+            ? "shrink-0 rounded-lg border border-emerald-300 px-2.5 py-1 font-medium hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-700 dark:hover:bg-emerald-900"
+            : "shrink-0 rounded-lg border border-amber-300 px-2.5 py-1 font-medium hover:bg-amber-100 disabled:opacity-50 dark:border-amber-700 dark:hover:bg-amber-900"
+        }
       >
-        {isPending ? "Sincronizando…" : status === "ok" ? "¡Listo!" : "Sincronizar"}
+        {isPending ? "Actualizando…" : hasSynced ? "Actualizar" : "Sincronizar Mundial"}
       </button>
     </div>
   );

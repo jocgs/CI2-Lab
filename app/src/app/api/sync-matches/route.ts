@@ -1,120 +1,113 @@
 /**
  * GET /api/sync-matches
  *
- * Descarga partidos de football-data.org y los guarda en Firestore.
- * Protegido con CRON_SECRET para que solo Vercel (o tú) pueda llamarlo.
- *
- * Vercel lo invoca automáticamente según el cron definido en vercel.json.
+ * Sincroniza Mundial 2026 (+ Champions si SYNC_CHAMPIONS=true).
+ * Upsert en Firestore — no borra partidos ya guardados.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { fetchRecentAndUpcomingMatches } from "@/lib/football-api";
+import { isStaleScheduledMatch } from "@/lib/match-display";
+import { fetchSyncMatches } from "@/lib/football-api";
+import {
+  assertManualSyncAllowed,
+  isCronRequest,
+  isMatchSyncEnabled,
+  writeSyncMeta,
+  WORLD_CUP_COMPETITION_ID,
+} from "@/lib/match-sync";
 
 export async function GET(req: NextRequest) {
-  // ── Modo mock: omitir la API externa y responder sin tocar Firestore ─────────
-  const useMock =
-    process.env.USE_MOCK_DATA === "true" ||
-    !process.env.FOOTBALL_DATA_API_KEY;
-
-  if (useMock) {
+  if (!isMatchSyncEnabled()) {
     return NextResponse.json({
-      ok: true,
+      ok: false,
       mock: true,
-      message:
-        "USE_MOCK_DATA=true o FOOTBALL_DATA_API_KEY no configurada — usando datos mock locales.",
+      error:
+        "Sincronización desactivada (USE_MOCK_DATA=true o falta FOOTBALL_DATA_API_KEY).",
     });
   }
 
-  // ── Protección: solo Vercel Cron o llamadas con el secreto correcto ─────────
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
+  const cronSecret = process.env.CRON_SECRET?.trim();
   if (cronSecret) {
-    const isVercelCron = authHeader === `Bearer ${cronSecret}`;
+    const isVercelCron = isCronRequest(req);
     const isManualCall = req.nextUrl.searchParams.get("secret") === cronSecret;
-
     if (!isVercelCron && !isManualCall) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
   }
 
+  const throttleMessage = await assertManualSyncAllowed(req);
+  if (throttleMessage) {
+    return NextResponse.json({ ok: false, error: throttleMessage }, { status: 429 });
+  }
+
   try {
-    const { competitions, teams, matches } =
-      await fetchRecentAndUpcomingMatches();
+    const { competitions, teams, matches } = await fetchSyncMatches();
 
-    const { adminDb } = await import("@/lib/firebase-admin");
-    const { resolveFinishedBets } = await import("@/lib/db");
-
-    async function batchUpsert<T extends { id: string }>(
-      collection: string,
-      items: T[],
-    ) {
-      for (let i = 0; i < items.length; i += 400) {
-        const batch = adminDb.batch();
-
-        for (const { id, ...data } of items.slice(i, i + 400)) {
-          batch.set(adminDb.collection(collection).doc(id), data);
-        }
-
-        await batch.commit();
-      }
-    }
-
-    if (
-      competitions.length === 0 ||
-      teams.length === 0 ||
-      matches.length === 0
-    ) {
-      console.warn(
-        "[sync-matches] API devolvió datos vacíos — sync abortado para evitar borrado accidental.",
-      );
-
+    if (matches.length === 0) {
+      console.warn("[sync-matches] API devolvió 0 partidos del Mundial — sync abortado.");
       return NextResponse.json(
         {
-          error: "La API externa devolvió datos vacíos. Sync abortado.",
-          received: {
-            competitions: competitions.length,
-            teams: teams.length,
-            matches: matches.length,
-          },
+          ok: false,
+          error: "La API no devolvió partidos del Mundial. Sync abortado.",
         },
         { status: 422 },
       );
     }
 
-    // Borra solo los partidos que vienen de la API (prefijo fd_match_) para
-    // evitar datos obsoletos, pero preserva los partidos creados manualmente.
-    async function clearApiMatches() {
-      const snap = await adminDb
-        .collection("matches")
-        .where("__name__", ">=", "fd_match_")
-        .where("__name__", "<", "fd_match_~")
-        .get();
+    const { adminDb } = await import("@/lib/firebase-admin");
+    const { getMatches, resolveFinishedBets } = await import("@/lib/db");
 
-      for (let i = 0; i < snap.docs.length; i += 400) {
+    async function batchUpsert<T extends { id: string }>(collection: string, items: T[]) {
+      for (let i = 0; i < items.length; i += 400) {
         const batch = adminDb.batch();
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        snap.docs.slice(i, i + 400).forEach((doc: any) => {
-          batch.delete(doc.ref);
-        });
-
+        for (const { id, ...data } of items.slice(i, i + 400)) {
+          batch.set(adminDb.collection(collection).doc(id), data, { merge: true });
+        }
         await batch.commit();
       }
     }
 
-    // Teams y competitions: upsert sin borrar — preserva datos manuales.
     await batchUpsert("competitions", competitions);
     await batchUpsert("teams", teams);
-
-    // Matches: limpia solo los de la API, luego reescribe.
-    await clearApiMatches();
     await batchUpsert("matches", matches);
 
-    const { resolved } = await resolveFinishedBets(matches);
+    // Solo elimina SCHEDULED obsoletos fuera del Mundial (nunca FINISHED).
+    const staleSnap = await adminDb.collection("matches").get();
+    let pruned = 0;
+    for (let i = 0; i < staleSnap.docs.length; i += 400) {
+      const batch = adminDb.batch();
+      for (const doc of staleSnap.docs.slice(i, i + 400)) {
+        const data = doc.data();
+        if (
+          doc.id.startsWith("fd_match_") &&
+          data.competitionId !== WORLD_CUP_COMPETITION_ID &&
+          data.status === "SCHEDULED" &&
+          isStaleScheduledMatch({ ...data, id: doc.id } as import("@/types/domain").Match)
+        ) {
+          batch.delete(doc.ref);
+          pruned++;
+        }
+      }
+      await batch.commit();
+    }
+
+    const allMatches = await getMatches();
+    const { resolved } = await resolveFinishedBets(allMatches);
+
+    const wcMatches = allMatches.filter((m) => m.competitionId === WORLD_CUP_COMPETITION_ID);
+    const finishedCount = wcMatches.filter((m) => m.status === "FINISHED").length;
+    const now = new Date().toISOString();
+    const fromCron = isCronRequest(req);
+
+    await writeSyncMeta({
+      lastSyncedAt: now,
+      ...(!fromCron ? { lastManualSyncedAt: now } : {}),
+      matchCount: wcMatches.length,
+      finishedCount,
+    });
 
     console.log(
-      `[sync-matches] ✓ ${matches.length} partidos, ${resolved} porras resueltas`,
+      `[sync-matches] ✓ ${matches.length} partidos WC upsert · ${pruned} obsoletos eliminados · ${finishedCount} finalizados · ${resolved} porras resueltas`,
     );
 
     return NextResponse.json({
@@ -123,12 +116,16 @@ export async function GET(req: NextRequest) {
         competitions: competitions.length,
         teams: teams.length,
         matches: matches.length,
+        worldCupMatches: wcMatches.length,
+        worldCupFinished: finishedCount,
+        championsIncluded: process.env.SYNC_CHAMPIONS === "true",
         betsResolved: resolved,
+        prunedStale: pruned,
       },
-      syncedAt: new Date().toISOString(),
+      syncedAt: now,
     });
   } catch (err) {
     console.error("[sync-matches] Error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
   }
 }

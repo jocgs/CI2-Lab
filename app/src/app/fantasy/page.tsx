@@ -57,6 +57,34 @@ export default async function FantasyPage() {
         </div>
       </section>
 
+      {/* Cuadro del Mundial */}
+      <section>
+        <SectionTitle
+          title="Cuadro del Mundial"
+          subtitle="Predice la clasificación de grupos y todo el bracket eliminatorio"
+        />
+        <Card className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="text-3xl" aria-hidden>
+              🏆
+            </span>
+            <div>
+              <h2 className="font-semibold">Grupos, dieciseisavos, final y 3.er puesto</h2>
+              <p className="mt-0.5 text-sm text-[var(--muted)]">
+                Ordena cada grupo y elige ganadores en cada cruce pulsando los escudos de las
+                selecciones.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/fantasy/bracket"
+            className="shrink-0 rounded-xl bg-[var(--brand)] px-5 py-2.5 text-center text-sm font-medium text-white hover:opacity-90"
+          >
+            Ir al cuadro →
+          </Link>
+        </Card>
+      </section>
+
       {/* Bola de cristal */}
       <section>
         <SectionTitle
